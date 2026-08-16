@@ -12,6 +12,11 @@ export const employeeFormSchema = z.object({
   managerId: z.string().optional(),
 })
 
+// react-hook-form needs the pre-coercion (input) shape for its field values
+// and the post-coercion (output) shape for what handleSubmit hands back —
+// z.coerce.number() makes those two types diverge (salary is `unknown`
+// going in, `number` coming out).
+export type EmployeeFormInput = z.input<typeof employeeFormSchema>
 export type EmployeeFormValues = z.infer<typeof employeeFormSchema>
 
 // Looser variant for CSV rows: fields arrive as raw strings, employmentType
