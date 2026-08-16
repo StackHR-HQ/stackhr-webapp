@@ -4,10 +4,8 @@
    needed). Light values here; dark values are redefined under the
    prefers-color-scheme block below, so bg-canvas, text-ink, etc. adapt
    automatically. Contrast-checked against WCAG AA (4.5:1 text / 3:1 UI):
-   ink/muted/positive/critical on canvas all clear 4.5:1+. accent used as
-   text/accent-ink on accent sits at ~4.4:1 — fine for large/bold text and
-   borders, but avoid it for small body text until the brand accent itself
-   is darkened slightly. */
+   ink/muted/positive/critical on canvas all clear 4.5:1+; accent-ink on
+   accent clears ~4.8:1 (light) / ~5.2:1 (dark). */
 @theme {
   --font-sans: var(--sans);
 
@@ -26,11 +24,10 @@
   --color-ink: #08060d;
   --color-muted: #6b6375;
   --color-line: #e5e4e7;
-  --color-accent: #aa3bff;
+  --color-accent: #0066ff;
   --color-accent-ink: #ffffff;
   --color-positive: #15803d;
   --color-critical: #dc2626;
-  --color-electric-blue: #0066ff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,11 +38,10 @@
     --color-ink: #f3f4f6;
     --color-muted: #9ca3af;
     --color-line: #2e303a;
-    --color-accent: #c084fc;
-    --color-accent-ink: #1b1024;
+    --color-accent: #2563eb;
+    --color-accent-ink: #ffffff;
     --color-positive: #34d399;
     --color-critical: #f87171;
-    --color-electric-blue: #3b82f6;
   }
 }
 
@@ -61,7 +57,7 @@
 }
 
 :root {
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;

@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
-import { ForgotPasswordPage } from './features/auth/forgot-password-page'
-import { LoginPage } from './features/auth/login-page'
-import { SignupPage } from './features/auth/signup-page'
+import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
+import { LoginPage } from './features/auth/pages/login-page'
+import { SignupPage } from './features/auth/pages/signup-page'
 import { DashboardPlaceholder } from './pages/dashboard-placeholder'
 import { ProtectedRoute } from './routing/protected-route'
 

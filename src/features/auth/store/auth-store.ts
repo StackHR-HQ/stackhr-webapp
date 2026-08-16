@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
-import { AUTH_STORAGE_KEY } from './constants'
-import type { AuthSession, AuthUser } from './types'
+import { AUTH_STORAGE_KEY } from '../auth-constants'
+import type { AuthSession, AuthUser } from '../types/auth-types'
 
 // "Remember me" decides where the session lives: checked -> localStorage
 // (survives browser restarts), unchecked -> sessionStorage (cleared when the

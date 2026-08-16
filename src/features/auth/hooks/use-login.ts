@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
-import { authService } from './service'
-import { useAuthStore } from './store'
-import type { LoginPayload } from './types'
+import { authService } from '../api/auth-service'
+import { useAuthStore } from '../store/auth-store'
+import type { LoginPayload } from '../types/auth-types'
 
 export function useLogin() {
   const setSession = useAuthStore((state) => state.setSession)
@@ -11,11 +11,5 @@ export function useLogin() {
     onSuccess: (session, variables) => {
       setSession(session, variables.rememberMe)
     },
-  })
-}
-
-export function useRequestPasswordReset() {
-  return useMutation({
-    mutationFn: (email: string) => authService.requestPasswordReset(email),
   })
 }

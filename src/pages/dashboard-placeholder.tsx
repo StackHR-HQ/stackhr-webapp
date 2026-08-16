@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router'
-import { useAuthStore } from '../features/auth/store'
+import { useAuthStore } from '../features/auth/store/auth-store'
 
 // Stands in for the real app shell until routing/features land here.
 export function DashboardPlaceholder() {

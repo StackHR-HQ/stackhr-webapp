@@ -18,4 +18,10 @@ export interface LoginPayload {
   password: string
 }
 
+export interface SignupPayload {
+  companyName: string
+  email: string
+  password: string
+}
+
 export class AuthError extends Error {}

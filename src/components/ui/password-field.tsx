@@ -1,16 +1,21 @@
-import { useId, useState, type ComponentPropsWithRef } from 'react'
+import { useId, useState, type ComponentPropsWithRef, type ReactNode } from 'react'
 
-type PasswordInputProps = Omit<ComponentPropsWithRef<'input'>, 'type'> & {
+type PasswordFieldProps = Omit<ComponentPropsWithRef<'input'>, 'type' | 'className'> & {
+  label: ReactNode
   error?: string
+  inputClassName?: string
 }
 
-export function PasswordInput({ error, className, id, ...inputProps }: PasswordInputProps) {
+export function PasswordField({ label, error, id, inputClassName, ...inputProps }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false)
   const generatedId = useId()
   const inputId = id ?? generatedId
 
   return (
     <div>
+      <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-ink">
+        {label}
+      </label>
       <div className="relative">
         <input
           id={inputId}
@@ -18,7 +23,7 @@ export function PasswordInput({ error, className, id, ...inputProps }: PasswordI
           aria-invalid={Boolean(error)}
           className={`w-full rounded-lg border bg-canvas px-3 py-2 pr-10 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 ${
             error ? 'border-critical' : 'border-line focus:border-accent'
-          } ${className ?? ''}`}
+          } ${inputClassName ?? ''}`}
           {...inputProps}
         />
         <button
@@ -26,7 +31,7 @@ export function PasswordInput({ error, className, id, ...inputProps }: PasswordI
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? 'Hide password' : 'Show password'}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded-r-lg"
+          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-muted hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         >
           {visible ? (
             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

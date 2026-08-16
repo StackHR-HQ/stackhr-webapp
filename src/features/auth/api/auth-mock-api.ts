@@ -1,4 +1,5 @@
-import { AuthError, type AuthSession, type LoginPayload } from './types'
+import { slugify } from '../../../lib/slugify'
+import { AuthError, type AuthSession, type LoginPayload, type SignupPayload } from '../types/auth-types'
 
 // Stands in for the real backend until the auth endpoints exist. Delays are
 // simulated so loading states are actually visible while testing the flow.
@@ -34,6 +35,23 @@ export const mockAuthApi = {
         name: 'Demo Admin',
         orgSlug: DEMO_ORG_SLUG,
         orgName: 'Acme Inc.',
+        role: 'admin',
+      },
+      token: 'mock.jwt.token',
+    }
+  },
+
+  async signup({ companyName, email }: SignupPayload): Promise<AuthSession> {
+    await delay(700)
+
+    const orgSlug = slugify(companyName)
+    return {
+      user: {
+        id: `user_${Date.now()}`,
+        email,
+        name: email.split('@')[0] ?? email,
+        orgSlug,
+        orgName: companyName,
         role: 'admin',
       },
       token: 'mock.jwt.token',
