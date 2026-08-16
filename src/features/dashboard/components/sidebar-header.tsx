@@ -1,4 +1,4 @@
-import { CaretUpDownIcon, PlusIcon, SidebarSimpleIcon } from '@phosphor-icons/react'
+import { CaretUpDownIcon, PlusIcon, SidebarSimpleIcon, XIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useClickOutside } from '../../../lib/use-click-outside'
@@ -10,7 +10,7 @@ export function SidebarHeader() {
   const user = useAuthStore((state) => state.user)
   const switchOrg = useAuthStore((state) => state.switchOrg)
   const navigate = useNavigate()
-  const { collapsed, toggleCollapsed } = useSidebar()
+  const { collapsed, toggleCollapsed, closeMobile } = useSidebar()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   useClickOutside(containerRef, () => setOpen(false))
@@ -64,14 +64,24 @@ export function SidebarHeader() {
         ) : null}
       </button>
 
+      {/* Icon-collapse is a desktop concept; on mobile the drawer is either
+          fully open or fully closed, so swap in a plain close button. */}
       <button
         type="button"
         onClick={toggleCollapsed}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         title="Toggle sidebar (⌘B)"
-        className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-surface hover:text-ink"
+        className="hidden shrink-0 rounded-lg p-1.5 text-muted hover:bg-surface hover:text-ink lg:block"
       >
         <SidebarSimpleIcon className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={closeMobile}
+        aria-label="Close sidebar"
+        className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-surface hover:text-ink lg:hidden"
+      >
+        <XIcon className="h-4 w-4" />
       </button>
 
       {open ? (
