@@ -6,7 +6,7 @@ import type { NavSection } from './sidebar-nav-data'
 import { useSidebar } from './use-sidebar'
 
 export function SidebarNavItem({ section }: { section: NavSection }) {
-  const { collapsed, toggleCollapsed } = useSidebar()
+  const { collapsed, toggleCollapsed, closeMobile } = useSidebar()
   const location = useLocation()
   const Icon = NAV_ICONS[section.icon]
 
@@ -19,6 +19,7 @@ export function SidebarNavItem({ section }: { section: NavSection }) {
         to={section.path!}
         end={section.path === '/'}
         title={collapsed ? section.label : undefined}
+        onClick={closeMobile}
         className={({ isActive }) =>
           `flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm ${collapsed ? 'justify-center' : ''} ${
             isActive ? 'bg-surface font-medium text-ink' : 'text-muted hover:bg-surface hover:text-ink'
@@ -64,6 +65,7 @@ export function SidebarNavItem({ section }: { section: NavSection }) {
             <li key={item.path}>
               <NavLink
                 to={item.path}
+                onClick={closeMobile}
                 className={({ isActive }) =>
                   `block truncate rounded-lg px-2.5 py-1.5 text-sm ${
                     isActive ? 'font-medium text-ink' : 'text-muted hover:text-ink'

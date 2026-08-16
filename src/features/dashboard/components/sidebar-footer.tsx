@@ -15,7 +15,7 @@ export function SidebarFooter() {
   const user = useAuthStore((state) => state.user)
   const clearSession = useAuthStore((state) => state.clearSession)
   const navigate = useNavigate()
-  const { collapsed } = useSidebar()
+  const { collapsed, closeMobile } = useSidebar()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   useClickOutside(containerRef, () => setOpen(false))
@@ -78,7 +78,10 @@ export function SidebarFooter() {
                 key={item.to}
                 to={item.to}
                 role="menuitem"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false)
+                  closeMobile()
+                }}
                 className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-surface"
               >
                 <item.icon className="h-4 w-4 text-muted" weight="regular" />
