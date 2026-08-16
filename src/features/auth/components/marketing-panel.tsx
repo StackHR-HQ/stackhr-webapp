@@ -71,7 +71,7 @@ export function MarketingPanel() {
           ))}
         </ul>
 
-        <div className="mt-10 rounded-2xl border border-panel-ink/10 bg-panel-ink/5 p-4">
+        {/* <div className="mt-10 rounded-2xl border border-panel-ink/10 bg-panel-ink/5 p-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">April payroll run</p>
             <span className="rounded-full bg-positive/20 px-2 py-0.5 text-xs text-positive">Compliant</span>
@@ -83,7 +83,7 @@ export function MarketingPanel() {
             <span>36 employees paid</span>
             <span>Tax rules NG-2026-v1</span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       <p className="relative text-xs text-panel-ink/50">Built for growing teams across Africa.</p>

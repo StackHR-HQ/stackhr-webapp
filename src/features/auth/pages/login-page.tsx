@@ -48,7 +48,7 @@ export function LoginPage() {
   })
 
   return (
-    <AuthShell
+    <AuthSplitShell
       title="Sign in to StackHR"
       subtitle="Enter your workspace and account details"
       footer={
@@ -122,6 +122,6 @@ export function LoginPage() {
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
-    </AuthShell>
+    </AuthSplitShell>
   )
 }

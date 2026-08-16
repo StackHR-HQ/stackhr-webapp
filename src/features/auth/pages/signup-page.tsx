@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
-import { AuthShell } from '../components/auth-shell'
+import { AuthSplitShell } from '../components/auth-split-shell'
 import { useSignup } from '../hooks/use-signup'
 import { signupSchema, type SignupFormValues } from '../schemas/signup-schema'
 import { AuthError } from '../types/auth-types'
@@ -28,8 +28,8 @@ export function SignupPage() {
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
     try {
-      await signup.mutateAsync(values)
-      navigate('/', { replace: true })
+      const { email } = await signup.mutateAsync(values)
+      navigate('/verify-email', { state: { email } })
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
@@ -37,7 +37,7 @@ export function SignupPage() {
   })
 
   return (
-    <AuthShell
+    <AuthSplitShell
       title="Create your workspace"
       subtitle="Set up People, Payroll, and Spend for your company"
       footer={
@@ -101,6 +101,6 @@ export function SignupPage() {
           {isSubmitting ? 'Creating workspace…' : 'Create workspace'}
         </Button>
       </form>
-    </AuthShell>
+    </AuthSplitShell>
   )
 }
