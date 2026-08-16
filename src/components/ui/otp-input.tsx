@@ -1,4 +1,4 @@
-import { useRef, type ClipboardEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, type ClipboardEvent, type FocusEvent, type KeyboardEvent } from 'react'
 
 type OtpInputProps = {
   length?: number
@@ -12,6 +12,16 @@ type OtpInputProps = {
 export function OtpInput({ length = 6, value, onChange, error, disabled, id }: OtpInputProps) {
   const inputsRef = useRef<Array<HTMLInputElement | null>>([])
   const digits = Array.from({ length }, (_, i) => value[i] ?? '')
+
+  // When the caller clears the value (e.g. after a failed verification),
+  // refocus the first box so the user can immediately retype.
+  const previousValue = useRef(value)
+  useEffect(() => {
+    if (value === '' && previousValue.current !== '') {
+      inputsRef.current[0]?.focus()
+    }
+    previousValue.current = value
+  }, [value])
 
   function setDigit(index: number, digit: string) {
     const next = digits.slice()
@@ -31,6 +41,12 @@ export function OtpInput({ length = 6, value, onChange, error, disabled, id }: O
     if (event.key === 'Backspace' && !digits[index] && index > 0) {
       inputsRef.current[index - 1]?.focus()
     }
+  }
+
+  function handleFocus(event: FocusEvent<HTMLInputElement>) {
+    // Select-on-focus so typing over an already-filled box always overwrites
+    // it, regardless of where the click landed.
+    event.target.select()
   }
 
   function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
@@ -53,6 +69,7 @@ export function OtpInput({ length = 6, value, onChange, error, disabled, id }: O
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
+            onFocus={handleFocus}
             onPaste={handlePaste}
             disabled={disabled}
             inputMode="numeric"

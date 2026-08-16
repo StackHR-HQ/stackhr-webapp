@@ -37,14 +37,11 @@ const FEATURES = [
 
 export function MarketingPanel() {
   return (
-    <aside className="relative hidden shrink-0 flex-col justify-between overflow-hidden bg-panel px-12 py-12 text-panel-ink lg:flex lg:w-[46%]">
+    <aside className="relative hidden shrink-0 flex-col justify-between overflow-hidden bg-panel px-12 py-12 text-panel-ink lg:flex lg:w-[50%]">
       <div aria-hidden className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/30 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
 
-      <div className="relative flex items-center gap-2 text-lg font-medium">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm font-semibold text-accent-ink">
-          S
-        </span>
+      <div className="relative flex items-center gap-2 text-xl font-medium">
         StackHR
       </div>
 

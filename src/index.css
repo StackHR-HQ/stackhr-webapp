@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fontsource/instrument-sans/latin-400.css";
+@import "@fontsource/instrument-sans/latin-500.css";
 
 /* Semantic theme tokens (Tailwind v4 CSS-first config — no tailwind.config.ts
    needed). Light values here; dark values are redefined under the
@@ -63,7 +65,7 @@
 }
 
 :root {
-  --sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;

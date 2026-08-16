@@ -27,6 +27,7 @@ export function VerifyEmailPage() {
   const {
     control,
     handleSubmit,
+    resetField,
     setError,
     clearErrors,
     formState: { errors, isSubmitting },
@@ -55,6 +56,7 @@ export function VerifyEmailPage() {
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
+      resetField('code')
     }
   })
 
