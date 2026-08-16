@@ -1,7 +1,7 @@
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { NAV_ICONS } from './nav-icon-map'
-import { ChevronRightIcon } from './nav-icons'
 import type { NavSection } from './sidebar-nav-data'
 import { useSidebar } from './use-sidebar'
 
@@ -53,7 +53,7 @@ export function SidebarNavItem({ section }: { section: NavSection }) {
         {!collapsed ? (
           <>
             <span className="flex-1 truncate text-left">{section.label}</span>
-            <ChevronRightIcon className={`h-3.5 w-3.5 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+            <CaretRightIcon className={`h-3.5 w-3.5 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
           </>
         ) : null}
       </button>

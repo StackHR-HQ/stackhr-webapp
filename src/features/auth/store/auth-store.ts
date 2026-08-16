@@ -31,6 +31,7 @@ interface AuthState {
   rememberMe: boolean
   setSession: (session: AuthSession, rememberMe: boolean) => void
   clearSession: () => void
+  switchOrg: (org: { orgSlug: string; orgName: string }) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -41,6 +42,7 @@ export const useAuthStore = create<AuthState>()(
       rememberMe: false,
       setSession: ({ user, token }, rememberMe) => set({ user, token, rememberMe }),
       clearSession: () => set({ user: null, token: null, rememberMe: false }),
+      switchOrg: (org) => set((state) => (state.user ? { user: { ...state.user, ...org } } : state)),
     }),
     {
       name: AUTH_STORAGE_KEY,
