@@ -1,3 +1,5 @@
+export type NavIconName = 'dashboard' | 'people' | 'payroll' | 'spend' | 'compliance' | 'approvals' | 'reports' | 'settings'
+
 export interface NavLeaf {
   label: string
   path: string
@@ -5,15 +7,17 @@ export interface NavLeaf {
 
 export interface NavSection {
   label: string
+  icon: NavIconName
   path?: string
   items?: NavLeaf[]
 }
 
 // Mirrors sidebar.md — the single source of truth for the dashboard nav tree.
 export const SIDEBAR_NAV: NavSection[] = [
-  { label: 'Dashboard', path: '/' },
+  { label: 'Dashboard', icon: 'dashboard', path: '/' },
   {
     label: 'People',
+    icon: 'people',
     items: [
       { label: 'Employees', path: '/people/employees' },
       { label: 'Leave', path: '/people/leave' },
@@ -24,6 +28,7 @@ export const SIDEBAR_NAV: NavSection[] = [
   },
   {
     label: 'Payroll',
+    icon: 'payroll',
     items: [
       { label: 'Overview', path: '/payroll/overview' },
       { label: 'Payroll Runs', path: '/payroll/runs' },
@@ -34,6 +39,7 @@ export const SIDEBAR_NAV: NavSection[] = [
   },
   {
     label: 'Spend',
+    icon: 'spend',
     items: [
       { label: 'Expenses', path: '/spend/expenses' },
       { label: 'Reimbursements', path: '/spend/reimbursements' },
@@ -42,16 +48,18 @@ export const SIDEBAR_NAV: NavSection[] = [
   },
   {
     label: 'Compliance',
+    icon: 'compliance',
     items: [
       { label: 'Tax', path: '/compliance/tax' },
       { label: 'Statutory', path: '/compliance/statutory' },
       { label: 'Remittances', path: '/compliance/remittances' },
     ],
   },
-  { label: 'Approvals', path: '/approvals' },
-  { label: 'Reports', path: '/reports' },
+  { label: 'Approvals', icon: 'approvals', path: '/approvals' },
+  { label: 'Reports', icon: 'reports', path: '/reports' },
   {
     label: 'Settings',
+    icon: 'settings',
     items: [
       { label: 'Organization', path: '/settings/organization' },
       { label: 'Payroll', path: '/settings/payroll' },
