@@ -24,4 +24,13 @@ export interface SignupPayload {
   password: string
 }
 
+export interface PendingSignup {
+  email: string
+}
+
+export interface VerifyEmailOtpPayload {
+  email: string
+  code: string
+}
+
 export class AuthError extends Error {}

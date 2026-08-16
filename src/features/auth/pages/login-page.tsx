@@ -8,7 +8,7 @@ import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
 import { USE_MOCK_AUTH } from '../../../lib/env'
 import { DEMO_LOGIN_CREDENTIALS } from '../api/auth-mock-api'
-import { AuthShell } from '../components/auth-shell'
+import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
 import { AuthError } from '../types/auth-types'
@@ -74,6 +74,7 @@ export function LoginPage() {
 
         <div className="mb-4">
           <TextField
+            id="orgSlug"
             label="Workspace"
             autoCapitalize="none"
             autoComplete="organization"
@@ -85,6 +86,7 @@ export function LoginPage() {
 
         <div className="mb-4">
           <TextField
+            id="email"
             label="Email"
             type="email"
             autoComplete="email"
@@ -96,6 +98,7 @@ export function LoginPage() {
 
         <div className="mb-4">
           <PasswordField
+            id="password"
             label={
               <span className="flex items-center justify-between">
                 <span>Password</span>

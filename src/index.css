@@ -28,6 +28,12 @@
   --color-accent-ink: #ffffff;
   --color-positive: #15803d;
   --color-critical: #dc2626;
+
+  /* Fixed brand panel colors — intentionally NOT redefined in the dark
+     media query below, so the auth marketing panel stays a consistent
+     dark, branded surface regardless of the visitor's OS theme. */
+  --color-panel: #0a0d16;
+  --color-panel-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {

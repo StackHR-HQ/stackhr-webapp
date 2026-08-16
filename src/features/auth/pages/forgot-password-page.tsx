@@ -41,6 +41,7 @@ export function ForgotPasswordPage() {
         <form onSubmit={onSubmit} noValidate>
           <div className="mb-5">
             <TextField
+              id="email"
               label="Email"
               type="email"
               autoComplete="email"

@@ -1,11 +1,19 @@
 import { slugify } from '../../../lib/slugify'
-import { AuthError, type AuthSession, type LoginPayload, type SignupPayload } from '../types/auth-types'
+import {
+  AuthError,
+  type AuthSession,
+  type LoginPayload,
+  type PendingSignup,
+  type SignupPayload,
+  type VerifyEmailOtpPayload,
+} from '../types/auth-types'
 
 // Stands in for the real backend until the auth endpoints exist. Delays are
 // simulated so loading states are actually visible while testing the flow.
 const DEMO_ORG_SLUG = 'acme'
 const DEMO_EMAIL = 'demo@stackhr.app'
 const DEMO_PASSWORD = 'password123'
+export const DEMO_OTP_CODE = '123456'
 
 export const DEMO_LOGIN_CREDENTIALS = {
   orgSlug: DEMO_ORG_SLUG,
@@ -16,6 +24,10 @@ export const DEMO_LOGIN_CREDENTIALS = {
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+// A real backend would persist the pending signup and email an actual code.
+// Keyed by lowercased email; cleared once the account is verified.
+const pendingSignups = new Map<string, SignupPayload>()
 
 export const mockAuthApi = {
   async login({ orgSlug, email, password }: LoginPayload): Promise<AuthSession> {
@@ -41,21 +53,41 @@ export const mockAuthApi = {
     }
   },
 
-  async signup({ companyName, email }: SignupPayload): Promise<AuthSession> {
+  async signup(payload: SignupPayload): Promise<PendingSignup> {
     await delay(700)
 
-    const orgSlug = slugify(companyName)
+    pendingSignups.set(payload.email.toLowerCase(), payload)
+    return { email: payload.email }
+  },
+
+  async verifyEmailOtp({ email, code }: VerifyEmailOtpPayload): Promise<AuthSession> {
+    await delay(500)
+
+    if (code !== DEMO_OTP_CODE) {
+      throw new AuthError('Incorrect verification code.')
+    }
+
+    const pending = pendingSignups.get(email.toLowerCase())
+    if (!pending) {
+      throw new AuthError('Your signup session expired. Please sign up again.')
+    }
+    pendingSignups.delete(email.toLowerCase())
+
     return {
       user: {
         id: `user_${Date.now()}`,
-        email,
-        name: email.split('@')[0] ?? email,
-        orgSlug,
-        orgName: companyName,
+        email: pending.email,
+        name: pending.email.split('@')[0] ?? pending.email,
+        orgSlug: slugify(pending.companyName),
+        orgName: pending.companyName,
         role: 'admin',
       },
       token: 'mock.jwt.token',
     }
+  },
+
+  async resendEmailOtp(_email: string): Promise<void> {
+    await delay(500)
   },
 
   async requestPasswordReset(_email: string): Promise<void> {

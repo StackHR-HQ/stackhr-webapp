@@ -54,6 +54,7 @@ export function SignupPage() {
 
         <div className="mb-4">
           <TextField
+            id="companyName"
             label="Company name"
             autoComplete="organization"
             placeholder="Acme Inc."
@@ -64,6 +65,7 @@ export function SignupPage() {
 
         <div className="mb-4">
           <TextField
+            id="email"
             label="Email"
             type="email"
             autoComplete="email"
@@ -75,6 +77,7 @@ export function SignupPage() {
 
         <div className="mb-4">
           <PasswordField
+            id="password"
             label="Password"
             autoComplete="new-password"
             placeholder="••••••••"
@@ -85,6 +88,7 @@ export function SignupPage() {
 
         <div className="mb-5">
           <PasswordField
+            id="confirmPassword"
             label="Confirm password"
             autoComplete="new-password"
             placeholder="••••••••"
