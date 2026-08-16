@@ -39,7 +39,7 @@ StackHR MVP & Technical Product Specification Page 1
 | Team Management  | Role and permission management |
 | Onboarding  | Organization setup, templates, guided setup |
 | Testing  | Playwright tests, TypeScript/build validation |
-| Infrastructure  | Supabase/PostgreSQL, Git, current web application |
+| Infrastructure  | NeonDB PostgreSQL, Cloudflare R2, Vercel, GitHub |
 
 Attendance tracking was scoped out entirely and is not in MVP. 
 
@@ -59,20 +59,15 @@ Expense Claims, Reimbursements, Spending Approvals, are all live.
 
 **Billing & Subscriptions** 
 
-• **Phase 1 (live, tested end-to-end):** 14-day trial state machine, subscriptions Supabase table, TrialBanner, Paystack card capture (50 verification charge). 
+• **Phase 1 (live, tested end-to-end):** 14-day trial state machine, subscriptions PostgreSQL table, TrialBanner, and Anchor payment setup. 
 
-• **Phase 2 (live, tested end-to-end):** Paystack webhook handler (signature verification, 
+• **Phase 2 (live, tested end-to-end):** Anchor webhook handling with signature verification, daily cron for trial-to-paid conversion and monthly renewals. Expired trials with no payment method correctly downgrade to Free. 
 
-charge.success/charge.failed), daily cron for trial-to-paid conversion and monthly renewals via 
-
-charge\_authorization   
-. Expired trials with no card correctly downgrade to Free. 
-
-• Paystack account is currently in **test mode**. 
+• Anchor payment integration is currently in **test mode**. 
 
 • Stripe (USD tiers — Business/Enterprise) is planned, not built. 
 
-• Marketing site pricing CTAs pass ?plan=\<tier\> into signup → auto-provisions correct subscription row. 
+• Marketing site pricing CTAs pass ?plan=<tier> into signup → auto-provisions the correct subscription row. 
 
 **Onboarding Fixes (post-launch)** 
 
@@ -170,7 +165,7 @@ Every contribution should explain: what it is, whether mandatory, why it applies
 
 • Subscription tiers do not enforce feature access — RBAC controls access independently of tier (feature gating intentionally deferred). 
 
-• Paystack account is in test mode; Stripe for USD tiers not yet built. 
+• Anchor payment integration is in test mode; Stripe for USD tiers not yet built. 
 
 **Capacity:** 
 
@@ -182,38 +177,35 @@ Every contribution should explain: what it is, whether mandatory, why it applies
 
 **6\. Current Stack**
 
-StackHR MVP & Technical Product Specification Page 4 
-
-| Layer  | Technology |
+| Layer | Technology |
 | :---- | :---- |
-| Framework  | React JS + Vite |
-| Language  | TypeScript |
-| Authentication  | Supabase Auth |
-| Database  | Supabase PostgreSQL |
-| Database security  | PostgreSQL RLS |
-| Storage  | Supabase Storage |
-| Email  | Resend |
-| Payments  | Stripe \+ Paystack |
-| Hosting  | Vercel |
-| Error monitoring  | Sentry |
-| Analytics  | Google Analytics 4 |
-| Source control  | GitHub |
-| Theming  | next-themes (dark/light mode) |
-| Testing  | Playwright (E2E), TypeScript/build validation |
+| Framework | React JS + Vite |
+| Language | TypeScript |
+| Authentication | BetterAuth |
+| Database | NeonDB PostgreSQL |
+| Database security | PostgreSQL RLS |
+| Storage | Cloudflare R2 |
+| Email | Sendbyte |
+| Payments | Anchor |
+| Hosting | Vercel |
+| Error monitoring | Sentry |
+| Analytics | Google Analytics 4 |
+| Source control | GitHub |
+| Theming | Application-level dark/light mode |
+| Testing | Playwright (E2E), TypeScript/build validation |
 
-Deployed through Vercel with GitHub-based deployment. Two repos: stackhr (beta app, project prj\_KpkU1AvyN32BYEh4sKAt8CuNrYmB) and stackhr-website (marketing, project prj\_BSrPQgYhKpwpVJZYWQWlIfS7q5wf), both under Vercel team team\_2bBGRqXOm83tlnHIUT70Flyg, auto-deploy on push. 
+The beta application and marketing site are deployed through Vercel with GitHub-based deployment and automatic deployment on push. The current architecture uses NeonDB PostgreSQL as the primary relational database, PostgreSQL RLS for tenant isolation, Cloudflare R2 for object/media storage, Sendbyte for transactional email, Anchor for payments, Sentry for error monitoring, and Google Analytics 4 for analytics.
 
-**Security & Data** 
+**Security & Data**
 
-• RLS policies across \~29 Supabase tables; 36/36 RLS tests passing (pre-payroll-rework baseline). • NIN/BVN encryption in place. 
+• RLS policies remain the database-level tenant isolation mechanism across organization-owned PostgreSQL tables; 36/36 RLS tests were passing at the pre-payroll-rework baseline.  
+• NIN/BVN encryption is in place.  
+• UUID validation is enforced across employee routes (src/lib/uuid.ts).  
+• Self-approval security bypass has been fixed.  
 
-• UUID validation fixed across employee routes (src/lib/uuid.ts). 
+**Environment Configuration**
 
-• Self-approval security bypass fixed. 
-
-**Environment Configuration** 
-
-NEXT\_PUBLIC\_SUPABASE\_URL, NEXT\_PUBLIC\_SUPABASE\_ANON\_KEY, SUPABASE\_SERVICE\_ROLE\_KEY, RESEND\_API\_KEY, NEXT\_PUBLIC\_APP\_URL, NEXT\_PUBLIC\_GA\_MEASUREMENT\_ID, GA4\_API\_SECRET.  Secretsstay outside GitHub/source control. 
+Environment variables are managed through the deployment environment for BetterAuth, NeonDB, Cloudflare R2, Sendbyte, Anchor, Vercel, Sentry, and Google Analytics 4. Secrets stay outside GitHub/source control.
 
 **7\. User Roles & Permissions** 
 
@@ -240,7 +232,7 @@ Page 5
 
 6\. **Salary advance** → request → approval → disbursement tracking. 
 
-7\. **Billing** → trial start → card capture → recurring charge (Paystack) → renewal/downgrade. 
+7\. **Billing** → trial start → payment setup → recurring charge (Anchor) → renewal/downgrade. 
 
 **Planned future payslip flow:** Payroll Approved → Generate Payslip → Save to Employee Account → Notify Employee → Email Payslip (moving away from email-only distribution; employees should access payslip history from their account). 
 
@@ -254,7 +246,7 @@ Page 5
 
 • Tables: subscriptions, expense\_claims, reimbursements, salary\_advances, plus core employee/org/payroll tables (\~29 tables total under RLS). 
 
-• No full ERD is maintained in documentation, recommend generating one directly from Supabase for onboarding/reference rather than reconstructing it from notes. 
+• No full ERD is maintained in documentation; recommend generating one directly from the current PostgreSQL schema for onboarding/reference rather than reconstructing it from notes. 
 
 **10\. Current Technical Debt** 
 
@@ -281,7 +273,7 @@ Page 5
 • Tier-based feature gating (deferred, role-based access only for now).
 
 StackHR MVP & Technical Product Specification Page 6   
-• Stripe/USD recurring billing (Paystack/NGN only is live; Paystack still in test mode). 
+• Stripe/USD recurring billing (Anchor/NGN is the current payment path; Anchor is still in test mode). 
 
 • Employee-level statutory profiles, rent-relief field, employee-level salary component classification. • Configurable maker-checker payroll approval workflow. 
 
@@ -312,9 +304,6 @@ StackHR MVP & Technical Product Specification Page 6
 • Use-of-funds plan includes hiring first team member(s) alongside GTM and infrastructure/compliance work. **13\. Scalability Roadmap** 
 
 **Principle:** Preserve the current architecture initially rather than prematurely introducing microservices. Scale based on measured bottlenecks, not architecture for hypothetical scale. 
-
-• **Stage 1 — Current:** Next.js → Supabase →   
- PostgreSQL, with Vercel handling application deployment. 
 
 • **Stage 2 — Growth:** Database indexing, query optimization, RLS performance, background jobs, scheduled jobs, caching where justified, observability, load testing, better audit infrastructure. 
 
