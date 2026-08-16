@@ -3,8 +3,34 @@ import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
 import { LoginPage } from './features/auth/pages/login-page'
 import { SignupPage } from './features/auth/pages/signup-page'
 import { VerifyEmailPage } from './features/auth/pages/verify-email-page'
+import { RemittancesPage } from './features/compliance/pages/remittances-page'
+import { StatutoryPage } from './features/compliance/pages/statutory-page'
+import { TaxPage } from './features/compliance/pages/tax-page'
+import { ApprovalsPage } from './features/dashboard/pages/approvals-page'
+import { DashboardHomePage } from './features/dashboard/pages/dashboard-home-page'
+import { ReportsPage } from './features/dashboard/pages/reports-page'
+import { DashboardLayout } from './features/dashboard/components/dashboard-layout'
 import { OnboardingPage } from './features/onboarding/pages/onboarding-page'
-import { DashboardPlaceholder } from './pages/dashboard-placeholder'
+import { DocumentsPage } from './features/people/pages/documents-page'
+import { EmployeesPage } from './features/people/pages/employees-page'
+import { LeavePage } from './features/people/pages/leave-page'
+import { PeopleOnboardingPage } from './features/people/pages/onboarding-page'
+import { PeopleOrganizationPage } from './features/people/pages/organization-page'
+import { PayrollOverviewPage } from './features/payroll/pages/overview-page'
+import { PayrollRunsPage } from './features/payroll/pages/payroll-runs-page'
+import { PayslipsPage } from './features/payroll/pages/payslips-page'
+import { SalariesPage } from './features/payroll/pages/salaries-page'
+import { SalaryAdvancesPage } from './features/payroll/pages/salary-advances-page'
+import { BillingPage } from './features/settings/pages/billing-page'
+import { IntegrationsPage } from './features/settings/pages/integrations-page'
+import { NotificationsPage } from './features/settings/pages/notifications-page'
+import { SettingsOrganizationPage } from './features/settings/pages/organization-page'
+import { SettingsPayrollPage } from './features/settings/pages/payroll-page'
+import { SecurityPage } from './features/settings/pages/security-page'
+import { TeamAccessPage } from './features/settings/pages/team-access-page'
+import { ExpensesPage } from './features/spend/pages/expenses-page'
+import { ReimbursementsPage } from './features/spend/pages/reimbursements-page'
+import { SpendApprovalsPage } from './features/spend/pages/approvals-page'
 import { ProtectedRoute } from './routing/protected-route'
 
 function App() {
@@ -22,14 +48,59 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <DashboardPlaceholder />
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<DashboardHomePage />} />
+
+        <Route path="people">
+          <Route path="employees" element={<EmployeesPage />} />
+          <Route path="leave" element={<LeavePage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="organization" element={<PeopleOrganizationPage />} />
+          <Route path="onboarding" element={<PeopleOnboardingPage />} />
+        </Route>
+
+        <Route path="payroll">
+          <Route path="overview" element={<PayrollOverviewPage />} />
+          <Route path="runs" element={<PayrollRunsPage />} />
+          <Route path="salaries" element={<SalariesPage />} />
+          <Route path="payslips" element={<PayslipsPage />} />
+          <Route path="salary-advances" element={<SalaryAdvancesPage />} />
+        </Route>
+
+        <Route path="spend">
+          <Route path="expenses" element={<ExpensesPage />} />
+          <Route path="reimbursements" element={<ReimbursementsPage />} />
+          <Route path="approvals" element={<SpendApprovalsPage />} />
+        </Route>
+
+        <Route path="compliance">
+          <Route path="tax" element={<TaxPage />} />
+          <Route path="statutory" element={<StatutoryPage />} />
+          <Route path="remittances" element={<RemittancesPage />} />
+        </Route>
+
+        <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+
+        <Route path="settings">
+          <Route path="organization" element={<SettingsOrganizationPage />} />
+          <Route path="payroll" element={<SettingsPayrollPage />} />
+          <Route path="team-access" element={<TeamAccessPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="billing" element={<BillingPage />} />
+          <Route path="security" element={<SecurityPage />} />
+          <Route path="integrations" element={<IntegrationsPage />} />
+        </Route>
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
