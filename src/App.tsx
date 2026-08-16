@@ -3,8 +3,8 @@ import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
 import { LoginPage } from './features/auth/pages/login-page'
 import { SignupPage } from './features/auth/pages/signup-page'
 import { VerifyEmailPage } from './features/auth/pages/verify-email-page'
+import { OnboardingPage } from './features/onboarding/pages/onboarding-page'
 import { DashboardPlaceholder } from './pages/dashboard-placeholder'
-import { OnboardingPlaceholder } from './pages/onboarding-placeholder'
 import { ProtectedRoute } from './routing/protected-route'
 
 function App() {
@@ -18,7 +18,7 @@ function App() {
         path="/onboarding"
         element={
           <ProtectedRoute>
-            <OnboardingPlaceholder />
+            <OnboardingPage />
           </ProtectedRoute>
         }
       />

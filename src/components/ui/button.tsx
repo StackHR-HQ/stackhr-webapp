@@ -1,9 +1,11 @@
 import type { ComponentPropsWithRef } from 'react'
+import { TrailingDots } from './trailing-dots'
 
 type ButtonVariant = 'primary' | 'secondary'
 
 type ButtonProps = ComponentPropsWithRef<'button'> & {
   variant?: ButtonVariant
+  loading?: boolean
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -11,11 +13,20 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: 'border border-line text-ink hover:bg-canvas',
 }
 
-export function Button({ variant = 'primary', className, ...props }: ButtonProps) {
+export function Button({ variant = 'primary', loading = false, className, disabled, children, ...props }: ButtonProps) {
   return (
     <button
-      className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-opacity disabled:opacity-50 ${variantClasses[variant]} ${className ?? ''}`}
+      disabled={disabled || loading}
+      aria-busy={loading}
+      className={`relative flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-opacity disabled:opacity-50 ${variantClasses[variant]} ${className ?? ''}`}
       {...props}
-    />
+    >
+      <span className={loading ? 'invisible' : undefined}>{children}</span>
+      {loading ? (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <TrailingDots size="sm" tone={variant === 'primary' ? 'inverted' : 'default'} />
+        </span>
+      ) : null}
+    </button>
   )
 }

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, type ChangeEvent } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Button } from '../../../components/ui/button'
 import { SelectField } from '../../../components/ui/select-field'
 import { TextField } from '../../../components/ui/text-field'
@@ -28,7 +28,7 @@ export function CompanyInfoStep({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CompanyInfoFormValues>({
@@ -44,7 +44,7 @@ export function CompanyInfoStep({
     },
   })
 
-  const logoDataUrl = watch('logoDataUrl')
+  const logoDataUrl = useWatch({ control, name: 'logoDataUrl' })
   const [logoError, setLogoError] = useState<string | null>(null)
 
   async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
