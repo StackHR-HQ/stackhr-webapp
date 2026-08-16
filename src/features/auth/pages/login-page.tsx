@@ -118,8 +118,8 @@ export function LoginPage() {
           <CheckboxField label="Remember me" {...register('rememberMe')} />
         </div>
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        <Button type="submit" loading={isSubmitting}>
+          Sign in
         </Button>
       </form>
     </AuthSplitShell>

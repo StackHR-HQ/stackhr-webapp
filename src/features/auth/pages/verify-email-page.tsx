@@ -5,6 +5,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { OtpInput } from '../../../components/ui/otp-input'
+import { TrailingDots } from '../../../components/ui/trailing-dots'
 import { USE_MOCK_AUTH } from '../../../lib/env'
 import { DEMO_OTP_CODE } from '../api/auth-mock-api'
 import { AuthShell } from '../components/auth-shell'
@@ -94,17 +95,18 @@ export function VerifyEmailPage() {
           />
         </div>
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Verifying…' : 'Verify email'}
+        <Button type="submit" loading={isSubmitting}>
+          Verify email
         </Button>
 
         <button
           type="button"
           onClick={handleResend}
           disabled={cooldown > 0 || resendOtp.isPending}
-          className="mt-4 w-full text-center text-sm text-accent hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+          className="mt-4 flex w-full items-center justify-center gap-2 text-center text-sm text-accent hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
         >
-          {cooldown > 0 ? `Resend code in ${cooldown}s` : resendOtp.isPending ? 'Resending…' : 'Resend code'}
+          {resendOtp.isPending ? <TrailingDots size="sm" /> : null}
+          {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
         </button>
       </form>
     </AuthShell>

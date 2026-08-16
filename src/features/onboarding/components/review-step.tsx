@@ -96,9 +96,9 @@ export function ReviewStep({
         <Button
           type="button"
           onClick={() => completeOnboarding.mutate({ companyInfo, employees })}
-          disabled={completeOnboarding.isPending}
+          loading={completeOnboarding.isPending}
         >
-          {completeOnboarding.isPending ? 'Setting up…' : 'Complete setup'}
+          Complete setup
         </Button>
       </div>
     </div>

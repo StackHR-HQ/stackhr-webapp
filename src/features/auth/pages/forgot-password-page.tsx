@@ -51,8 +51,8 @@ export function ForgotPasswordPage() {
             />
           </div>
 
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Sending…' : 'Send reset link'}
+          <Button type="submit" loading={isSubmitting}>
+            Send reset link
           </Button>
         </form>
       )}

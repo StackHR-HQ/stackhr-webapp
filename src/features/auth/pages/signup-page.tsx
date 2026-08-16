@@ -97,8 +97,8 @@ export function SignupPage() {
           />
         </div>
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating workspace…' : 'Create workspace'}
+        <Button type="submit" loading={isSubmitting}>
+          Create workspace
         </Button>
       </form>
     </AuthSplitShell>
