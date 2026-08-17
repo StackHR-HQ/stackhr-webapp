@@ -1,10 +1,30 @@
+import { DEDUCTION_TYPES } from '../data/deduction-types'
 import { getRunMeta, PAYROLL_RUNS } from '../data/payroll-runs'
+import { SALARY_CHANGES } from '../data/salary-changes'
+import { getBonusPayouts as computeBonusPayouts } from '../lib/bonuses'
 import { buildAuditLog, buildComplianceWarnings } from '../lib/compliance-and-audit'
+import { EARNING_COMPONENTS } from '../lib/earning-structure'
 import { getEmployeesAsOf } from '../lib/employees-as-of'
 import { calculateRunLines, summarizeRun } from '../lib/payroll-calculation'
+import { getPayslips as computePayslips } from '../lib/payslips'
+import { getSalaryAdvances as computeSalaryAdvances } from '../lib/salary-advances'
+import { getEmployeeSalaryRows, getSalaryBands as computeSalaryBands } from '../lib/salary-bands'
 import { getStatutoryContributions } from '../lib/statutory-contributions'
 import { TAX_RULE_SETS } from '../lib/tax-rules'
-import type { PayrollOverview, PayrollRunDetail, PayrollRunListItem, PayrollRunMeta } from '../types/payroll-types'
+import type {
+  BonusPayout,
+  DeductionType,
+  EarningComponent,
+  EmployeeSalaryRow,
+  PayrollOverview,
+  PayrollRunDetail,
+  PayrollRunListItem,
+  PayrollRunMeta,
+  PayslipRecord,
+  SalaryAdvanceStatusEntry,
+  SalaryBand,
+  SalaryChangeEntry,
+} from '../types/payroll-types'
 
 const CURRENT_RUN_ID = 'run-2026-08'
 const CURRENCY = 'NGN'
@@ -67,5 +87,45 @@ export const mockPayrollApi = {
       upcomingRuns,
       complianceWarnings: currentRun.complianceWarnings,
     }
+  },
+
+  async getSalaryBands(): Promise<SalaryBand[]> {
+    await delay(300)
+    return computeSalaryBands()
+  },
+
+  async getEmployeeSalaries(): Promise<EmployeeSalaryRow[]> {
+    await delay(300)
+    return getEmployeeSalaryRows()
+  },
+
+  async getEarningComponents(): Promise<EarningComponent[]> {
+    await delay(200)
+    return EARNING_COMPONENTS
+  },
+
+  async getDeductionTypes(): Promise<DeductionType[]> {
+    await delay(200)
+    return DEDUCTION_TYPES
+  },
+
+  async getBonusPayouts(): Promise<BonusPayout[]> {
+    await delay(300)
+    return computeBonusPayouts()
+  },
+
+  async getSalaryChanges(): Promise<SalaryChangeEntry[]> {
+    await delay(300)
+    return [...SALARY_CHANGES].sort((a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime())
+  },
+
+  async getSalaryAdvances(): Promise<SalaryAdvanceStatusEntry[]> {
+    await delay(300)
+    return computeSalaryAdvances()
+  },
+
+  async getPayslips(): Promise<PayslipRecord[]> {
+    await delay(300)
+    return computePayslips()
   },
 }

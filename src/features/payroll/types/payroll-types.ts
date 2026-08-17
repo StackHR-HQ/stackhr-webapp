@@ -103,3 +103,78 @@ export interface PayrollOverview {
   upcomingRuns: PayrollRunMeta[]
   complianceWarnings: ComplianceWarning[]
 }
+
+export interface EmployeeRef {
+  employeeId: string
+  employeeName: string
+  avatarInitials: string
+}
+
+export interface SalaryBand {
+  departmentId: string
+  departmentName: string
+  employeeCount: number
+  minSalary: number
+  maxSalary: number
+  avgSalary: number
+}
+
+export interface EmployeeSalaryRow extends EmployeeRef {
+  jobTitle: string
+  departmentId: string
+  annualSalary: number
+  monthlySalary: number
+  currency: string
+  payFrequency: string
+}
+
+export interface EarningComponent {
+  id: 'basic' | 'housing' | 'transport' | 'other'
+  name: string
+  percentOfGross: number
+  description: string
+}
+
+export interface DeductionType {
+  id: string
+  name: string
+  category: 'statutory' | 'other'
+  rateDescription: string
+  description: string
+}
+
+export interface BonusPayout extends EmployeeRef {
+  amount: number
+  currency: string
+  periodLabel: string
+  payDate: string
+  status: PayrollRunStatus
+}
+
+export interface SalaryChangeEntry extends EmployeeRef {
+  id: string
+  previousSalary: number
+  newSalary: number
+  currency: string
+  effectiveDate: string
+  reason: string
+}
+
+export interface SalaryAdvanceStatusEntry extends EmployeeRef {
+  id: string
+  requestedAt: string
+  amount: number
+  currency: string
+  repaymentMonths: number
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid'
+}
+
+export interface PayslipRecord extends EmployeeRef {
+  id: string
+  runId: string
+  periodLabel: string
+  payDate: string
+  netPay: number
+  currency: string
+  status: 'generated' | 'pending'
+}

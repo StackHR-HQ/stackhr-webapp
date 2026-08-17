@@ -1,4 +1,5 @@
 import type { EmployeeSeed } from '../../people/data/employees'
+import { BASIC_PERCENT, HOUSING_PERCENT, TRANSPORT_PERCENT } from './earning-structure'
 import { calculateAnnualPaye } from './tax-rules'
 import type { PayrollRunSummary, RunEmployeeLine, StatutoryContributionRule, TaxRuleSetId } from '../types/payroll-types'
 
@@ -21,9 +22,9 @@ export function calculateRunLines(
   return employees.map((employee) => {
     const annualGross = employee.compensation.salary
     const grossPay = annualGross / 12
-    const basic = grossPay * 0.45
-    const housing = grossPay * 0.25
-    const transport = grossPay * 0.15
+    const basic = grossPay * BASIC_PERCENT
+    const housing = grossPay * HOUSING_PERCENT
+    const transport = grossPay * TRANSPORT_PERCENT
     const otherAllowances = grossPay - basic - housing - transport
     const bht = basic + housing + transport
 
