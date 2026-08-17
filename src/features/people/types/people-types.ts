@@ -117,3 +117,70 @@ export interface EmployeeDetail extends EmployeeSummary {
   salaryAdvances: SalaryAdvanceEntry[]
   activity: ActivityEntry[]
 }
+
+export interface EmployeeRef {
+  employeeId: string
+  employeeName: string
+  avatarInitials: string
+}
+
+export type LeaveTypeTone = 'accent' | 'positive' | 'warning' | 'critical' | 'neutral'
+
+export interface LeaveType {
+  id: string
+  name: string
+  defaultDays: number
+  paid: boolean
+  tone: LeaveTypeTone
+  description: string
+}
+
+export interface LeavePolicy {
+  id: string
+  title: string
+  description: string
+}
+
+export interface LeaveRequestWithEmployee extends LeaveRequestEntry, EmployeeRef {}
+
+export interface EmployeeLeaveBalanceRow extends EmployeeRef {
+  balances: LeaveBalanceEntry[]
+}
+
+export interface CompanyDocument {
+  id: string
+  name: string
+  category: string
+  uploadedAt: string
+  fileSize: string
+  visibility: string
+}
+
+export interface DocumentTemplate {
+  id: string
+  name: string
+  category: string
+  description: string
+}
+
+export interface EmployeeDocumentRow extends DocumentEntry, EmployeeRef {}
+
+export interface ChecklistItem {
+  id: string
+  label: string
+  stage: string
+}
+
+export interface OnboardingTemplate {
+  id: string
+  name: string
+  departmentIds: string[]
+  checklist: ChecklistItem[]
+}
+
+export interface EmployeeOnboardingRow extends EmployeeRef {
+  jobTitle: string
+  startDate: string
+  templateId: string
+  completedItemIds: string[]
+}
