@@ -12,6 +12,7 @@ export const REQUEST_STATUS_META: Record<string, { label: string; tone: BadgeTon
   pending: { label: 'Pending', tone: 'warning' },
   approved: { label: 'Approved', tone: 'positive' },
   rejected: { label: 'Rejected', tone: 'critical' },
+  disbursed: { label: 'Disbursed', tone: 'accent' },
   repaid: { label: 'Repaid', tone: 'neutral' },
   paid: { label: 'Paid', tone: 'positive' },
   processing: { label: 'Processing', tone: 'accent' },

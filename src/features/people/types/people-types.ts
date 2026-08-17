@@ -96,7 +96,7 @@ export interface SalaryAdvanceEntry {
   amount: number
   currency: string
   repaymentMonths: number
-  status: 'pending' | 'approved' | 'rejected' | 'repaid'
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid'
 }
 
 export interface ActivityEntry {
