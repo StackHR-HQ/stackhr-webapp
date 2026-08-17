@@ -34,7 +34,7 @@ export function getStatutoryContributions(employeeCount: number): StatutoryContr
     },
     {
       id: 'nhia',
-      name: 'Health insurance (NHIA)',
+      name: 'Health Insurance (NHIA)',
       applicability: 'voluntary',
       employeeRatePercent: 0,
       employerRatePercent: 3,
