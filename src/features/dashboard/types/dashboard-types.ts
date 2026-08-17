@@ -1,4 +1,6 @@
-export type PayrollRunStatus = 'draft' | 'processing' | 'approved' | 'paid' | 'failed'
+import type { PayrollRunStatus } from '../../payroll/types/payroll-types'
+
+export type { PayrollRunStatus }
 
 export interface PayrollStatusSummary {
   periodLabel: string

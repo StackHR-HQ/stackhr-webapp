@@ -18,6 +18,7 @@ import { LeavePage } from './features/people/pages/leave-page'
 import { PeopleOnboardingPage } from './features/people/pages/onboarding-page'
 import { PeopleOrganizationPage } from './features/people/pages/organization-page'
 import { PayrollOverviewPage } from './features/payroll/pages/overview-page'
+import { PayrollRunDetailPage } from './features/payroll/pages/run-detail-page'
 import { PayrollRunsPage } from './features/payroll/pages/payroll-runs-page'
 import { PayslipsPage } from './features/payroll/pages/payslips-page'
 import { SalariesPage } from './features/payroll/pages/salaries-page'
@@ -70,8 +71,10 @@ function App() {
         </Route>
 
         <Route path="payroll">
+          <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<PayrollOverviewPage />} />
           <Route path="runs" element={<PayrollRunsPage />} />
+          <Route path="runs/:runId" element={<PayrollRunDetailPage />} />
           <Route path="salaries" element={<SalariesPage />} />
           <Route path="payslips" element={<PayslipsPage />} />
           <Route path="salary-advances" element={<SalaryAdvancesPage />} />
