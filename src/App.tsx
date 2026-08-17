@@ -18,6 +18,7 @@ import { LeavePage } from './features/people/pages/leave-page'
 import { PeopleOnboardingPage } from './features/people/pages/onboarding-page'
 import { PeopleOrganizationPage } from './features/people/pages/organization-page'
 import { PayrollOverviewPage } from './features/payroll/pages/overview-page'
+import { PayrollRunDetailPage } from './features/payroll/pages/run-detail-page'
 import { PayrollRunsPage } from './features/payroll/pages/payroll-runs-page'
 import { PayslipsPage } from './features/payroll/pages/payslips-page'
 import { SalariesPage } from './features/payroll/pages/salaries-page'
@@ -29,6 +30,7 @@ import { SettingsOrganizationPage } from './features/settings/pages/organization
 import { SettingsPayrollPage } from './features/settings/pages/payroll-page'
 import { SecurityPage } from './features/settings/pages/security-page'
 import { TeamAccessPage } from './features/settings/pages/team-access-page'
+import { ExpenseDetailPage } from './features/spend/pages/expense-detail-page'
 import { ExpensesPage } from './features/spend/pages/expenses-page'
 import { ReimbursementsPage } from './features/spend/pages/reimbursements-page'
 import { SpendApprovalsPage } from './features/spend/pages/approvals-page'
@@ -70,8 +72,10 @@ function App() {
         </Route>
 
         <Route path="payroll">
+          <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<PayrollOverviewPage />} />
           <Route path="runs" element={<PayrollRunsPage />} />
+          <Route path="runs/:runId" element={<PayrollRunDetailPage />} />
           <Route path="salaries" element={<SalariesPage />} />
           <Route path="payslips" element={<PayslipsPage />} />
           <Route path="salary-advances" element={<SalaryAdvancesPage />} />
@@ -79,6 +83,7 @@ function App() {
 
         <Route path="spend">
           <Route path="expenses" element={<ExpensesPage />} />
+          <Route path="expenses/:expenseId" element={<ExpenseDetailPage />} />
           <Route path="reimbursements" element={<ReimbursementsPage />} />
           <Route path="approvals" element={<SpendApprovalsPage />} />
         </Route>

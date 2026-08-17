@@ -1,4 +1,11 @@
+import { EMPLOYEES } from '../../people/data/employees'
+import { getRunMeta, PAYROLL_RUNS } from '../../payroll/data/payroll-runs'
+import { getEmployeesAsOf } from '../../payroll/lib/employees-as-of'
+import { calculateRunLines, summarizeRun } from '../../payroll/lib/payroll-calculation'
+import { getStatutoryContributions } from '../../payroll/lib/statutory-contributions'
 import type { DashboardSummary } from '../types/dashboard-types'
+
+const CURRENT_RUN_ID = 'run-2026-08'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -11,27 +18,36 @@ function daysFromNow(days: number): string {
 }
 
 function buildDashboardSummary(): DashboardSummary {
+  const activeEmployees = EMPLOYEES.filter((employee) => employee.employmentStatus === 'active').length
+
+  const currentRunMeta = getRunMeta(CURRENT_RUN_ID)!
+  const currentRunEmployees = getEmployeesAsOf(currentRunMeta.payDate)
+  const currentRunContributions = getStatutoryContributions(currentRunEmployees.length)
+  const currentRunLines = calculateRunLines(currentRunEmployees, currentRunMeta.taxRuleSetId, currentRunContributions)
+  const currentRunSummary = summarizeRun(currentRunLines, 'NGN')
+
+  const upcomingRunIds = ['run-2026-08', 'run-2026-08-bonus', 'run-2026-09']
+
   return {
     overview: {
-      activeEmployees: 48,
-      pendingApprovalsCount: 12,
+      activeEmployees,
+      pendingApprovalsCount: 10,
       openComplianceAlertsCount: 2,
-      nextPayDate: daysFromNow(9),
+      nextPayDate: currentRunMeta.payDate,
     },
     payroll: {
-      periodLabel: 'August 2026',
-      status: 'processing',
-      payDate: daysFromNow(9),
-      totalNet: 18_240_000,
-      currency: 'NGN',
-      employeesIncluded: 45,
-      employeesTotal: 48,
+      periodLabel: currentRunMeta.periodLabel,
+      status: currentRunMeta.status,
+      payDate: currentRunMeta.payDate,
+      totalNet: currentRunSummary.netPay,
+      currency: currentRunSummary.currency,
+      employeesIncluded: currentRunSummary.employeeCount,
+      employeesTotal: EMPLOYEES.length,
     },
-    upcomingPayroll: [
-      { id: 'run-2026-08', periodLabel: 'August 2026', payDate: daysFromNow(9), status: 'processing' },
-      { id: 'run-2026-09', periodLabel: 'September 2026', payDate: daysFromNow(39), status: 'draft' },
-      { id: 'run-2026-10', periodLabel: 'October 2026', payDate: daysFromNow(70), status: 'draft' },
-    ],
+    upcomingPayroll: upcomingRunIds.map((id) => {
+      const run = PAYROLL_RUNS.find((candidate) => candidate.id === id)!
+      return { id: run.id, periodLabel: run.periodLabel, payDate: run.payDate, status: run.status }
+    }),
     approvalCategories: [
       {
         key: 'employee-changes',
@@ -202,8 +218,8 @@ function buildDashboardSummary(): DashboardSummary {
       planName: 'Growth (Trial)',
       status: 'trial',
       trialEndsAt: daysFromNow(6),
-      seatsUsed: 48,
-      seatsLimit: 60,
+      seatsUsed: EMPLOYEES.length,
+      seatsLimit: 25,
     },
   }
 }

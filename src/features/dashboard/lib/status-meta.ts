@@ -4,8 +4,9 @@ import type { ComplianceAlertSeverity, PayrollRunStatus } from '../types/dashboa
 export const PAYROLL_STATUS_META: Record<PayrollRunStatus, { label: string; tone: BadgeTone }> = {
   draft: { label: 'Draft', tone: 'neutral' },
   processing: { label: 'Processing', tone: 'accent' },
-  approved: { label: 'Approved', tone: 'positive' },
-  paid: { label: 'Paid', tone: 'positive' },
+  pending_approval: { label: 'Pending approval', tone: 'warning' },
+  approved: { label: 'Approved', tone: 'accent' },
+  completed: { label: 'Completed', tone: 'positive' },
   failed: { label: 'Failed', tone: 'critical' },
 }
 

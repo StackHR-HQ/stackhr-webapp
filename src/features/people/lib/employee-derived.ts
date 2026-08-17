@@ -141,18 +141,20 @@ export function deriveExpenses(seed: EmployeeSeed): ExpenseEntry[] {
   ]
 }
 
+const ADVANCE_STATUSES: SalaryAdvanceEntry['status'][] = ['pending', 'approved', 'rejected', 'disbursed', 'repaid']
+
 export function deriveSalaryAdvances(seed: EmployeeSeed): SalaryAdvanceEntry[] {
   const hash = hashOf(seed.id)
-  if (seed.employmentStatus !== 'active' || hash % 4 !== 0) return []
+  if (seed.employmentStatus !== 'active' || hash % 2 !== 0) return []
 
   return [
     {
       id: `${seed.id}-advance-1`,
-      requestedAt: isoDaysAgo(15 + (hash % 30)),
+      requestedAt: isoDaysAgo(3 + (hash % 30)),
       amount: Math.round((seed.compensation.salary / 12) * 0.4),
       currency: seed.compensation.currency,
       repaymentMonths: 3,
-      status: hash % 8 === 0 ? 'pending' : 'repaid',
+      status: ADVANCE_STATUSES[hash % ADVANCE_STATUSES.length],
     },
   ]
 }
