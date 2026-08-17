@@ -30,6 +30,7 @@ import { SettingsOrganizationPage } from './features/settings/pages/organization
 import { SettingsPayrollPage } from './features/settings/pages/payroll-page'
 import { SecurityPage } from './features/settings/pages/security-page'
 import { TeamAccessPage } from './features/settings/pages/team-access-page'
+import { ExpenseDetailPage } from './features/spend/pages/expense-detail-page'
 import { ExpensesPage } from './features/spend/pages/expenses-page'
 import { ReimbursementsPage } from './features/spend/pages/reimbursements-page'
 import { SpendApprovalsPage } from './features/spend/pages/approvals-page'
@@ -82,6 +83,7 @@ function App() {
 
         <Route path="spend">
           <Route path="expenses" element={<ExpensesPage />} />
+          <Route path="expenses/:expenseId" element={<ExpenseDetailPage />} />
           <Route path="reimbursements" element={<ReimbursementsPage />} />
           <Route path="approvals" element={<SpendApprovalsPage />} />
         </Route>
