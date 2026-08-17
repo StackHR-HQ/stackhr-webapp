@@ -1,5 +1,8 @@
+import { COMPANY_DOCUMENTS, DOCUMENT_TEMPLATES } from '../data/company-documents'
 import { DEPARTMENTS } from '../data/departments'
 import { EMPLOYEES, getEmployeeSeed, type EmployeeSeed } from '../data/employees'
+import { LEAVE_POLICIES, LEAVE_TYPES } from '../data/leave-catalog'
+import { ONBOARDING_TEMPLATES } from '../data/onboarding-templates'
 import { TEAMS } from '../data/teams'
 import {
   deriveActivity,
@@ -10,7 +13,22 @@ import {
   derivePayslips,
   deriveSalaryAdvances,
 } from '../lib/employee-derived'
-import type { Department, EmployeeDetail, EmployeeSummary, Team } from '../types/people-types'
+import { deriveOnboardingRow } from '../lib/onboarding-derived'
+import type {
+  CompanyDocument,
+  Department,
+  DocumentTemplate,
+  EmployeeDetail,
+  EmployeeDocumentRow,
+  EmployeeLeaveBalanceRow,
+  EmployeeOnboardingRow,
+  EmployeeSummary,
+  LeavePolicy,
+  LeaveRequestWithEmployee,
+  LeaveType,
+  OnboardingTemplate,
+  Team,
+} from '../types/people-types'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -67,5 +85,71 @@ export const mockPeopleApi = {
   async getTeams(): Promise<Team[]> {
     await delay(300)
     return TEAMS
+  },
+
+  async getLeaveTypes(): Promise<LeaveType[]> {
+    await delay(300)
+    return LEAVE_TYPES
+  },
+
+  async getLeavePolicies(): Promise<LeavePolicy[]> {
+    await delay(300)
+    return LEAVE_POLICIES
+  },
+
+  async getLeaveRequests(): Promise<LeaveRequestWithEmployee[]> {
+    await delay(400)
+    return EMPLOYEES.flatMap((seed) =>
+      deriveLeaveRequests(seed).map((request) => ({
+        ...request,
+        employeeId: seed.id,
+        employeeName: seed.fullName,
+        avatarInitials: seed.avatarInitials,
+      })),
+    ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+  },
+
+  async getLeaveBalances(): Promise<EmployeeLeaveBalanceRow[]> {
+    await delay(400)
+    return EMPLOYEES.map((seed) => ({
+      employeeId: seed.id,
+      employeeName: seed.fullName,
+      avatarInitials: seed.avatarInitials,
+      balances: deriveLeaveBalance(seed),
+    }))
+  },
+
+  async getCompanyDocuments(): Promise<CompanyDocument[]> {
+    await delay(300)
+    return COMPANY_DOCUMENTS
+  },
+
+  async getDocumentTemplates(): Promise<DocumentTemplate[]> {
+    await delay(300)
+    return DOCUMENT_TEMPLATES
+  },
+
+  async getEmployeeDocuments(): Promise<EmployeeDocumentRow[]> {
+    await delay(400)
+    return EMPLOYEES.flatMap((seed) =>
+      deriveDocuments(seed).map((document) => ({
+        ...document,
+        employeeId: seed.id,
+        employeeName: seed.fullName,
+        avatarInitials: seed.avatarInitials,
+      })),
+    )
+  },
+
+  async getOnboardingTemplates(): Promise<OnboardingTemplate[]> {
+    await delay(300)
+    return ONBOARDING_TEMPLATES
+  },
+
+  async getEmployeeOnboarding(): Promise<EmployeeOnboardingRow[]> {
+    await delay(400)
+    return EMPLOYEES.filter(
+      (seed) => seed.employmentStatus === 'onboarding' || seed.employmentStatus === 'pending_invitation',
+    ).map(deriveOnboardingRow)
   },
 }
