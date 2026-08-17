@@ -12,6 +12,7 @@ import { ReportsPage } from './features/dashboard/pages/reports-page'
 import { DashboardLayout } from './features/dashboard/components/dashboard-layout'
 import { OnboardingPage } from './features/onboarding/pages/onboarding-page'
 import { DocumentsPage } from './features/people/pages/documents-page'
+import { EmployeeProfilePage } from './features/people/pages/employee-profile-page'
 import { EmployeesPage } from './features/people/pages/employees-page'
 import { LeavePage } from './features/people/pages/leave-page'
 import { PeopleOnboardingPage } from './features/people/pages/onboarding-page'
@@ -61,6 +62,7 @@ function App() {
 
         <Route path="people">
           <Route path="employees" element={<EmployeesPage />} />
+          <Route path="employees/:employeeId" element={<EmployeeProfilePage />} />
           <Route path="leave" element={<LeavePage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="organization" element={<PeopleOrganizationPage />} />
