@@ -6,7 +6,7 @@ import { VerifyEmailPage } from './features/auth/pages/verify-email-page'
 import { RemittancesPage } from './features/compliance/pages/remittances-page'
 import { StatutoryPage } from './features/compliance/pages/statutory-page'
 import { TaxPage } from './features/compliance/pages/tax-page'
-import { ApprovalsPage } from './features/dashboard/pages/approvals-page'
+import { GlobalApprovalsPage } from './features/approvals/pages/approvals-page'
 import { DashboardHomePage } from './features/dashboard/pages/dashboard-home-page'
 import { ReportsPage } from './features/dashboard/pages/reports-page'
 import { DashboardLayout } from './features/dashboard/components/dashboard-layout'
@@ -94,7 +94,7 @@ function App() {
           <Route path="remittances" element={<RemittancesPage />} />
         </Route>
 
-        <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="approvals" element={<GlobalApprovalsPage />} />
         <Route path="reports" element={<ReportsPage />} />
 
         <Route path="settings">
