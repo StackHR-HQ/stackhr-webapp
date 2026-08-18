@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Pagination } from '../../../components/ui/pagination'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { ApprovalDomainTabs, type ApprovalTabKey } from '../components/approval-domain-tabs'
 import { ApprovalHistoryTable } from '../components/approval-history-table'
@@ -6,11 +7,19 @@ import { ApprovalsQueueTable } from '../components/approvals-queue-table'
 import { useGlobalApprovals } from '../hooks/use-global-approvals'
 import type { GlobalApprovalItem, GlobalApprovalStatus } from '../types/approval-types'
 
+const HISTORY_PAGE_SIZE = 20
+
 export function GlobalApprovalsPage() {
   const { data: approvals, isPending, isError, refetch } = useGlobalApprovals()
   const [activeTab, setActiveTab] = useState<ApprovalTabKey>('all')
+  const [historyPage, setHistoryPage] = useState(1)
   const [decisions, setDecisions] = useState<Partial<Record<string, GlobalApprovalStatus>>>({})
   const approverName = useAuthStore((state) => state.user?.name) ?? 'You'
+
+  function changeTab(tab: ApprovalTabKey) {
+    setActiveTab(tab)
+    setHistoryPage(1)
+  }
 
   const items = useMemo(() => {
     return approvals.map((item) => {
@@ -46,15 +55,23 @@ export function GlobalApprovalsPage() {
   }, [items])
 
   const visibleItems = useMemo(() => {
-    if (activeTab === 'history') {
-      return items
-        .filter((item) => item.status !== 'pending')
-        .sort((a, b) => new Date(b.decidedAt ?? b.submittedAt).getTime() - new Date(a.decidedAt ?? a.submittedAt).getTime())
-    }
     const pending = items.filter((item) => item.status === 'pending')
-    if (activeTab === 'all') return pending
+    if (activeTab === 'all' || activeTab === 'history') return pending
     return pending.filter((item) => item.domain === activeTab)
   }, [items, activeTab])
+
+  const historyItems = useMemo(() => {
+    return items
+      .filter((item) => item.status !== 'pending')
+      .sort((a, b) => new Date(b.decidedAt ?? b.submittedAt).getTime() - new Date(a.decidedAt ?? a.submittedAt).getTime())
+  }, [items])
+
+  const totalHistoryPages = Math.max(1, Math.ceil(historyItems.length / HISTORY_PAGE_SIZE))
+  const clampedHistoryPage = Math.min(historyPage, totalHistoryPages)
+  const paginatedHistoryItems = useMemo(() => {
+    const start = (clampedHistoryPage - 1) * HISTORY_PAGE_SIZE
+    return historyItems.slice(start, start + HISTORY_PAGE_SIZE)
+  }, [historyItems, clampedHistoryPage])
 
   return (
     <div className="max-w-[1400px] space-y-5">
@@ -78,12 +95,20 @@ export function GlobalApprovalsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <ApprovalDomainTabs active={activeTab} counts={counts} onChange={setActiveTab} />
+          <ApprovalDomainTabs active={activeTab} counts={counts} onChange={changeTab} />
 
           {isPending ? (
             <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
           ) : activeTab === 'history' ? (
-            <ApprovalHistoryTable items={visibleItems} />
+            <div className="space-y-3">
+              <ApprovalHistoryTable items={paginatedHistoryItems} />
+              <Pagination
+                page={clampedHistoryPage}
+                pageSize={HISTORY_PAGE_SIZE}
+                totalItems={historyItems.length}
+                onChange={setHistoryPage}
+              />
+            </div>
           ) : (
             <ApprovalsQueueTable
               items={visibleItems}
