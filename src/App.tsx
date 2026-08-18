@@ -6,9 +6,8 @@ import { VerifyEmailPage } from './features/auth/pages/verify-email-page'
 import { RemittancesPage } from './features/compliance/pages/remittances-page'
 import { StatutoryPage } from './features/compliance/pages/statutory-page'
 import { TaxPage } from './features/compliance/pages/tax-page'
-import { ApprovalsPage } from './features/dashboard/pages/approvals-page'
+import { GlobalApprovalsPage } from './features/approvals/pages/approvals-page'
 import { DashboardHomePage } from './features/dashboard/pages/dashboard-home-page'
-import { ReportsPage } from './features/dashboard/pages/reports-page'
 import { DashboardLayout } from './features/dashboard/components/dashboard-layout'
 import { OnboardingPage } from './features/onboarding/pages/onboarding-page'
 import { DocumentsPage } from './features/people/pages/documents-page'
@@ -23,6 +22,7 @@ import { PayrollRunsPage } from './features/payroll/pages/payroll-runs-page'
 import { PayslipsPage } from './features/payroll/pages/payslips-page'
 import { SalariesPage } from './features/payroll/pages/salaries-page'
 import { SalaryAdvancesPage } from './features/payroll/pages/salary-advances-page'
+import { ReportsPage } from './features/reports/pages/reports-page'
 import { BillingPage } from './features/settings/pages/billing-page'
 import { IntegrationsPage } from './features/settings/pages/integrations-page'
 import { NotificationsPage } from './features/settings/pages/notifications-page'
@@ -94,7 +94,7 @@ function App() {
           <Route path="remittances" element={<RemittancesPage />} />
         </Route>
 
-        <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="approvals" element={<GlobalApprovalsPage />} />
         <Route path="reports" element={<ReportsPage />} />
 
         <Route path="settings">
