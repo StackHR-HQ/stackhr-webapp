@@ -65,6 +65,7 @@ export function SidebarNavItem({ section }: { section: NavSection }) {
             <li key={item.path}>
               <NavLink
                 to={item.path}
+                end
                 onClick={closeMobile}
                 className={({ isActive }) =>
                   `block truncate rounded-lg px-2.5 py-1.5 text-sm ${

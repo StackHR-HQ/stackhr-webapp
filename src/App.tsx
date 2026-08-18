@@ -3,6 +3,7 @@ import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
 import { LoginPage } from './features/auth/pages/login-page'
 import { SignupPage } from './features/auth/pages/signup-page'
 import { VerifyEmailPage } from './features/auth/pages/verify-email-page'
+import { ComplianceOverviewPage } from './features/compliance/pages/overview-page'
 import { RemittancesPage } from './features/compliance/pages/remittances-page'
 import { StatutoryPage } from './features/compliance/pages/statutory-page'
 import { TaxPage } from './features/compliance/pages/tax-page'
@@ -89,6 +90,7 @@ function App() {
         </Route>
 
         <Route path="compliance">
+          <Route index element={<ComplianceOverviewPage />} />
           <Route path="tax" element={<TaxPage />} />
           <Route path="statutory" element={<StatutoryPage />} />
           <Route path="remittances" element={<RemittancesPage />} />

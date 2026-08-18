@@ -11,6 +11,7 @@ import type {
   SalaryAdvanceStatusEntry,
   SalaryBand,
   SalaryChangeEntry,
+  TaxRuleSet,
 } from '../types/payroll-types'
 
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
@@ -69,6 +70,11 @@ export const payrollApi = {
 
   async getPayslips(): Promise<PayslipRecord[]> {
     const { data } = await http.get<PayslipRecord[]>('/payroll/payslips')
+    return data
+  },
+
+  async getTaxRuleSets(): Promise<TaxRuleSet[]> {
+    const { data } = await http.get<TaxRuleSet[]>('/payroll/tax-rule-sets')
     return data
   },
 }
