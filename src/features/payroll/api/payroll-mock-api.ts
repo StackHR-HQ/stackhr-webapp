@@ -24,6 +24,7 @@ import type {
   SalaryAdvanceStatusEntry,
   SalaryBand,
   SalaryChangeEntry,
+  TaxRuleSet,
 } from '../types/payroll-types'
 
 const CURRENT_RUN_ID = 'run-2026-08'
@@ -127,5 +128,10 @@ export const mockPayrollApi = {
   async getPayslips(): Promise<PayslipRecord[]> {
     await delay(300)
     return computePayslips()
+  },
+
+  async getTaxRuleSets(): Promise<TaxRuleSet[]> {
+    await delay(200)
+    return Object.values(TAX_RULE_SETS)
   },
 }

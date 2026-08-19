@@ -66,7 +66,7 @@ export function OverviewStats({ overview }: { overview: DashboardOverview }) {
         icon={WarningCircleIcon}
         label="Compliance alerts"
         value={overview.openComplianceAlertsCount.toString()}
-        to="/compliance/statutory"
+        to="/compliance"
       />
     </div>
   )

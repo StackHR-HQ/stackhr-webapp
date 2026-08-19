@@ -50,6 +50,7 @@ export const SIDEBAR_NAV: NavSection[] = [
     label: 'Compliance',
     icon: 'compliance',
     items: [
+      { label: 'Overview', path: '/compliance' },
       { label: 'Tax', path: '/compliance/tax' },
       { label: 'Statutory', path: '/compliance/statutory' },
       { label: 'Remittances', path: '/compliance/remittances' },

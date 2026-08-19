@@ -36,7 +36,7 @@ export function ComplianceAlertsCard({ alerts }: { alerts: ComplianceAlert[] }) 
         </div>
       )}
 
-      <Link to="/compliance/statutory" className="mt-4 inline-block text-xs font-medium text-accent hover:underline">
+      <Link to="/compliance" className="mt-4 inline-block text-xs font-medium text-accent hover:underline">
         View compliance →
       </Link>
     </Card>
