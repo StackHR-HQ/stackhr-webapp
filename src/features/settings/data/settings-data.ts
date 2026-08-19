@@ -1,4 +1,21 @@
-import type { NotificationSettings, OrganizationSettings, PayrollSettings } from '../types/settings-types'
+import type {
+  BillingSettings,
+  Integration,
+  NotificationSettings,
+  OrganizationSettings,
+  PayrollSettings,
+  SecuritySettings,
+} from '../types/settings-types'
+
+function daysFromNow(days: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date.toISOString()
+}
+
+function daysAgo(days: number): string {
+  return daysFromNow(-days)
+}
 
 export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
   companyInformation: {
@@ -154,3 +171,151 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     },
   ],
 }
+
+export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
+  currentPlan: {
+    id: 'growth',
+    name: 'Growth',
+    priceLabel: '₦15,000 / seat / month',
+    billingCycle: 'monthly',
+    seatsIncluded: 25,
+    features: [
+      'Unlimited payroll runs',
+      'Statutory compliance engine',
+      'Spend management & approvals',
+      'Priority email support',
+    ],
+  },
+  subscription: {
+    status: 'trial',
+    currentPeriodStart: daysAgo(8),
+    currentPeriodEnd: daysFromNow(6),
+    seatsUsed: 15,
+    seatsLimit: 25,
+    autoRenew: true,
+    trialEndsAt: daysFromNow(6),
+  },
+  paymentMethod: {
+    cardholderName: 'Demo Admin',
+    brand: 'Visa',
+    last4: '4242',
+    expiryMonth: 11,
+    expiryYear: 2028,
+  },
+  billingHistory: [
+    { id: 'txn-1', date: daysAgo(38), description: 'Growth plan — monthly subscription', amount: 225_000, currency: 'NGN', status: 'paid' },
+    { id: 'txn-2', date: daysAgo(68), description: 'Growth plan — monthly subscription', amount: 210_000, currency: 'NGN', status: 'paid' },
+    { id: 'txn-3', date: daysAgo(98), description: 'Growth plan — monthly subscription', amount: 210_000, currency: 'NGN', status: 'failed' },
+  ],
+  invoices: [
+    { id: 'inv-1', number: 'INV-2026-0142', issuedDate: daysAgo(8), dueDate: daysFromNow(6), amount: 225_000, currency: 'NGN', status: 'unpaid' },
+    { id: 'inv-2', number: 'INV-2026-0098', issuedDate: daysAgo(38), dueDate: daysAgo(24), amount: 225_000, currency: 'NGN', status: 'paid' },
+    { id: 'inv-3', number: 'INV-2025-0231', issuedDate: daysAgo(68), dueDate: daysAgo(54), amount: 210_000, currency: 'NGN', status: 'paid' },
+  ],
+}
+
+export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
+  authentication: {
+    twoFactorEnabled: false,
+    twoFactorMethod: null,
+    ssoEnabled: false,
+    ssoProvider: '',
+  },
+  sessions: [
+    {
+      id: 'session-1',
+      device: 'MacBook Pro',
+      browser: 'Chrome on macOS',
+      location: 'Lagos, Nigeria',
+      ipAddress: '105.112.24.6',
+      lastActiveAt: daysAgo(0),
+      current: true,
+    },
+    {
+      id: 'session-2',
+      device: 'iPhone 15',
+      browser: 'Safari on iOS',
+      location: 'Lagos, Nigeria',
+      ipAddress: '105.112.24.19',
+      lastActiveAt: daysAgo(2),
+      current: false,
+    },
+    {
+      id: 'session-3',
+      device: 'Windows PC',
+      browser: 'Edge on Windows',
+      location: 'Abuja, Nigeria',
+      ipAddress: '197.211.53.101',
+      lastActiveAt: daysAgo(9),
+      current: false,
+    },
+  ],
+  activity: [
+    { id: 'act-1', event: 'Signed in', description: 'Successful sign-in from a recognized device.', ipAddress: '105.112.24.6', device: 'Chrome on macOS', timestamp: daysAgo(0), status: 'success' },
+    { id: 'act-2', event: 'Password changed', description: 'Account password was updated.', ipAddress: '105.112.24.6', device: 'Chrome on macOS', timestamp: daysAgo(12), status: 'success' },
+    { id: 'act-3', event: 'Failed sign-in attempt', description: 'Incorrect password entered.', ipAddress: '41.58.12.203', device: 'Unknown device', timestamp: daysAgo(15), status: 'failed' },
+    { id: 'act-4', event: 'New session', description: 'Signed in from a new device.', ipAddress: '105.112.24.19', device: 'Safari on iOS', timestamp: daysAgo(20), status: 'success' },
+  ],
+}
+
+export const DEFAULT_INTEGRATIONS: Integration[] = [
+  {
+    id: 'anchor',
+    name: 'Anchor',
+    category: 'payment',
+    description: 'Send NGN salary and vendor payments directly from StackHR.',
+    status: 'connected',
+    connectedAccount: 'Acme Inc. — Operating Account',
+  },
+  {
+    id: 'paystack',
+    name: 'Paystack',
+    category: 'payment',
+    description: 'Accept and reconcile inbound payments and reimbursement top-ups.',
+    status: 'not_connected',
+  },
+  {
+    id: 'sendbyte',
+    name: 'Sendbyte',
+    category: 'email',
+    description: 'Transactional email for payslips, approvals, and notifications.',
+    status: 'connected',
+    connectedAccount: 'notifications@acme.example',
+  },
+  {
+    id: 'google-workspace',
+    name: 'Google Workspace',
+    category: 'email',
+    description: 'Sync employee directory and calendars with Google Workspace.',
+    status: 'not_connected',
+  },
+  {
+    id: 'quickbooks',
+    name: 'QuickBooks',
+    category: 'accounting',
+    description: 'Sync payroll journal entries and expense claims to QuickBooks.',
+    status: 'not_connected',
+  },
+  {
+    id: 'xero',
+    name: 'Xero',
+    category: 'accounting',
+    description: 'Sync payroll journal entries and expense claims to Xero.',
+    status: 'not_connected',
+  },
+  {
+    id: 'gtbank',
+    name: 'GTBank Business',
+    category: 'banking',
+    description: 'Connect a business bank account for payroll funding and reconciliation.',
+    status: 'connected',
+    connectedAccount: 'GTBank •••• 4821',
+  },
+  {
+    id: 'access-bank',
+    name: 'Access Bank',
+    category: 'banking',
+    description: 'Connect a business bank account for payroll funding and reconciliation.',
+    status: 'not_connected',
+  },
+]
