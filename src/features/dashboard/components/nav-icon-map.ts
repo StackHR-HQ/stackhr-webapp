@@ -1,12 +1,20 @@
 import {
+  ArrowsClockwiseIcon,
+  BellIcon,
+  CalendarCheckIcon,
   ChartBarIcon,
   CheckCircleIcon,
   CreditCardIcon,
+  FolderIcon,
   GearIcon,
+  HandCoinsIcon,
   MoneyIcon,
+  ReceiptIcon,
   ShieldCheckIcon,
   SquaresFourIcon,
+  UserCircleIcon,
   UsersIcon,
+  WalletIcon,
   type Icon,
 } from '@phosphor-icons/react'
 import type { NavIconName } from './sidebar-nav-data'
@@ -20,4 +28,12 @@ export const NAV_ICONS: Record<NavIconName, Icon> = {
   approvals: CheckCircleIcon,
   reports: ChartBarIcon,
   settings: GearIcon,
+  profile: UserCircleIcon,
+  leave: CalendarCheckIcon,
+  payslips: ReceiptIcon,
+  expenses: WalletIcon,
+  reimbursements: ArrowsClockwiseIcon,
+  salaryAdvance: HandCoinsIcon,
+  documents: FolderIcon,
+  notifications: BellIcon,
 }
