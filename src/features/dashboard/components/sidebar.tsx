@@ -1,4 +1,5 @@
-import { SIDEBAR_NAV } from './sidebar-nav-data'
+import { useAuthStore } from '../../auth/store/auth-store'
+import { getSidebarNav } from './sidebar-nav-data'
 import { SidebarFooter } from './sidebar-footer'
 import { SidebarHeader } from './sidebar-header'
 import { SidebarNavItem } from './sidebar-nav-item'
@@ -6,6 +7,8 @@ import { useSidebar } from './use-sidebar'
 
 export function Sidebar() {
   const { collapsed, mobileOpen, closeMobile } = useSidebar()
+  const role = useAuthStore((state) => state.user?.role)
+  const sidebarNav = getSidebarNav(role)
 
   return (
     <>
@@ -22,7 +25,7 @@ export function Sidebar() {
         <SidebarHeader />
 
         <div className="flex-1 space-y-1 overflow-y-auto p-2">
-          {SIDEBAR_NAV.map((section) => (
+          {sidebarNav.map((section) => (
             <SidebarNavItem key={section.label} section={section} />
           ))}
         </div>

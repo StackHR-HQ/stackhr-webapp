@@ -8,8 +8,16 @@ import { RemittancesPage } from './features/compliance/pages/remittances-page'
 import { StatutoryPage } from './features/compliance/pages/statutory-page'
 import { TaxPage } from './features/compliance/pages/tax-page'
 import { GlobalApprovalsPage } from './features/approvals/pages/approvals-page'
-import { DashboardHomePage } from './features/dashboard/pages/dashboard-home-page'
 import { DashboardLayout } from './features/dashboard/components/dashboard-layout'
+import { MyExpensesPage } from './features/employee/pages/expenses-page'
+import { EmployeeDocumentsPage } from './features/employee/pages/documents-page'
+import { MyLeavePage } from './features/employee/pages/leave-page'
+import { EmployeeNotificationsPage } from './features/employee/pages/notifications-page'
+import { MyPayslipsPage } from './features/employee/pages/payslips-page'
+import { MyProfilePage } from './features/employee/pages/profile-page'
+import { MyReimbursementsPage } from './features/employee/pages/reimbursements-page'
+import { MySalaryAdvancePage } from './features/employee/pages/salary-advance-page'
+import { EmployeeSettingsPage } from './features/employee/pages/settings-page'
 import { OnboardingPage } from './features/onboarding/pages/onboarding-page'
 import { DocumentsPage } from './features/people/pages/documents-page'
 import { EmployeeProfilePage } from './features/people/pages/employee-profile-page'
@@ -35,6 +43,7 @@ import { ExpenseDetailPage } from './features/spend/pages/expense-detail-page'
 import { ExpensesPage } from './features/spend/pages/expenses-page'
 import { ReimbursementsPage } from './features/spend/pages/reimbursements-page'
 import { SpendApprovalsPage } from './features/spend/pages/approvals-page'
+import { DashboardHomeRoute } from './routing/dashboard-home-route'
 import { ProtectedRoute } from './routing/protected-route'
 
 function App() {
@@ -61,7 +70,7 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardHomePage />} />
+        <Route index element={<DashboardHomeRoute />} />
 
         <Route path="people">
           <Route path="employees" element={<EmployeesPage />} />
@@ -107,6 +116,18 @@ function App() {
           <Route path="billing" element={<BillingPage />} />
           <Route path="security" element={<SecurityPage />} />
           <Route path="integrations" element={<IntegrationsPage />} />
+        </Route>
+
+        <Route path="me">
+          <Route path="profile" element={<MyProfilePage />} />
+          <Route path="leave" element={<MyLeavePage />} />
+          <Route path="payslips" element={<MyPayslipsPage />} />
+          <Route path="expenses" element={<MyExpensesPage />} />
+          <Route path="reimbursements" element={<MyReimbursementsPage />} />
+          <Route path="salary-advance" element={<MySalaryAdvancePage />} />
+          <Route path="documents" element={<EmployeeDocumentsPage />} />
+          <Route path="notifications" element={<EmployeeNotificationsPage />} />
+          <Route path="settings" element={<EmployeeSettingsPage />} />
         </Route>
       </Route>
 
