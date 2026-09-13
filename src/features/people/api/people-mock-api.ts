@@ -29,7 +29,7 @@ import type {
   OnboardingTemplate,
   Team,
 } from '../types/people-types'
-import type { DocumentUploadPayload, LeaveDecision } from './people-api'
+import type { DepartmentInput, DocumentUploadPayload, EmployeeDirectoryParams, LeaveDecision, PaginatedEmployees } from './people-api'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -72,6 +72,23 @@ export const mockPeopleApi = {
     return EMPLOYEES.map(toSummary)
   },
 
+  async getEmployeeDirectory(params: EmployeeDirectoryParams): Promise<PaginatedEmployees> {
+    await delay(400)
+    const search = params.search?.trim().toLowerCase()
+    const matching = EMPLOYEES.map(toSummary)
+      .filter((employee) => !params.employmentStatus || employee.employmentStatus === params.employmentStatus)
+      .filter(
+        (employee) =>
+          !search ||
+          employee.fullName.toLowerCase().includes(search) ||
+          employee.email.toLowerCase().includes(search) ||
+          employee.jobTitle.toLowerCase().includes(search),
+      )
+      .sort((a, b) => a.fullName.localeCompare(b.fullName) || a.id.localeCompare(b.id))
+    const start = (params.page - 1) * params.pageSize
+    return { items: matching.slice(start, start + params.pageSize), page: params.page, pageSize: params.pageSize, total: matching.length }
+  },
+
   async getEmployee(id: string): Promise<EmployeeDetail | null> {
     await delay(400)
     const seed = getEmployeeSeed(id)
@@ -81,6 +98,45 @@ export const mockPeopleApi = {
   async getDepartments(): Promise<Department[]> {
     await delay(300)
     return DEPARTMENTS
+  },
+
+  async createDepartment(payload: DepartmentInput): Promise<Department> {
+    await delay(350)
+    const name = payload.name.trim()
+    if (!name) throw new Error('Department name is required.')
+    if (DEPARTMENTS.some((department) => department.name.toLowerCase() === name.toLowerCase())) {
+      throw new Error('A department with this name already exists.')
+    }
+    if (payload.headEmployeeId && !payload.memberIds.includes(payload.headEmployeeId)) {
+      throw new Error('The department head must be a department member.')
+    }
+    const department = { id: `department_${Date.now()}`, name, headEmployeeId: payload.headEmployeeId }
+    DEPARTMENTS.push(department)
+    for (const employee of EMPLOYEES) {
+      if (payload.memberIds.includes(employee.id)) employee.departmentId = department.id
+    }
+    return department
+  },
+
+  async updateDepartment(id: string, payload: DepartmentInput): Promise<Department> {
+    await delay(350)
+    const department = DEPARTMENTS.find((item) => item.id === id)
+    if (!department) throw new Error('Department not found.')
+    const name = payload.name.trim()
+    if (!name) throw new Error('Department name is required.')
+    if (DEPARTMENTS.some((item) => item.id !== id && item.name.toLowerCase() === name.toLowerCase())) {
+      throw new Error('A department with this name already exists.')
+    }
+    if (payload.headEmployeeId && !payload.memberIds.includes(payload.headEmployeeId)) {
+      throw new Error('The department head must be a department member.')
+    }
+    department.name = name
+    department.headEmployeeId = payload.headEmployeeId
+    for (const employee of EMPLOYEES) {
+      if (employee.departmentId === id && !payload.memberIds.includes(employee.id)) employee.departmentId = ''
+      if (payload.memberIds.includes(employee.id)) employee.departmentId = id
+    }
+    return department
   },
 
   async getTeams(): Promise<Team[]> {

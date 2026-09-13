@@ -19,6 +19,49 @@ afterEach(() => {
 })
 
 describe('People mutation API', () => {
+  test('creates a department with its head and member assignments', async () => {
+    const request = captureRequest()
+    await peopleApi.createDepartment({
+      name: 'Customer Success',
+      headEmployeeId: 'emp_1',
+      memberIds: ['emp_1', 'emp_2'],
+    })
+
+    expect(request()?.url).toBe('/people/departments')
+    expect(request()?.method).toBe('post')
+    expect(JSON.parse(request()?.data as string)).toEqual({
+      name: 'Customer Success',
+      headEmployeeId: 'emp_1',
+      memberIds: ['emp_1', 'emp_2'],
+    })
+  })
+
+  test('updates a department and its membership atomically', async () => {
+    const request = captureRequest()
+    await peopleApi.updateDepartment('dept_1', {
+      name: 'Customer Success',
+      headEmployeeId: 'emp_2',
+      memberIds: ['emp_2', 'emp_3'],
+    })
+
+    expect(request()?.url).toBe('/people/departments/dept_1')
+    expect(request()?.method).toBe('patch')
+    expect(JSON.parse(request()?.data as string)).toEqual({
+      name: 'Customer Success',
+      headEmployeeId: 'emp_2',
+      memberIds: ['emp_2', 'emp_3'],
+    })
+  })
+
+  test('sends opt-in directory pagination and filters as query parameters', async () => {
+    const request = captureRequest()
+    await peopleApi.getEmployeeDirectory({ page: 2, pageSize: 25, search: ' ada ', employmentStatus: 'active' })
+
+    expect(request()?.url).toBe('/people/employees')
+    expect(request()?.method).toBe('get')
+    expect(request()?.params).toEqual({ page: 2, pageSize: 25, search: 'ada', employmentStatus: 'active' })
+  })
+
   test('sends a leave decision to its persisted endpoint', async () => {
     const request = captureRequest()
     await peopleApi.decideLeaveRequest('leave_1', 'approved')

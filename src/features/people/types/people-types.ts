@@ -4,7 +4,7 @@ export type EmploymentType = 'Full-time' | 'Part-time' | 'Contract' | 'Intern'
 export interface Department {
   id: string
   name: string
-  headEmployeeId: string
+  headEmployeeId: string | null
 }
 
 export interface Team {

@@ -17,12 +17,32 @@ import type {
 
 export type LeaveDecision = 'approved' | 'rejected'
 
+export type EmployeeDirectoryParams = {
+  page: number
+  pageSize: number
+  search?: string
+  employmentStatus?: EmployeeSummary['employmentStatus']
+}
+
+export type PaginatedEmployees = {
+  items: EmployeeSummary[]
+  page: number
+  pageSize: number
+  total: number
+}
+
 export type DocumentUploadPayload = {
   file: File
   name: string
   category: string
   scope: 'company' | 'employee'
   employeeId?: string
+}
+
+export type DepartmentInput = {
+  name: string
+  headEmployeeId: string | null
+  memberIds: string[]
 }
 
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
@@ -34,6 +54,18 @@ export const peopleApi = {
     return data
   },
 
+  async getEmployeeDirectory(params: EmployeeDirectoryParams): Promise<PaginatedEmployees> {
+    const { data } = await http.get<PaginatedEmployees>('/people/employees', {
+      params: {
+        page: params.page,
+        pageSize: params.pageSize,
+        search: params.search?.trim() || undefined,
+        employmentStatus: params.employmentStatus,
+      },
+    })
+    return data
+  },
+
   async getEmployee(id: string): Promise<EmployeeDetail | null> {
     const { data } = await http.get<EmployeeDetail>(`/people/employees/${id}`)
     return data
@@ -41,6 +73,16 @@ export const peopleApi = {
 
   async getDepartments(): Promise<Department[]> {
     const { data } = await http.get<Department[]>('/people/departments')
+    return data
+  },
+
+  async createDepartment(payload: DepartmentInput): Promise<Department> {
+    const { data } = await http.post<Department>('/people/departments', payload)
+    return data
+  },
+
+  async updateDepartment(id: string, payload: DepartmentInput): Promise<Department> {
+    const { data } = await http.patch<Department>(`/people/departments/${id}`, payload)
     return data
   },
 
