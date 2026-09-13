@@ -31,7 +31,7 @@ with sync_playwright() as playwright:
     expect(page).to_have_url("http://127.0.0.1:5173/onboarding")
 
     # Verify the same newly-created account can start a fresh session.
-    page.evaluate("localStorage.clear(); sessionStorage.clear()")
+    page.evaluate("localStorage.removeItem('stackhr.auth'); sessionStorage.removeItem('stackhr.auth')")
     page.goto("http://127.0.0.1:5173/login")
     page.wait_for_load_state("networkidle")
     page.locator("#orgSlug").fill("browser-test-company")

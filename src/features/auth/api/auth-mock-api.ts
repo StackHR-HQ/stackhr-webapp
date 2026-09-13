@@ -29,6 +29,35 @@ function delay(ms: number) {
 // Keyed by lowercased email; cleared once the account is verified.
 const pendingSignups = new Map<string, SignupPayload>()
 const verifiedSignups = new Map<string, SignupPayload>()
+const VERIFIED_SIGNUPS_STORAGE_KEY = 'stackhr.mock.verified-signups'
+
+function getVerifiedSignup(email: string): SignupPayload | undefined {
+  const normalizedEmail = email.toLowerCase()
+  const inMemory = verifiedSignups.get(normalizedEmail)
+  if (inMemory) return inMemory
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(VERIFIED_SIGNUPS_STORAGE_KEY) ?? '{}') as Record<string, SignupPayload>
+    const verified = stored[normalizedEmail]
+    if (verified) verifiedSignups.set(normalizedEmail, verified)
+    return verified
+  } catch {
+    return undefined
+  }
+}
+
+function saveVerifiedSignup(email: string, signup: SignupPayload) {
+  const normalizedEmail = email.toLowerCase()
+  verifiedSignups.set(normalizedEmail, signup)
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(VERIFIED_SIGNUPS_STORAGE_KEY) ?? '{}') as Record<string, SignupPayload>
+    stored[normalizedEmail] = signup
+    localStorage.setItem(VERIFIED_SIGNUPS_STORAGE_KEY, JSON.stringify(stored))
+  } catch {
+    // The in-memory account is sufficient in non-browser test environments.
+  }
+}
 
 export const mockAuthApi = {
   async login({ orgSlug, email, password }: LoginPayload): Promise<AuthSession> {
@@ -49,7 +78,7 @@ export const mockAuthApi = {
       }
     }
 
-    const verified = verifiedSignups.get(normalizedEmail)
+    const verified = getVerifiedSignup(normalizedEmail)
     if (!verified || slugify(verified.companyName) !== orgSlug.toLowerCase() || verified.password !== password) {
       throw new AuthError('Incorrect workspace, email, or password.')
     }
@@ -86,7 +115,7 @@ export const mockAuthApi = {
       throw new AuthError('Your signup session expired. Please sign up again.')
     }
     pendingSignups.delete(email.toLowerCase())
-    verifiedSignups.set(email.toLowerCase(), pending)
+    saveVerifiedSignup(email, pending)
 
     return {
       user: {
