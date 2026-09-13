@@ -5,6 +5,7 @@ import { LeaveCalendarView } from '../components/leave/leave-calendar-view'
 import { LeavePoliciesView } from '../components/leave/leave-policies-view'
 import { LeaveRequestsView } from '../components/leave/leave-requests-view'
 import { LeaveTypesView } from '../components/leave/leave-types-view'
+import { PeopleLoadError } from '../components/people-load-error'
 import { useLeaveBalances } from '../hooks/use-leave-balances'
 import { useLeavePolicies } from '../hooks/use-leave-policies'
 import { useLeaveRequests } from '../hooks/use-leave-requests'
@@ -22,10 +23,14 @@ const LEAVE_TABS: { key: LeaveTabKey; label: string }[] = [
 
 export function LeavePage() {
   const [activeTab, setActiveTab] = useState<LeaveTabKey>('requests')
-  const { data: requests, isPending: requestsPending } = useLeaveRequests()
-  const { data: leaveTypes, isPending: typesPending } = useLeaveTypes()
-  const { data: policies, isPending: policiesPending } = useLeavePolicies()
-  const { data: balances, isPending: balancesPending } = useLeaveBalances()
+  const requestsQuery = useLeaveRequests()
+  const typesQuery = useLeaveTypes()
+  const policiesQuery = useLeavePolicies()
+  const balancesQuery = useLeaveBalances()
+  const { data: requests, isPending: requestsPending } = requestsQuery
+  const { data: leaveTypes, isPending: typesPending } = typesQuery
+  const { data: policies, isPending: policiesPending } = policiesQuery
+  const { data: balances, isPending: balancesPending } = balancesQuery
 
   const pendingByTab: Record<LeaveTabKey, boolean> = {
     requests: requestsPending,
@@ -35,6 +40,18 @@ export function LeavePage() {
     balances: balancesPending,
   }
   const isPending = pendingByTab[activeTab]
+  const hasError =
+    (activeTab === 'requests' || activeTab === 'calendar' ? requestsQuery.isError : false) ||
+    (activeTab === 'types' ? typesQuery.isError : false) ||
+    (activeTab === 'policies' ? policiesQuery.isError : false) ||
+    (activeTab === 'balances' ? balancesQuery.isError : false)
+
+  function retryActiveTab() {
+    if (activeTab === 'requests' || activeTab === 'calendar') void requestsQuery.refetch()
+    if (activeTab === 'types') void typesQuery.refetch()
+    if (activeTab === 'policies') void policiesQuery.refetch()
+    if (activeTab === 'balances') void balancesQuery.refetch()
+  }
 
   return (
     <div className="max-w-[1400px] space-y-5">
@@ -45,7 +62,9 @@ export function LeavePage() {
 
       <UnderlineTabs tabs={LEAVE_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {isPending ? (
+      {hasError ? (
+        <PeopleLoadError resource="leave data" onRetry={retryActiveTab} />
+      ) : isPending ? (
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
       ) : (
         <>

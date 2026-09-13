@@ -15,6 +15,16 @@ import type {
   Team,
 } from '../types/people-types'
 
+export type LeaveDecision = 'approved' | 'rejected'
+
+export type DocumentUploadPayload = {
+  file: File
+  name: string
+  category: string
+  scope: 'company' | 'employee'
+  employeeId?: string
+}
+
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
 // behind the same shape as people-mock-api.ts so people-service.ts can swap
 // to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
@@ -81,6 +91,31 @@ export const peopleApi = {
 
   async getEmployeeOnboarding(): Promise<EmployeeOnboardingRow[]> {
     const { data } = await http.get<EmployeeOnboardingRow[]>('/people/onboarding/employees')
+    return data
+  },
+
+  async decideLeaveRequest(id: string, status: LeaveDecision): Promise<LeaveRequestWithEmployee> {
+    const { data } = await http.patch<LeaveRequestWithEmployee>(`/people/leave/requests/${id}/decision`, { status })
+    return data
+  },
+
+  async uploadDocument(payload: DocumentUploadPayload): Promise<{ scope: 'company' | 'employee'; document: CompanyDocument | EmployeeDocumentRow }> {
+    const body = new FormData()
+    body.append('file', payload.file)
+    body.append('name', payload.name)
+    body.append('category', payload.category)
+    body.append('scope', payload.scope)
+    if (payload.employeeId) body.append('employeeId', payload.employeeId)
+
+    const { data } = await http.post<{ scope: 'company' | 'employee'; document: CompanyDocument | EmployeeDocumentRow }>('/people/documents', body)
+    return data
+  },
+
+  async updateOnboardingChecklist(employeeId: string, itemId: string, completed: boolean): Promise<EmployeeOnboardingRow> {
+    const { data } = await http.patch<EmployeeOnboardingRow>(
+      `/people/onboarding/employees/${employeeId}/checklist/${itemId}`,
+      { completed },
+    )
     return data
   },
 }

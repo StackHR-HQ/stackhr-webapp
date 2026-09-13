@@ -1,5 +1,4 @@
 import { CheckIcon, XIcon } from '@phosphor-icons/react'
-import { useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar } from '../../../../components/ui/avatar'
 import { Badge } from '../../../../components/ui/badge'
@@ -7,20 +6,24 @@ import { Card } from '../../../../components/ui/card'
 import { formatDate } from '../../lib/format'
 import { REQUEST_STATUS_META } from '../../lib/status-meta'
 import type { LeaveRequestWithEmployee } from '../../types/people-types'
+import { getApiErrorMessage } from '../../../../lib/api-error'
+import { notify } from '../../../../lib/toast'
+import { useDecideLeaveRequest } from '../../hooks/use-decide-leave-request'
 
 export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmployee[] }) {
-  const [resolvedIds, setResolvedIds] = useState<Partial<Record<string, 'approved' | 'rejected'>>>({})
+  const decision = useDecideLeaveRequest()
 
-  const visible = requests.map((request) => ({
-    ...request,
-    status: resolvedIds[request.id] ?? request.status,
-  }))
-
-  function resolve(id: string, status: 'approved' | 'rejected') {
-    setResolvedIds((prev) => ({ ...prev, [id]: status }))
+  function resolve(request: LeaveRequestWithEmployee, status: 'approved' | 'rejected') {
+    decision.mutate(
+      { id: request.id, status },
+      {
+        onSuccess: () => notify.success(`Leave request ${status}`),
+        onError: (error) => notify.error(`Could not ${status === 'approved' ? 'approve' : 'reject'} leave request`, getApiErrorMessage(error, 'Please try again.')),
+      },
+    )
   }
 
-  if (visible.length === 0) {
+  if (requests.length === 0) {
     return (
       <Card>
         <p className="text-sm text-muted">No leave requests on record.</p>
@@ -42,7 +45,7 @@ export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmpl
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
-          {visible.map((request) => {
+          {requests.map((request) => {
             const statusMeta = REQUEST_STATUS_META[request.status]
             const isPending = request.status === 'pending'
             return (
@@ -66,7 +69,8 @@ export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmpl
                     <div className="flex justify-end gap-1.5">
                       <button
                         type="button"
-                        onClick={() => resolve(request.id, 'rejected')}
+                        onClick={() => resolve(request, 'rejected')}
+                        disabled={decision.isPending}
                         aria-label={`Reject leave request from ${request.employeeName}`}
                         className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical"
                       >
@@ -74,7 +78,8 @@ export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmpl
                       </button>
                       <button
                         type="button"
-                        onClick={() => resolve(request.id, 'approved')}
+                        onClick={() => resolve(request, 'approved')}
+                        disabled={decision.isPending}
                         aria-label={`Approve leave request from ${request.employeeName}`}
                         className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90"
                       >

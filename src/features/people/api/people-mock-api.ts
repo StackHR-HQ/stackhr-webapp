@@ -29,6 +29,7 @@ import type {
   OnboardingTemplate,
   Team,
 } from '../types/people-types'
+import type { DocumentUploadPayload, LeaveDecision } from './people-api'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -151,5 +152,39 @@ export const mockPeopleApi = {
     return EMPLOYEES.filter(
       (seed) => seed.employmentStatus === 'onboarding' || seed.employmentStatus === 'pending_invitation',
     ).map(deriveOnboardingRow)
+  },
+
+  async decideLeaveRequest(id: string, status: LeaveDecision): Promise<LeaveRequestWithEmployee> {
+    const request = (await this.getLeaveRequests()).find((item) => item.id === id)
+    if (!request) throw new Error('Leave request not found.')
+    return { ...request, status }
+  },
+
+  async uploadDocument(payload: DocumentUploadPayload): Promise<{ scope: 'company' | 'employee'; document: CompanyDocument | EmployeeDocumentRow }> {
+    await delay(500)
+    const document = {
+      id: `document_${Date.now()}`,
+      name: payload.name,
+      category: payload.category,
+      uploadedAt: new Date().toISOString(),
+      fileSize: `${Math.ceil(payload.file.size / 1024)} KB`,
+    }
+    if (payload.scope === 'company') return { scope: 'company', document: { ...document, visibility: 'All employees' } }
+
+    const employee = EMPLOYEES.find((item) => item.id === payload.employeeId)
+    if (!employee) throw new Error('Employee not found.')
+    return {
+      scope: 'employee',
+      document: { ...document, employeeId: employee.id, employeeName: employee.fullName, avatarInitials: employee.avatarInitials },
+    }
+  },
+
+  async updateOnboardingChecklist(employeeId: string, itemId: string, completed: boolean): Promise<EmployeeOnboardingRow> {
+    const row = (await this.getEmployeeOnboarding()).find((item) => item.employeeId === employeeId)
+    if (!row) throw new Error('Onboarding employee not found.')
+    const completedItemIds = new Set(row.completedItemIds)
+    if (completed) completedItemIds.add(itemId)
+    else completedItemIds.delete(itemId)
+    return { ...row, completedItemIds: [...completedItemIds] }
   },
 }

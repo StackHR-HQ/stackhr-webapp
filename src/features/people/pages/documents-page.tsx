@@ -4,6 +4,7 @@ import { CompanyDocumentsView } from '../components/documents/company-documents-
 import { DocumentTemplatesView } from '../components/documents/document-templates-view'
 import { EmployeeDocumentsView } from '../components/documents/employee-documents-view'
 import { UploadDocumentView } from '../components/documents/upload-document-view'
+import { PeopleLoadError } from '../components/people-load-error'
 import { useCompanyDocuments } from '../hooks/use-company-documents'
 import { useDocumentTemplates } from '../hooks/use-document-templates'
 import { useEmployeeDocuments } from '../hooks/use-employee-documents'
@@ -20,16 +21,32 @@ const DOCUMENTS_TABS: { key: DocumentsTabKey; label: string }[] = [
 
 export function DocumentsPage() {
   const [activeTab, setActiveTab] = useState<DocumentsTabKey>('company')
-  const { data: companyDocs, isPending: companyPending } = useCompanyDocuments()
-  const { data: employeeDocs, isPending: employeePending } = useEmployeeDocuments()
-  const { data: templates, isPending: templatesPending } = useDocumentTemplates()
-  const { data: employees } = useEmployees()
+  const companyQuery = useCompanyDocuments()
+  const employeeQuery = useEmployeeDocuments()
+  const templateQuery = useDocumentTemplates()
+  const employeesQuery = useEmployees()
+  const { data: companyDocs, isPending: companyPending } = companyQuery
+  const { data: employeeDocs, isPending: employeePending } = employeeQuery
+  const { data: templates, isPending: templatesPending } = templateQuery
+  const { data: employees } = employeesQuery
 
   const pendingByTab: Record<DocumentsTabKey, boolean> = {
     company: companyPending,
     employee: employeePending,
     templates: templatesPending,
     upload: false,
+  }
+  const hasError =
+    (activeTab === 'company' ? companyQuery.isError : false) ||
+    (activeTab === 'employee' ? employeeQuery.isError : false) ||
+    (activeTab === 'templates' ? templateQuery.isError : false) ||
+    (activeTab === 'upload' ? employeesQuery.isError : false)
+
+  function retryActiveTab() {
+    if (activeTab === 'company') void companyQuery.refetch()
+    if (activeTab === 'employee') void employeeQuery.refetch()
+    if (activeTab === 'templates') void templateQuery.refetch()
+    if (activeTab === 'upload') void employeesQuery.refetch()
   }
 
   return (
@@ -41,7 +58,9 @@ export function DocumentsPage() {
 
       <UnderlineTabs tabs={DOCUMENTS_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {pendingByTab[activeTab] ? (
+      {hasError ? (
+        <PeopleLoadError resource="documents" onRetry={retryActiveTab} />
+      ) : pendingByTab[activeTab] ? (
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
       ) : (
         <>

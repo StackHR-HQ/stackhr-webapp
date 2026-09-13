@@ -1,10 +1,12 @@
-import { useState } from 'react'
 import { Card, CardHeader } from '../../../../components/ui/card'
 import { SelectField } from '../../../../components/ui/select-field'
+import { getApiErrorMessage } from '../../../../lib/api-error'
+import { notify } from '../../../../lib/toast'
+import { useUpdateOnboardingChecklist } from '../../hooks/use-update-onboarding-checklist'
 import type { EmployeeOnboardingRow, OnboardingTemplate } from '../../types/people-types'
 
 function ChecklistCard({ row, template }: { row: EmployeeOnboardingRow; template?: OnboardingTemplate }) {
-  const [checked, setChecked] = useState<Set<string>>(new Set(row.completedItemIds))
+  const updateChecklist = useUpdateOnboardingChecklist()
 
   if (!template) {
     return (
@@ -15,18 +17,17 @@ function ChecklistCard({ row, template }: { row: EmployeeOnboardingRow; template
   }
 
   const stages = Array.from(new Set(template.checklist.map((item) => item.stage)))
-  const percent = Math.round((checked.size / template.checklist.length) * 100)
+  const percent = Math.round((row.completedItemIds.length / template.checklist.length) * 100)
 
   function toggle(itemId: string) {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(itemId)) {
-        next.delete(itemId)
-      } else {
-        next.add(itemId)
-      }
-      return next
-    })
+    const completed = !row.completedItemIds.includes(itemId)
+    updateChecklist.mutate(
+      { employeeId: row.employeeId, itemId, completed },
+      {
+        onSuccess: () => notify.success(completed ? 'Checklist item completed' : 'Checklist item reopened'),
+        onError: (error) => notify.error('Could not update checklist', getApiErrorMessage(error, 'Please try again.')),
+      },
+    )
   }
 
   return (
@@ -53,11 +54,12 @@ function ChecklistCard({ row, template }: { row: EmployeeOnboardingRow; template
                     <label className="flex items-center gap-2.5 text-sm text-ink">
                       <input
                         type="checkbox"
-                        checked={checked.has(item.id)}
+                        checked={row.completedItemIds.includes(item.id)}
                         onChange={() => toggle(item.id)}
+                        disabled={updateChecklist.isPending}
                         className="h-4 w-4 rounded border-line text-accent focus:ring-2 focus:ring-accent/40"
                       />
-                      <span className={checked.has(item.id) ? 'text-muted line-through' : ''}>{item.label}</span>
+                      <span className={row.completedItemIds.includes(item.id) ? 'text-muted line-through' : ''}>{item.label}</span>
                     </label>
                   </li>
                 ))}
