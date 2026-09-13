@@ -12,22 +12,22 @@ import type {
 // this by flipping VITE_USE_MOCK_AUTH once the backend is live.
 export const authApi = {
   async login(payload: LoginPayload): Promise<AuthSession> {
-    const { data } = await http.post<AuthSession>('/auth/login', payload)
+    const { data } = await http.post<AuthSession>('/auth/business/login', payload)
     return data
   },
 
   async signup(payload: SignupPayload): Promise<PendingSignup> {
-    const { data } = await http.post<PendingSignup>('/auth/signup', payload)
+    const { data } = await http.post<PendingSignup>('/auth/business/signup', payload)
     return data
   },
 
   async verifyEmailOtp(payload: VerifyEmailOtpPayload): Promise<AuthSession> {
-    const { data } = await http.post<AuthSession>('/auth/verify-email', payload)
+    const { data } = await http.post<AuthSession>('/auth/business/verify-email', payload)
     return data
   },
 
   async resendEmailOtp(email: string): Promise<void> {
-    await http.post('/auth/resend-otp', { email })
+    await http.post('/auth/business/resend-verification', { email })
   },
 
   async requestPasswordReset(email: string): Promise<void> {

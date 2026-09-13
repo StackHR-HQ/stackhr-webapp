@@ -22,6 +22,7 @@ export interface SignupPayload {
   companyName: string
   email: string
   password: string
+  confirmPassword: string
 }
 
 export interface PendingSignup {
