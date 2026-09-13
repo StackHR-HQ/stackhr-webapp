@@ -6,6 +6,7 @@ import { CheckboxField } from '../../../components/ui/checkbox-field'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
+import { notify } from '../../../lib/toast'
 import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
@@ -33,11 +34,13 @@ export function LoginPage() {
     clearErrors('root')
     try {
       await login.mutateAsync(values)
+      notify.success('Welcome back')
       const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
       navigate(redirectTo, { replace: true })
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
+      notify.error('Could not sign in', message)
       // Keep the workspace and email as typed; only the password needs
       // re-entering, and re-focusing it saves the user a click.
       resetField('password')

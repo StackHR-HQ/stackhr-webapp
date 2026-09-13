@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router'
+import { Toaster } from 'sonner'
 import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
 import { LoginPage } from './features/auth/pages/login-page'
 import { SignupPage } from './features/auth/pages/signup-page'
@@ -48,7 +49,8 @@ import { ProtectedRoute } from './routing/protected-route'
 
 function App() {
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/signup" element={<SignupPage />} />
@@ -131,8 +133,10 @@ function App() {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster position="top-right" richColors closeButton />
+    </>
   )
 }
 

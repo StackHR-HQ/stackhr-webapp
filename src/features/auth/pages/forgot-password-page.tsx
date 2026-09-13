@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
+import { notify } from '../../../lib/toast'
 import { AuthShell } from '../components/auth-shell'
 import { useRequestPasswordReset } from '../hooks/use-request-password-reset'
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '../schemas/forgot-password-schema'
@@ -20,7 +21,12 @@ export function ForgotPasswordPage() {
   })
 
   const onSubmit = handleSubmit(async (values) => {
-    await requestReset.mutateAsync(values.email)
+    try {
+      await requestReset.mutateAsync(values.email)
+      notify.success('Reset link sent', 'Check your inbox for password reset instructions.')
+    } catch {
+      notify.error('Could not send reset link', 'Please try again.')
+    }
   })
 
   return (

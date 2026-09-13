@@ -7,6 +7,7 @@ import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { OtpInput } from '../../../components/ui/otp-input'
 import { TrailingDots } from '../../../components/ui/trailing-dots'
 import { USE_MOCK_AUTH } from '../../../lib/env'
+import { notify } from '../../../lib/toast'
 import { DEMO_OTP_CODE } from '../api/auth-mock-api'
 import { AuthShell } from '../components/auth-shell'
 import { useResendEmailOtp } from '../hooks/use-resend-email-otp'
@@ -53,17 +54,30 @@ export function VerifyEmailPage() {
     clearErrors('root')
     try {
       await verifyOtp.mutateAsync({ email, code: values.code })
+      notify.success('Email verified', 'Your workspace is ready to set up.')
       navigate('/onboarding', { replace: true })
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
+      notify.error('Verification failed', message)
       resetField('code')
     }
   })
 
   async function handleResend() {
-    await resendOtp.mutateAsync(email as string)
-    setCooldown(RESEND_COOLDOWN_SECONDS)
+    if (cooldown > 0) {
+      notify.warning('Please wait before requesting another code', `You can resend a code in ${cooldown} seconds.`)
+      return
+    }
+
+    try {
+      await resendOtp.mutateAsync(email as string)
+      setCooldown(RESEND_COOLDOWN_SECONDS)
+      notify.success('Verification code resent', `A new code was sent to ${email}.`)
+    } catch (err) {
+      const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
+      notify.error('Could not resend verification code', message)
+    }
   }
 
   return (
