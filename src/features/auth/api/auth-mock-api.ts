@@ -28,25 +28,39 @@ function delay(ms: number) {
 // A real backend would persist the pending signup and email an actual code.
 // Keyed by lowercased email; cleared once the account is verified.
 const pendingSignups = new Map<string, SignupPayload>()
+const verifiedSignups = new Map<string, SignupPayload>()
 
 export const mockAuthApi = {
   async login({ orgSlug, email, password }: LoginPayload): Promise<AuthSession> {
     await delay(700)
 
-    if (orgSlug.toLowerCase() !== DEMO_ORG_SLUG) {
-      throw new AuthError(`We couldn't find a workspace called "${orgSlug}".`)
+    const normalizedEmail = email.toLowerCase()
+    if (orgSlug.toLowerCase() === DEMO_ORG_SLUG && normalizedEmail === DEMO_EMAIL && password === DEMO_PASSWORD) {
+      return {
+        user: {
+          id: 'user_demo_1',
+          email: DEMO_EMAIL,
+          name: 'Demo Admin',
+          orgSlug: DEMO_ORG_SLUG,
+          orgName: 'Acme Inc.',
+          role: 'admin',
+        },
+        token: 'mock.jwt.token',
+      }
     }
-    if (email.toLowerCase() !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
-      throw new AuthError('Incorrect email or password.')
+
+    const verified = verifiedSignups.get(normalizedEmail)
+    if (!verified || slugify(verified.companyName) !== orgSlug.toLowerCase() || verified.password !== password) {
+      throw new AuthError('Incorrect workspace, email, or password.')
     }
 
     return {
       user: {
-        id: 'user_demo_1',
-        email: DEMO_EMAIL,
-        name: 'Demo Admin',
-        orgSlug: DEMO_ORG_SLUG,
-        orgName: 'Acme Inc.',
+        id: `user_${normalizedEmail}`,
+        email: verified.email,
+        name: verified.email.split('@')[0] ?? verified.email,
+        orgSlug: slugify(verified.companyName),
+        orgName: verified.companyName,
         role: 'admin',
       },
       token: 'mock.jwt.token',
@@ -72,6 +86,7 @@ export const mockAuthApi = {
       throw new AuthError('Your signup session expired. Please sign up again.')
     }
     pendingSignups.delete(email.toLowerCase())
+    verifiedSignups.set(email.toLowerCase(), pending)
 
     return {
       user: {

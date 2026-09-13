@@ -6,8 +6,6 @@ import { CheckboxField } from '../../../components/ui/checkbox-field'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
-import { USE_MOCK_AUTH } from '../../../lib/env'
-import { DEMO_LOGIN_CREDENTIALS } from '../api/auth-mock-api'
 import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
@@ -49,13 +47,13 @@ export function LoginPage() {
 
   return (
     <AuthSplitShell
-      title="Sign in to StackHR"
-      subtitle="Enter your workspace and account details"
+      title="Welcome back"
+      subtitle="Sign in to continue to your StackHR workspace."
       footer={
         <>
-          Don&apos;t have an account?{' '}
+          New to StackHR?{' '}
           <Link to="/signup" className="text-accent hover:underline">
-            Sign up
+            Create a workspace
           </Link>
         </>
       }
@@ -63,22 +61,13 @@ export function LoginPage() {
       <form onSubmit={onSubmit} noValidate>
         {errors.root ? <FormErrorBanner message={errors.root.message ?? ''} /> : null}
 
-        {USE_MOCK_AUTH ? (
-          <div className="mb-4 rounded-lg border border-line bg-canvas p-3 text-xs text-muted">
-            No backend yet — this form runs against a mock. Try workspace{' '}
-            <span className="font-mono text-ink">{DEMO_LOGIN_CREDENTIALS.orgSlug}</span>, email{' '}
-            <span className="font-mono text-ink">{DEMO_LOGIN_CREDENTIALS.email}</span>, password{' '}
-            <span className="font-mono text-ink">{DEMO_LOGIN_CREDENTIALS.password}</span>.
-          </div>
-        ) : null}
-
         <div className="mb-4">
           <TextField
             id="orgSlug"
-            label="Workspace"
+            label="Workspace slug"
             autoCapitalize="none"
             autoComplete="organization"
-            placeholder="acme"
+            placeholder="e.g. acme-inc"
             error={errors.orgSlug?.message}
             {...register('orgSlug')}
           />
@@ -87,7 +76,7 @@ export function LoginPage() {
         <div className="mb-4">
           <TextField
             id="email"
-            label="Email"
+            label="Work email"
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
@@ -115,11 +104,11 @@ export function LoginPage() {
         </div>
 
         <div className="mb-5">
-          <CheckboxField label="Remember me" {...register('rememberMe')} />
+          <CheckboxField label="Keep me signed in" {...register('rememberMe')} />
         </div>
 
         <Button type="submit" loading={isSubmitting}>
-          Sign in
+          Continue to StackHR
         </Button>
       </form>
     </AuthSplitShell>
