@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useAuthStore } from '../../auth/store/auth-store'
 import { DepartmentsView } from '../components/organization/departments-view'
 import { OrgChartView } from '../components/organization/org-chart-view'
 import { OrganizationTabs } from '../components/organization/organization-tabs'
@@ -12,6 +13,7 @@ import { buildOrgTree } from '../lib/org-tree'
 import type { OrganizationTabKey } from '../lib/organization-tabs-data'
 
 export function PeopleOrganizationPage() {
+  const canManageTeams = useAuthStore((state) => state.user?.role === 'admin')
   const employeesQuery = useEmployees()
   const departmentsQuery = useDepartments()
   const teamsQuery = useTeams()
@@ -48,7 +50,7 @@ export function PeopleOrganizationPage() {
           {activeTab === 'departments' ? (
             <DepartmentsView departments={departments ?? []} employees={employees ?? []} />
           ) : null}
-          {activeTab === 'teams' ? <TeamsView teams={teams ?? []} employees={employees ?? []} /> : null}
+          {activeTab === 'teams' ? <TeamsView teams={teams ?? []} employees={employees ?? []} canManage={canManageTeams} /> : null}
           {activeTab === 'reporting' ? <ReportingStructureView tree={tree} /> : null}
           {activeTab === 'org-chart' ? <OrgChartView tree={tree} /> : null}
         </>

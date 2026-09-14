@@ -29,7 +29,7 @@ import type {
   OnboardingTemplate,
   Team,
 } from '../types/people-types'
-import type { DepartmentInput, DocumentUploadPayload, EmployeeDirectoryParams, LeaveDecision, PaginatedEmployees } from './people-api'
+import type { DepartmentInput, DocumentUploadPayload, EmployeeDirectoryParams, LeaveDecision, PaginatedEmployees, TeamInput } from './people-api'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -142,6 +142,33 @@ export const mockPeopleApi = {
   async getTeams(): Promise<Team[]> {
     await delay(300)
     return TEAMS
+  },
+
+  async createTeam(payload: TeamInput): Promise<Team> {
+    await delay(350)
+    const name = payload.name.trim()
+    const description = payload.description.trim()
+    if (!name) throw new Error('Team name is required.')
+    if (!description) throw new Error('Team description is required.')
+    if (TEAMS.some((team) => team.name.toLowerCase() === name.toLowerCase())) throw new Error('A team with this name already exists.')
+    if (!payload.memberIds.includes(payload.leadEmployeeId)) throw new Error('The team lead must be a team member.')
+    const team = { id: `team_${Date.now()}`, name, description, leadEmployeeId: payload.leadEmployeeId, memberIds: [...new Set(payload.memberIds)] }
+    TEAMS.push(team)
+    return team
+  },
+
+  async updateTeam(id: string, payload: TeamInput): Promise<Team> {
+    await delay(350)
+    const team = TEAMS.find((item) => item.id === id)
+    if (!team) throw new Error('Team not found.')
+    const name = payload.name.trim()
+    const description = payload.description.trim()
+    if (!name) throw new Error('Team name is required.')
+    if (!description) throw new Error('Team description is required.')
+    if (TEAMS.some((item) => item.id !== id && item.name.toLowerCase() === name.toLowerCase())) throw new Error('A team with this name already exists.')
+    if (!payload.memberIds.includes(payload.leadEmployeeId)) throw new Error('The team lead must be a team member.')
+    Object.assign(team, { name, description, leadEmployeeId: payload.leadEmployeeId, memberIds: [...new Set(payload.memberIds)] })
+    return team
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {

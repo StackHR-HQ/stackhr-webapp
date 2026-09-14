@@ -45,6 +45,13 @@ export type DepartmentInput = {
   memberIds: string[]
 }
 
+export type TeamInput = {
+  name: string
+  description: string
+  leadEmployeeId: string
+  memberIds: string[]
+}
+
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
 // behind the same shape as people-mock-api.ts so people-service.ts can swap
 // to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
@@ -88,6 +95,16 @@ export const peopleApi = {
 
   async getTeams(): Promise<Team[]> {
     const { data } = await http.get<Team[]>('/people/teams')
+    return data
+  },
+
+  async createTeam(payload: TeamInput): Promise<Team> {
+    const { data } = await http.post<Team>('/people/teams', payload)
+    return data
+  },
+
+  async updateTeam(id: string, payload: TeamInput): Promise<Team> {
+    const { data } = await http.patch<Team>(`/people/teams/${id}`, payload)
     return data
   },
 
