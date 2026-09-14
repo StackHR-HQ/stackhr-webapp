@@ -26,15 +26,13 @@ export function BusinessInformationView({ businessInformation }: { businessInfor
 
   return (
     <Card>
-      <CardHeader title="Business Information" description="Tax ID is currently the only business detail saved by the Organization API." />
+      <CardHeader title="Business Information" description="Registration and tax details used for statutory filings." />
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TextField
             id="registrationNumber"
             label="Registration number"
             placeholder="RC 1234567"
-            disabled
-            hint="Not yet supported by the API"
             error={errors.registrationNumber?.message}
             {...register('registrationNumber')}
           />
@@ -50,8 +48,7 @@ export function BusinessInformationView({ businessInformation }: { businessInfor
         <SelectField
           id="businessType"
           label="Business type"
-            placeholder="Select business type"
-            disabled
+          placeholder="Select business type"
           options={BUSINESS_TYPES.map((type) => ({ value: type, label: type }))}
           error={errors.businessType?.message}
           {...register('businessType')}
@@ -62,8 +59,6 @@ export function BusinessInformationView({ businessInformation }: { businessInfor
             id="website"
             label={<span>Website <span className="font-normal text-muted">(optional)</span></span>}
             placeholder="https://acme.example"
-            disabled
-            hint="Not yet supported by the API"
             error={errors.website?.message}
             {...register('website')}
           />
@@ -71,8 +66,6 @@ export function BusinessInformationView({ businessInformation }: { businessInfor
             id="foundedYear"
             label={<span>Founded year <span className="font-normal text-muted">(optional)</span></span>}
             placeholder="2019"
-            disabled
-            hint="Not yet supported by the API"
             error={errors.foundedYear?.message}
             {...register('foundedYear')}
           />

@@ -26,7 +26,7 @@ export function SettingsOrganizationPage() {
         <>
           {activeTab === 'company-information' ? <CompanyInformationView companyInformation={settings.companyInformation} /> : null}
           {activeTab === 'branding' ? <BrandingView branding={settings.branding} /> : null}
-          {activeTab === 'address' ? <AddressView /> : null}
+          {activeTab === 'address' ? <AddressView address={settings.address} /> : null}
           {activeTab === 'business-information' ? (
             <BusinessInformationView businessInformation={settings.businessInformation} />
           ) : null}

@@ -6,6 +6,18 @@ export interface CompanyInfo {
   taxId?: string
   currency: string
   payrollFrequency: string
+  registrationNumber?: string
+  businessType?: string
+  website?: string
+  foundedYear?: number
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  state?: string
+  country?: string
+  postalCode?: string
+  primaryColor?: string
+  accentColor?: string
 }
 
 export interface EmployeeDraft {

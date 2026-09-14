@@ -12,8 +12,8 @@ export type CompanyInformationFormValues = z.infer<typeof companyInformationSche
 
 export const brandingSchema = z.object({
   logoDataUrl: z.string().optional(),
-  primaryColor: z.string().min(1, 'Select a primary color'),
-  accentColor: z.string().min(1, 'Select an accent color'),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a six-digit hex color'),
+  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a six-digit hex color'),
 })
 
 export type BrandingFormValues = z.infer<typeof brandingSchema>
@@ -31,10 +31,10 @@ export type OrganizationAddressFormValues = z.infer<typeof organizationAddressSc
 
 export const businessInformationSchema = z.object({
   registrationNumber: z.string().trim(),
-  taxId: z.string().trim().min(1, 'Tax ID is required'),
+  taxId: z.string().trim(),
   businessType: z.string(),
   website: z.string().trim(),
-  foundedYear: z.string().trim(),
+  foundedYear: z.string().trim().refine((value) => !value || (Number(value) >= 1800 && Number(value) <= new Date().getFullYear()), 'Use a valid year'),
 })
 
 export type BusinessInformationFormValues = z.infer<typeof businessInformationSchema>

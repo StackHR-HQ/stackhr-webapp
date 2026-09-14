@@ -39,7 +39,7 @@ describe('organization settings API', () => {
       industry: 'Technology',
       companySize: '11-50',
       currency: 'NGN',
-      payrollFrequency: 'MONTHLY',
+      payrollFrequency: 'Monthly',
     })
     expect(settings.branding.logoDataUrl).toBe(organization.logo)
     expect(settings.businessInformation.taxId).toBe(organization.taxId)
@@ -66,12 +66,22 @@ describe('organization settings API', () => {
 
     expect(request?.url).toBe('/onboarding/company')
     expect(JSON.parse(request?.data as string)).toEqual({
+      addressLine1: '14 Admiralty Way',
+      addressLine2: null,
+      businessType: null,
+      city: 'Lagos',
       companyName: 'Acme Nigeria Ltd.',
       industry: 'Technology',
       companySize: '11-50',
+      country: 'Nigeria',
       currency: 'NGN',
-      payrollFrequency: 'MONTHLY',
+      foundedYear: null,
+      postalCode: null,
+      registrationNumber: 'RC 1234567',
+      state: 'Lagos',
       taxId: 'TIN 12345678-0001',
+      website: null,
+      payrollFrequency: 'MONTHLY',
     })
   })
 })

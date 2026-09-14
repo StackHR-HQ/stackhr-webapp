@@ -47,7 +47,7 @@ export function BrandingView({ branding }: { branding: BrandingSettings }) {
 
   return (
     <Card>
-      <CardHeader title="Branding" description="Your logo is saved to your organization profile. Brand colors are not yet supported by the API." />
+      <CardHeader title="Branding" description="Your logo and brand colors, used across payslips and the employee portal." />
       <form onSubmit={onSubmit} noValidate className="space-y-5">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-panel border border-line bg-canvas">
@@ -72,8 +72,8 @@ export function BrandingView({ branding }: { branding: BrandingSettings }) {
               Primary color
             </label>
             <div className="flex items-center gap-2">
-              <input id="primaryColor" type="color" disabled className="h-9 w-12 rounded-lg border border-line bg-canvas disabled:cursor-not-allowed disabled:opacity-50" {...register('primaryColor')} />
-              <span className="text-sm text-muted">Not yet saved by the API</span>
+              <input id="primaryColor" type="color" className="h-9 w-12 rounded-lg border border-line bg-canvas" {...register('primaryColor')} />
+              <span className="text-sm text-muted">Used for buttons and highlights</span>
             </div>
           </div>
           <div>
@@ -81,8 +81,8 @@ export function BrandingView({ branding }: { branding: BrandingSettings }) {
               Accent color
             </label>
             <div className="flex items-center gap-2">
-              <input id="accentColor" type="color" disabled className="h-9 w-12 rounded-lg border border-line bg-canvas disabled:cursor-not-allowed disabled:opacity-50" {...register('accentColor')} />
-              <span className="text-sm text-muted">Not yet saved by the API</span>
+              <input id="accentColor" type="color" className="h-9 w-12 rounded-lg border border-line bg-canvas" {...register('accentColor')} />
+              <span className="text-sm text-muted">Used for headings and emphasis</span>
             </div>
           </div>
         </div>

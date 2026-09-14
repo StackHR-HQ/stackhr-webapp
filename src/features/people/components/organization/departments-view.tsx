@@ -71,7 +71,7 @@ export function DepartmentsView({ departments, employees }: { departments: Depar
   const [editingDepartmentId, setEditingDepartmentId] = useState<string | null>(null)
   return (
     <div className="space-y-4">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><p className="max-w-xl text-sm text-muted">Set the departments your organization uses, then assign each department&apos;s head and members.</p><Button type="button" className="w-auto gap-2" onClick={() => { setCreating(true); setEditingDepartmentId(null) }}><PlusIcon className="h-4 w-4" />Add department</Button></div>
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><p className="max-w-xl text-sm text-muted">Set the departments your organization uses, then assign each department&apos;s head and members.</p><Button type="button" className="w-auto! gap-2 px-5 py-3 text-base" onClick={() => { setCreating(true); setEditingDepartmentId(null) }}><PlusIcon className="h-5 w-5" />Add department</Button></div>
       {creating ? <DepartmentForm employees={employees} onClose={() => setCreating(false)} /> : null}
       {departments.length === 0 && !creating ? <Card><p className="text-sm font-medium text-ink">No departments yet</p><p className="mt-1 text-sm text-muted">Create your first department to organize your team and reporting structure.</p></Card> : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
