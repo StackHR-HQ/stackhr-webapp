@@ -8,7 +8,7 @@ import type { OrganizationAddress } from '../../types/settings-types'
 import { SettingsFormFooter } from '../settings-form-footer'
 
 export function AddressView({ address }: { address: OrganizationAddress }) {
-  const update = useUpdateOrganizationSettings()
+  const update = useUpdateOrganizationSettings('Address')
   const { register, handleSubmit, formState: { errors } } = useForm<OrganizationAddressFormValues>({ resolver: zodResolver(organizationAddressSchema), values: address })
   return (
     <Card>

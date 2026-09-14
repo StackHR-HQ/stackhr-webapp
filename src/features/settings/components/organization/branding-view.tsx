@@ -17,7 +17,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 export function BrandingView({ branding }: { branding: BrandingSettings }) {
-  const updateOrganizationSettings = useUpdateOrganizationSettings()
+  const updateOrganizationSettings = useUpdateOrganizationSettings('Branding')
   const [logoError, setLogoError] = useState<string | null>(null)
   const { control, setValue, handleSubmit, register } = useForm<BrandingFormValues>({
     resolver: zodResolver(brandingSchema),
