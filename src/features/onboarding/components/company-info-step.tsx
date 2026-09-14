@@ -20,10 +20,14 @@ export function CompanyInfoStep({
   defaultValues,
   onNext,
   onBack,
+  isSaving = false,
+  saveError = null,
 }: {
   defaultValues: CompanyInfoFormValues | null
   onNext: (values: CompanyInfoFormValues) => void
   onBack: () => void
+  isSaving?: boolean
+  saveError?: string | null
 }) {
   const {
     register,
@@ -54,6 +58,10 @@ export function CompanyInfoStep({
       setLogoError('Please choose an image file.')
       return
     }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('Logo files must be 2 MiB or smaller.')
+      return
+    }
     setLogoError(null)
     setValue('logoDataUrl', await readFileAsDataUrl(file))
   }
@@ -64,6 +72,7 @@ export function CompanyInfoStep({
     <div>
       <h1 className="text-2xl font-medium text-ink">Company info</h1>
       <p className="mt-1 text-sm text-muted">This helps us tailor payroll and compliance to your business.</p>
+      {saveError ? <p role="alert" className="mt-4 rounded-lg border border-critical/30 bg-critical/10 p-3 text-sm text-critical">{saveError}</p> : null}
 
       <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
         <div className="flex items-center gap-4">
@@ -141,7 +150,7 @@ export function CompanyInfoStep({
           <Button type="button" variant="secondary" onClick={onBack} className="w-auto px-6">
             Back
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" loading={isSubmitting || isSaving}>
             Continue
           </Button>
         </div>

@@ -12,18 +12,78 @@ import type {
   SecuritySettings,
 } from '../types/settings-types'
 
+interface OrganizationResponse {
+  id: string
+  name: string
+  slug: string
+  logo: string | null
+  industry: string
+  companySize: string
+  currency: string
+  payrollFrequency: string
+  taxId: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface UpdateOrganizationResponse {
+  organization: OrganizationResponse
+}
+
+function organizationSettingsFrom(response: OrganizationResponse): OrganizationSettings {
+  return {
+    companyInformation: {
+      name: response.name,
+      industry: response.industry,
+      companySize: response.companySize,
+      currency: response.currency,
+      payrollFrequency: response.payrollFrequency,
+    },
+    branding: {
+      logoDataUrl: response.logo ?? undefined,
+      // Brand colours are not persisted by the current Organization API.
+      primaryColor: '#0066ff',
+      accentColor: '#08060d',
+    },
+    address: { line1: '', line2: '', city: '', state: '', country: '', postalCode: '' },
+    businessInformation: {
+      registrationNumber: '',
+      taxId: response.taxId,
+      businessType: '',
+      website: '',
+      foundedYear: '',
+    },
+  }
+}
+
+function organizationUpdatePayload(patch: Partial<OrganizationSettings>) {
+  return {
+    ...(patch.companyInformation
+      ? {
+          companyName: patch.companyInformation.name,
+          industry: patch.companyInformation.industry,
+          companySize: patch.companyInformation.companySize,
+          currency: patch.companyInformation.currency,
+          payrollFrequency: patch.companyInformation.payrollFrequency,
+        }
+      : {}),
+    ...(patch.businessInformation ? { taxId: patch.businessInformation.taxId } : {}),
+    ...(patch.branding?.logoDataUrl ? { logoDataUrl: patch.branding.logoDataUrl } : {}),
+  }
+}
+
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
 // behind the same shape as settings-mock-api.ts so settings-service.ts can
 // swap to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
 export const settingsApi = {
   async getOrganizationSettings(): Promise<OrganizationSettings> {
-    const { data } = await http.get<OrganizationSettings>('/settings/organization')
-    return data
+    const { data } = await http.get<OrganizationResponse>('/organization/current')
+    return organizationSettingsFrom(data)
   },
 
   async updateOrganizationSettings(patch: Partial<OrganizationSettings>): Promise<OrganizationSettings> {
-    const { data } = await http.patch<OrganizationSettings>('/settings/organization', patch)
-    return data
+    const { data } = await http.patch<UpdateOrganizationResponse>('/onboarding/company', organizationUpdatePayload(patch))
+    return organizationSettingsFrom(data.organization)
   },
 
   async getPayrollSettings(): Promise<PayrollSettings> {

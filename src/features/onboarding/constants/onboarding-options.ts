@@ -20,6 +20,7 @@ export const CURRENCIES = [
   { code: 'KES', label: 'Kenyan Shilling', symbol: 'KSh' },
   { code: 'ZAR', label: 'South African Rand', symbol: 'R' },
   { code: 'GBP', label: 'British Pound', symbol: '£' },
+  { code: 'EUR', label: 'Euro', symbol: '€' },
 ] as const
 
 export const PAYROLL_FREQUENCIES = ['Monthly', 'Bi-weekly', 'Weekly'] as const

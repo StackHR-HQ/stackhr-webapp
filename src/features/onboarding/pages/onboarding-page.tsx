@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
+import { getApiErrorMessage } from '../../../lib/api-error'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { AddEmployeesStep } from '../components/add-employees-step'
 import { CompanyInfoStep } from '../components/company-info-step'
@@ -8,6 +10,7 @@ import { ReviewStep } from '../components/review-step'
 import { WelcomeStep } from '../components/welcome-step'
 import { useOnboardingStore } from '../store/onboarding-store'
 import type { CompanyInfoFormValues } from '../schemas/company-info-schema'
+import { onboardingService } from '../api/onboarding-service'
 
 const STEP = {
   welcome: 0,
@@ -21,10 +24,17 @@ export function OnboardingPage() {
   const user = useAuthStore((state) => state.user)
   const { companyInfo, employees, setCompanyInfo, addEmployee, addEmployees, removeEmployee } = useOnboardingStore()
   const [step, setStep] = useState<number>(STEP.welcome)
+  const companyQuery = useQuery({ queryKey: ['onboarding', 'company'], queryFn: () => onboardingService.getCompanyInfo() })
+  const updateCompany = useMutation({ mutationFn: (values: CompanyInfoFormValues) => onboardingService.updateCompanyInfo(values) })
 
-  function handleCompanyInfoSubmit(values: CompanyInfoFormValues) {
-    setCompanyInfo(values)
-    setStep(STEP.employees)
+  async function handleCompanyInfoSubmit(values: CompanyInfoFormValues) {
+    try {
+      const saved = await updateCompany.mutateAsync(values)
+      setCompanyInfo(saved)
+      setStep(STEP.employees)
+    } catch {
+      // Keep the form open so the user can retry after the error is shown.
+    }
   }
 
   return (
@@ -35,9 +45,11 @@ export function OnboardingPage() {
 
       {step === STEP.company ? (
         <CompanyInfoStep
-          defaultValues={companyInfo ?? { name: user?.orgName ?? '', industry: '', companySize: '', currency: 'NGN', payrollFrequency: 'Monthly', taxId: '' }}
+          defaultValues={companyInfo ?? (companyQuery.data?.name ? companyQuery.data : null) ?? { name: user?.orgName ?? '', industry: '', companySize: '', currency: 'NGN', payrollFrequency: 'Monthly', taxId: '' }}
           onNext={handleCompanyInfoSubmit}
           onBack={() => setStep(STEP.welcome)}
+          isSaving={updateCompany.isPending}
+          saveError={updateCompany.error ? getApiErrorMessage(updateCompany.error, 'Something went wrong saving company information.') : null}
         />
       ) : null}
 

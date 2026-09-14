@@ -30,9 +30,9 @@ export const organizationAddressSchema = z.object({
 export type OrganizationAddressFormValues = z.infer<typeof organizationAddressSchema>
 
 export const businessInformationSchema = z.object({
-  registrationNumber: z.string().trim().min(1, 'Registration number is required'),
+  registrationNumber: z.string().trim(),
   taxId: z.string().trim().min(1, 'Tax ID is required'),
-  businessType: z.string().min(1, 'Select a business type'),
+  businessType: z.string(),
   website: z.string().trim(),
   foundedYear: z.string().trim(),
 })
