@@ -11,11 +11,13 @@ import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
 import { AuthError } from '../types/auth-types'
+import { getLastLoginHint } from '../store/auth-store'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const login = useLogin()
+  const lastLogin = getLastLoginHint()
 
   const {
     register,
@@ -27,7 +29,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { orgSlug: '', email: '', password: '', rememberMe: false },
+    defaultValues: { orgSlug: lastLogin?.orgSlug ?? '', email: lastLogin?.email ?? '', password: '', rememberMe: false },
   })
 
   const onSubmit = handleSubmit(async (values) => {
