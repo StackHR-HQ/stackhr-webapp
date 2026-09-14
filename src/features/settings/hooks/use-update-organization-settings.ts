@@ -6,9 +6,13 @@ export function useUpdateOrganizationSettings() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (patch: Partial<OrganizationSettings>) => settingsService.updateOrganizationSettings(patch),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['settings', 'organization'], data)
+    mutationFn: async (patch: Partial<OrganizationSettings>) => {
+      await settingsService.updateOrganizationSettings(patch)
+    },
+    onSuccess: () => {
+      // PATCH returns an intentionally partial/empty organization object.
+      // Refetch the canonical full organization instead of replacing the cache.
+      queryClient.invalidateQueries({ queryKey: ['settings', 'organization'] })
     },
   })
 }

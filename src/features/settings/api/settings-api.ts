@@ -38,10 +38,6 @@ interface OrganizationResponse {
   updatedAt: string
 }
 
-interface UpdateOrganizationResponse {
-  organization: OrganizationResponse
-}
-
 function organizationSettingsFrom(response: OrganizationResponse): OrganizationSettings {
   const frequencies: Record<string, string> = { MONTHLY: 'Monthly', BIWEEKLY: 'Bi-weekly', WEEKLY: 'Weekly' }
   const businessTypes: Record<string, string> = { PRIVATE_LIMITED_COMPANY: 'Private Limited Company', PUBLIC_LIMITED_COMPANY: 'Public Limited Company', SOLE_PROPRIETORSHIP: 'Sole Proprietorship', PARTNERSHIP: 'Partnership', NON_GOVERNMENTAL_ORGANIZATION: 'Non-Governmental Organization' }
@@ -113,9 +109,8 @@ export const settingsApi = {
     return organizationSettingsFrom(data)
   },
 
-  async updateOrganizationSettings(patch: Partial<OrganizationSettings>): Promise<OrganizationSettings> {
-    const { data } = await http.patch<UpdateOrganizationResponse>('/onboarding/company', organizationUpdatePayload(patch))
-    return organizationSettingsFrom(data.organization)
+  async updateOrganizationSettings(patch: Partial<OrganizationSettings>): Promise<void> {
+    await http.patch('/onboarding/company', organizationUpdatePayload(patch))
   },
 
   async getPayrollSettings(): Promise<PayrollSettings> {

@@ -71,8 +71,9 @@ export const onboardingApi = {
   },
 
   async updateCompanyInfo(company: CompanyInfo): Promise<CompanyInfo> {
-    const { data } = await http.patch<CompanyResponse | { organization: CompanyResponse }>('/onboarding/company', toCompanyPayload(company))
-    return toCompanyInfo('organization' in data ? data.organization : data)
+    await http.patch('/onboarding/company', toCompanyPayload(company))
+    // The update response may contain only `{ organization: {}, onboarding: {} }`.
+    return company
   },
 
   async completeOnboarding(payload: { companyInfo: CompanyInfo; employees: EmployeeDraft[] }): Promise<void> {
