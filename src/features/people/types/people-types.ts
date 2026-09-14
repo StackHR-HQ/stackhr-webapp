@@ -11,7 +11,7 @@ export interface Team {
   id: string
   name: string
   description: string
-  leadEmployeeId: string
+  leadEmployeeId: string | null
   memberIds: string[]
 }
 

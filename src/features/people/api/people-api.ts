@@ -48,7 +48,7 @@ export type DepartmentInput = {
 export type TeamInput = {
   name: string
   description: string
-  leadEmployeeId: string
+  leadEmployeeId: string | null
   memberIds: string[]
 }
 
@@ -106,6 +106,10 @@ export const peopleApi = {
   async updateTeam(id: string, payload: TeamInput): Promise<Team> {
     const { data } = await http.patch<Team>(`/people/teams/${id}`, payload)
     return data
+  },
+
+  async deleteTeam(id: string): Promise<void> {
+    await http.delete(`/people/teams/${id}`)
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {

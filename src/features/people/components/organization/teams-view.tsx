@@ -1,4 +1,4 @@
-import { PencilSimpleIcon, PlusIcon, XIcon } from '@phosphor-icons/react'
+import { PencilSimpleIcon, PlusIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar } from '../../../../components/ui/avatar'
@@ -9,26 +9,28 @@ import { TextField } from '../../../../components/ui/text-field'
 import { getApiErrorMessage } from '../../../../lib/api-error'
 import { notify } from '../../../../lib/toast'
 import { useCreateTeam } from '../../hooks/use-create-team'
+import { useDeleteTeam } from '../../hooks/use-delete-team'
 import { useUpdateTeam } from '../../hooks/use-update-team'
 import type { EmployeeSummary, Team } from '../../types/people-types'
 import { AvatarStack } from './avatar-stack'
 
 function TeamForm({ team, employees, onClose }: { team?: Team; employees: EmployeeSummary[]; onClose: () => void }) {
-  const eligibleEmployees = employees.filter((employee) => employee.employmentStatus === 'active')
+  const activeEmployees = employees.filter((employee) => employee.employmentStatus === 'active')
   const [name, setName] = useState(team?.name ?? '')
   const [description, setDescription] = useState(team?.description ?? '')
-  const [memberIds, setMemberIds] = useState(team?.memberIds ?? [])
-  const [leadEmployeeId, setLeadEmployeeId] = useState(team?.leadEmployeeId ?? '')
+  const [memberIds, setMemberIds] = useState(team?.memberIds.filter((id) => activeEmployees.some((employee) => employee.id === id)) ?? [])
+  const [leadEmployeeId, setLeadEmployeeId] = useState<string | null>(team?.leadEmployeeId ?? null)
   const createTeam = useCreateTeam()
   const updateTeam = useUpdateTeam()
-  const members = eligibleEmployees.filter((employee) => memberIds.includes(employee.id))
+  const members = activeEmployees.filter((employee) => memberIds.includes(employee.id))
+  const historicalMemberCount = (team?.memberIds.length ?? 0) - memberIds.length
   const isSaving = createTeam.isPending || updateTeam.isPending
-  const canSave = Boolean(name.trim() && description.trim() && leadEmployeeId && memberIds.includes(leadEmployeeId))
+  const canSave = Boolean(name.trim() && description.trim() && (!leadEmployeeId || memberIds.includes(leadEmployeeId)))
 
   function toggleMember(employeeId: string) {
     setMemberIds((current) => {
       const next = current.includes(employeeId) ? current.filter((id) => id !== employeeId) : [...current, employeeId]
-      if (!next.includes(employeeId) && leadEmployeeId === employeeId) setLeadEmployeeId('')
+      if (!next.includes(employeeId) && leadEmployeeId === employeeId) setLeadEmployeeId(null)
       return next
     })
   }
@@ -44,11 +46,73 @@ function TeamForm({ team, employees, onClose }: { team?: Team; employees: Employ
     else createTeam.mutate(payload, options)
   }
 
-  return <Card><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium text-ink">{team ? 'Edit team' : 'New team'}</p><p className="mt-0.5 text-xs text-muted">Teams can bring people together across departments.</p></div><button type="button" onClick={onClose} aria-label="Close team editor" className="rounded-md p-1 text-muted hover:bg-canvas hover:text-ink"><XIcon className="h-4 w-4" /></button></div><div className="mt-5 space-y-4"><TextField label="Team name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Customer launch" /><div><label htmlFor="team-description" className="mb-1.5 block text-sm font-medium text-ink">Description</label><textarea id="team-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What does this team work on?" rows={3} className="w-full resize-y rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40" /></div><SelectField label="Team lead" value={leadEmployeeId} onChange={(event) => setLeadEmployeeId(event.target.value)} placeholder="Choose a team member" options={members.map((employee) => ({ value: employee.id, label: `${employee.fullName} · ${employee.jobTitle}` }))} /><fieldset><legend className="mb-1.5 text-sm font-medium text-ink">Members</legend><p className="mb-2.5 text-xs text-muted">Only active employees can be assigned. Choose the lead from this list.</p><div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-line bg-canvas p-1.5">{eligibleEmployees.map((employee) => { const checked = memberIds.includes(employee.id); return <label key={employee.id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 hover:bg-surface-2"><input type="checkbox" checked={checked} onChange={() => toggleMember(employee.id)} className="h-4 w-4 rounded border-line text-accent focus:ring-2 focus:ring-accent/40" /><Avatar initials={employee.avatarInitials} size="sm" /><span className="min-w-0"><span className="block truncate text-sm text-ink">{employee.fullName}</span><span className="block truncate text-xs text-muted">{employee.jobTitle}</span></span></label> })}</div></fieldset><Button type="button" onClick={saveTeam} loading={isSaving} disabled={!canSave}>{team ? 'Save team' : 'Create team'}</Button></div></Card>
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-ink">{team ? 'Edit team' : 'New team'}</p>
+          <p className="mt-0.5 text-xs text-muted">Teams can bring people together across departments.</p>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close team editor" className="rounded-md p-1 text-muted hover:bg-canvas hover:text-ink"><XIcon className="h-4 w-4" /></button>
+      </div>
+      <div className="mt-5 space-y-4">
+        <TextField label="Team name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Customer launch" />
+        <div>
+          <label htmlFor="team-description" className="mb-1.5 block text-sm font-medium text-ink">Description</label>
+          <textarea id="team-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What does this team work on?" rows={3} className="w-full resize-y rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40" />
+        </div>
+        <SelectField label="Team lead" value={leadEmployeeId ?? ''} onChange={(event) => setLeadEmployeeId(event.target.value || null)} options={[{ value: '', label: 'No team lead' }, ...members.map((employee) => ({ value: employee.id, label: `${employee.fullName} · ${employee.jobTitle}` }))]} />
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium text-ink">Members</legend>
+          <p className="mb-2.5 text-xs text-muted">Only active employees can be assigned. A lead, if selected, must be a member.</p>
+          {historicalMemberCount > 0 ? <p className="mb-2.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-2 text-xs text-warning">{historicalMemberCount} inactive or unavailable historical member{historicalMemberCount === 1 ? '' : 's'} will be removed when you save.</p> : null}
+          <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-line bg-canvas p-1.5">
+            {activeEmployees.map((employee) => {
+              const checked = memberIds.includes(employee.id)
+              return <label key={employee.id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 hover:bg-surface-2"><input type="checkbox" checked={checked} onChange={() => toggleMember(employee.id)} className="h-4 w-4 rounded border-line text-accent focus:ring-2 focus:ring-accent/40" /><Avatar initials={employee.avatarInitials} size="sm" /><span className="min-w-0"><span className="block truncate text-sm text-ink">{employee.fullName}</span><span className="block truncate text-xs text-muted">{employee.jobTitle}</span></span></label>
+            })}
+          </div>
+        </fieldset>
+        <Button type="button" onClick={saveTeam} loading={isSaving} disabled={!canSave}>{team ? 'Save team' : 'Create team'}</Button>
+      </div>
+    </Card>
+  )
+}
+
+function TeamCard({ team, employees, canManage, onEdit }: { team: Team; employees: EmployeeSummary[]; canManage: boolean; onEdit: () => void }) {
+  const deleteTeam = useDeleteTeam()
+  const members = employees.filter((employee) => team.memberIds.includes(employee.id))
+  const activeMembers = members.filter((employee) => employee.employmentStatus === 'active')
+  const inactiveMemberCount = members.length - activeMembers.length
+  const missingMemberCount = team.memberIds.length - members.length
+  const lead = employees.find((employee) => employee.id === team.leadEmployeeId)
+
+  function removeTeam() {
+    if (!window.confirm(`Delete ${team.name}? This cannot be undone.`)) return
+    deleteTeam.mutate(team.id, {
+      onSuccess: () => notify.success('Team deleted'),
+      onError: (error: Error) => notify.error('Could not delete team', getApiErrorMessage(error, 'Please try again.')),
+    })
+  }
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium text-ink">{team.name}</p>
+          <p className="mt-0.5 text-xs text-muted">{team.description}</p>
+        </div>
+        {canManage ? <div className="flex shrink-0 items-center gap-1"><button type="button" onClick={onEdit} aria-label={`Edit ${team.name}`} className="rounded-md p-1.5 text-muted hover:bg-canvas hover:text-ink"><PencilSimpleIcon className="h-4 w-4" /></button><button type="button" onClick={removeTeam} disabled={deleteTeam.isPending} aria-label={`Delete ${team.name}`} className="rounded-md p-1.5 text-muted hover:bg-critical/10 hover:text-critical disabled:opacity-50"><TrashIcon className="h-4 w-4" /></button></div> : null}
+      </div>
+      {lead ? <Link to={`/people/employees/${lead.id}`} className="mt-4 flex items-center gap-2.5 rounded-lg border border-line bg-canvas p-2.5 hover:bg-surface-2"><Avatar initials={lead.avatarInitials} size="sm" /><span className="min-w-0"><span className="block truncate text-xs text-muted">Team lead</span><span className="block truncate text-sm font-medium text-ink">{lead.fullName}</span></span></Link> : <p className="mt-4 rounded-lg border border-dashed border-line px-2.5 py-3 text-xs text-muted">No team lead assigned</p>}
+      <div className="mt-4 flex items-center justify-between"><AvatarStack members={members} /><span className="text-xs text-muted">{team.memberIds.length} member{team.memberIds.length === 1 ? '' : 's'}</span></div>
+      {inactiveMemberCount > 0 || missingMemberCount > 0 ? <p className="mt-2 text-xs text-warning">{[inactiveMemberCount > 0 ? `${inactiveMemberCount} inactive` : null, missingMemberCount > 0 ? `${missingMemberCount} unavailable` : null].filter(Boolean).join(' · ')} historical member{inactiveMemberCount + missingMemberCount === 1 ? '' : 's'}</p> : null}
+    </Card>
+  )
 }
 
 export function TeamsView({ teams, employees, canManage }: { teams: Team[]; employees: EmployeeSummary[]; canManage: boolean }) {
   const [creating, setCreating] = useState(false)
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
-  return <div className="space-y-4"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><p className="max-w-xl text-sm text-muted">Use teams for the groups that work together, including cross-functional squads.</p>{canManage ? <Button type="button" className="w-auto! gap-2 px-5 py-3 text-base" onClick={() => { setCreating(true); setEditingTeamId(null) }}><PlusIcon className="h-5 w-5" />Add team</Button> : null}</div>{creating ? <TeamForm employees={employees} onClose={() => setCreating(false)} /> : null}{teams.length === 0 && !creating ? <Card><p className="text-sm font-medium text-ink">No teams yet</p><p className="mt-1 text-sm text-muted">{canManage ? 'Create a team to group people who work together.' : 'Teams will appear here when they are set up.'}</p></Card> : null}<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{teams.map((team) => { const members = employees.filter((employee) => team.memberIds.includes(employee.id)); const lead = employees.find((employee) => employee.id === team.leadEmployeeId); if (editingTeamId === team.id) return <TeamForm key={team.id} team={team} employees={employees} onClose={() => setEditingTeamId(null)} />; return <Card key={team.id}><div className="flex items-start justify-between gap-2"><div><p className="text-sm font-medium text-ink">{team.name}</p><p className="mt-0.5 text-xs text-muted">{team.description}</p></div>{canManage ? <button type="button" onClick={() => { setEditingTeamId(team.id); setCreating(false) }} aria-label={`Edit ${team.name}`} className="rounded-md p-1.5 text-muted hover:bg-canvas hover:text-ink"><PencilSimpleIcon className="h-4 w-4" /></button> : null}</div>{lead ? <Link to={`/people/employees/${lead.id}`} className="mt-4 flex items-center gap-2.5 rounded-lg border border-line bg-canvas p-2.5 hover:bg-surface-2"><Avatar initials={lead.avatarInitials} size="sm" /><span className="min-w-0"><span className="block truncate text-xs text-muted">Team lead</span><span className="block truncate text-sm font-medium text-ink">{lead.fullName}</span></span></Link> : <p className="mt-4 rounded-lg border border-dashed border-line px-2.5 py-3 text-xs text-muted">No team lead assigned</p>}<div className="mt-4 flex items-center justify-between"><AvatarStack members={members} /><span className="text-xs text-muted">{members.length} member{members.length === 1 ? '' : 's'}</span></div></Card> })}</div></div>
+  return <div className="space-y-4"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><p className="max-w-xl text-sm text-muted">Use teams for the groups that work together, including cross-functional squads.</p>{canManage ? <Button type="button" className="w-auto! gap-2 px-5 py-3 text-base" onClick={() => { setCreating(true); setEditingTeamId(null) }}><PlusIcon className="h-5 w-5" />Add team</Button> : null}</div>{creating ? <TeamForm employees={employees} onClose={() => setCreating(false)} /> : null}{teams.length === 0 && !creating ? <Card><p className="text-sm font-medium text-ink">No teams yet</p><p className="mt-1 text-sm text-muted">{canManage ? 'Create a team to group people who work together.' : 'Teams will appear here when they are set up.'}</p></Card> : null}<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{teams.map((team) => editingTeamId === team.id ? <TeamForm key={team.id} team={team} employees={employees} onClose={() => setEditingTeamId(null)} /> : <TeamCard key={team.id} team={team} employees={employees} canManage={canManage} onEdit={() => { setEditingTeamId(team.id); setCreating(false) }} />)}</div></div>
 }

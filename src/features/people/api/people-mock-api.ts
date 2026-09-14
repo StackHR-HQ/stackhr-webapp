@@ -151,7 +151,7 @@ export const mockPeopleApi = {
     if (!name) throw new Error('Team name is required.')
     if (!description) throw new Error('Team description is required.')
     if (TEAMS.some((team) => team.name.toLowerCase() === name.toLowerCase())) throw new Error('A team with this name already exists.')
-    if (!payload.memberIds.includes(payload.leadEmployeeId)) throw new Error('The team lead must be a team member.')
+    if (payload.leadEmployeeId && !payload.memberIds.includes(payload.leadEmployeeId)) throw new Error('The team lead must be a team member.')
     const team = { id: `team_${Date.now()}`, name, description, leadEmployeeId: payload.leadEmployeeId, memberIds: [...new Set(payload.memberIds)] }
     TEAMS.push(team)
     return team
@@ -166,9 +166,16 @@ export const mockPeopleApi = {
     if (!name) throw new Error('Team name is required.')
     if (!description) throw new Error('Team description is required.')
     if (TEAMS.some((item) => item.id !== id && item.name.toLowerCase() === name.toLowerCase())) throw new Error('A team with this name already exists.')
-    if (!payload.memberIds.includes(payload.leadEmployeeId)) throw new Error('The team lead must be a team member.')
+    if (payload.leadEmployeeId && !payload.memberIds.includes(payload.leadEmployeeId)) throw new Error('The team lead must be a team member.')
     Object.assign(team, { name, description, leadEmployeeId: payload.leadEmployeeId, memberIds: [...new Set(payload.memberIds)] })
     return team
+  },
+
+  async deleteTeam(id: string): Promise<void> {
+    await delay(350)
+    const index = TEAMS.findIndex((team) => team.id === id)
+    if (index === -1) throw new Error('Team not found.')
+    TEAMS.splice(index, 1)
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {
