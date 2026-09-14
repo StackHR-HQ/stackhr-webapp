@@ -3,10 +3,11 @@ import { useId, type ComponentPropsWithRef, type ReactNode } from 'react'
 type TextFieldProps = Omit<ComponentPropsWithRef<'input'>, 'className'> & {
   label: ReactNode
   error?: string
+  hint?: ReactNode
   inputClassName?: string
 }
 
-export function TextField({ label, error, id, inputClassName, ...inputProps }: TextFieldProps) {
+export function TextField({ label, error, hint, id, inputClassName, ...inputProps }: TextFieldProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
 
@@ -27,6 +28,8 @@ export function TextField({ label, error, id, inputClassName, ...inputProps }: T
         <p className="mt-1.5 text-sm text-critical" role="alert">
           {error}
         </p>
+      ) : hint ? (
+        <p className="mt-1.5 text-sm text-muted">{hint}</p>
       ) : null}
     </div>
   )

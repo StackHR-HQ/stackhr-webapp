@@ -20,6 +20,7 @@ export interface LoginPayload {
 
 export interface SignupPayload {
   companyName: string
+  organizationSlug?: string
   email: string
   password: string
   confirmPassword: string

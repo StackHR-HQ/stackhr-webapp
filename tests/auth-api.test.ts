@@ -48,11 +48,13 @@ describe('business authentication API', () => {
     const signupRequest = captureRequest()
     await authApi.signup({
       companyName: 'Acme Inc.',
+      organizationSlug: 'acme-inc-2026',
       email: 'ada@acme.com',
       password: 'correct horse battery staple',
       confirmPassword: 'correct horse battery staple',
     })
     expect(signupRequest()?.url).toBe('/auth/business/signup')
+    expect(JSON.parse(signupRequest()?.data as string).organizationSlug).toBe('acme-inc-2026')
 
     const verificationRequest = captureRequest()
     await authApi.verifyEmailOtp({ email: 'ada@acme.com', code: '123456' })

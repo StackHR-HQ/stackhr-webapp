@@ -23,13 +23,17 @@ export function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { companyName: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { companyName: '', organizationSlug: '', email: '', password: '', confirmPassword: '' },
   })
 
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
     try {
-      const { email } = await signup.mutateAsync(values)
+      const { organizationSlug, ...signupValues } = values
+      const { email } = await signup.mutateAsync({
+        ...signupValues,
+        ...(organizationSlug ? { organizationSlug } : {}),
+      })
       notify.success('Verification code sent', `Check ${email} for your six-digit code.`)
       navigate('/verify-email', { state: { email } })
     } catch (err) {
@@ -63,6 +67,18 @@ export function SignupPage() {
             placeholder="Acme Inc."
             error={errors.companyName?.message}
             {...register('companyName')}
+          />
+        </div>
+
+        <div className="mb-4">
+          <TextField
+            id="organizationSlug"
+            label="Workspace URL"
+            autoComplete="off"
+            placeholder="acme-inc-2026"
+            hint="Optional. Choose a unique value only if the suggested workspace URL is taken."
+            error={errors.organizationSlug?.message}
+            {...register('organizationSlug')}
           />
         </div>
 
