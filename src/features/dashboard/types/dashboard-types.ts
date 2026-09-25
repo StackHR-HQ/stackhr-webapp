@@ -19,11 +19,12 @@ export interface UpcomingPayrollRun {
   status: PayrollRunStatus
 }
 
-export type ApprovalCategoryKey = 'employee-changes' | 'leave' | 'expenses' | 'reimbursements' | 'salary-advances'
+export type ApprovalCategoryKey = 'employee-changes' | 'leave' | 'expenses' | 'reimbursements' | 'salary-advances' | 'other'
 
 export interface ApprovalItem {
   id: string
-  employeeName: string
+  requesterId: string
+  title: string
   detail: string
   submittedAt: string
   amount?: number
@@ -76,17 +77,11 @@ export interface SubscriptionStatus {
 
 export interface DashboardOverview {
   activeEmployees: number
+  pendingInvitations: number
   pendingApprovalsCount: number
-  openComplianceAlertsCount: number
-  nextPayDate: string
 }
 
 export interface DashboardSummary {
   overview: DashboardOverview
-  payroll: PayrollStatusSummary
-  upcomingPayroll: UpcomingPayrollRun[]
   approvalCategories: ApprovalCategory[]
-  recentActivity: ActivityItem[]
-  complianceAlerts: ComplianceAlert[]
-  subscription: SubscriptionStatus
 }
