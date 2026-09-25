@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
-import { authService } from '../api/auth-service'
+import { authApi } from '../api/auth-api'
 
 export function useRequestPasswordReset() {
   return useMutation({
-    mutationFn: (email: string) => authService.requestPasswordReset(email),
+    mutationFn: (email: string) => authApi.requestPasswordReset(email),
   })
 }

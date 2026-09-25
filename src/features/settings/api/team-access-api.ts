@@ -3,7 +3,7 @@ import type { Invitation, ManagerInfo, ModulePermission, RoleDefinition, TeamMem
 
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
 // behind the same shape as team-access-mock-api.ts so team-access-service.ts
-// can swap to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
+// can swap to this by flipping VITE_USE_MOCK_SETTINGS once the backend is live.
 export const teamAccessApi = {
   async getTeamMembers(): Promise<TeamMember[]> {
     const { data } = await http.get<TeamMember[]>('/settings/team-members')

@@ -6,8 +6,6 @@ import { CheckboxField } from '../../../components/ui/checkbox-field'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
-import { USE_MOCK_AUTH } from '../../../lib/env'
-import { DEMO_LOGIN_CREDENTIALS } from '../api/auth-mock-api'
 import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
@@ -28,7 +26,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { orgSlug: '', email: '', password: '', rememberMe: false },
+    defaultValues: { email: '', password: '', rememberMe: false },
   })
 
   const onSubmit = handleSubmit(async (values) => {
@@ -40,8 +38,6 @@ export function LoginPage() {
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
-      // Keep the workspace and email as typed; only the password needs
-      // re-entering, and re-focusing it saves the user a click.
       resetField('password')
       setFocus('password')
     }
@@ -50,7 +46,7 @@ export function LoginPage() {
   return (
     <AuthSplitShell
       title="Sign in to StackHR"
-      subtitle="Enter your workspace and account details"
+      subtitle="Enter your account details"
       footer={
         <>
           Don&apos;t have an account?{' '}
@@ -62,27 +58,6 @@ export function LoginPage() {
     >
       <form onSubmit={onSubmit} noValidate>
         {errors.root ? <FormErrorBanner message={errors.root.message ?? ''} /> : null}
-
-        {USE_MOCK_AUTH ? (
-          <div className="mb-4 rounded-lg border border-line bg-canvas p-3 text-xs text-muted">
-            No backend yet — this form runs against a mock. Try workspace{' '}
-            <span className="font-mono text-ink">{DEMO_LOGIN_CREDENTIALS.orgSlug}</span>, email{' '}
-            <span className="font-mono text-ink">{DEMO_LOGIN_CREDENTIALS.email}</span>, password{' '}
-            <span className="font-mono text-ink">{DEMO_LOGIN_CREDENTIALS.password}</span>.
-          </div>
-        ) : null}
-
-        <div className="mb-4">
-          <TextField
-            id="orgSlug"
-            label="Workspace"
-            autoCapitalize="none"
-            autoComplete="organization"
-            placeholder="acme"
-            error={errors.orgSlug?.message}
-            {...register('orgSlug')}
-          />
-        </div>
 
         <div className="mb-4">
           <TextField

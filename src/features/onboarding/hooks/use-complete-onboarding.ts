@@ -1,10 +1,9 @@
 import { useMutation } from '@tanstack/react-query'
-import { onboardingService } from '../api/onboarding-service'
-import type { CompanyInfo, EmployeeDraft } from '../types/onboarding-types'
+import { onboardingApi } from '../api/onboarding-api'
+import type { CompleteOnboardingPayload } from '../types/onboarding-types'
 
 export function useCompleteOnboarding() {
   return useMutation({
-    mutationFn: (payload: { companyInfo: CompanyInfo; employees: EmployeeDraft[] }) =>
-      onboardingService.completeOnboarding(payload),
+    mutationFn: (payload: CompleteOnboardingPayload) => onboardingApi.completeOnboarding(payload),
   })
 }

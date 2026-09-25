@@ -3,6 +3,7 @@ import { Avatar } from '../../../../components/ui/avatar'
 import { Badge } from '../../../../components/ui/badge'
 import { tenureLabel } from '../../lib/dates'
 import { EMPLOYMENT_STATUS_META } from '../../lib/status-meta'
+import { ResendInviteButton } from '../employees/resend-invite-button'
 import type { Department, EmployeeDetail } from '../../types/people-types'
 
 export function ProfileHeader({ employee, department }: { employee: EmployeeDetail; department?: Department }) {
@@ -17,6 +18,7 @@ export function ProfileHeader({ employee, department }: { employee: EmployeeDeta
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-medium text-ink">{employee.fullName}</h1>
             <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>
+            {employee.employmentStatus === 'pending_invitation' ? <ResendInviteButton employeeId={employee.id} /> : null}
           </div>
           <p className="mt-0.5 text-sm text-muted">
             {employee.jobTitle} · {department?.name ?? '—'}

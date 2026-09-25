@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
-import { authService } from '../api/auth-service'
+import { authApi } from '../api/auth-api'
 
 export function useResendEmailOtp() {
   return useMutation({
-    mutationFn: (email: string) => authService.resendEmailOtp(email),
+    mutationFn: (email: string) => authApi.resendEmailOtp(email),
   })
 }

@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { peopleService } from '../api/people-service'
+import { peopleApi } from '../api/people-api'
 
 export function useCompanyDocuments() {
   return useQuery({
     queryKey: ['people', 'documents', 'company'],
-    queryFn: () => peopleService.getCompanyDocuments(),
+    queryFn: () => peopleApi.getCompanyDocuments(),
   })
 }

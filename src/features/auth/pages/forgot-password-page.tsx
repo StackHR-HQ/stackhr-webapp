@@ -2,10 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router'
 import { Button } from '../../../components/ui/button'
+import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { TextField } from '../../../components/ui/text-field'
 import { AuthShell } from '../components/auth-shell'
 import { useRequestPasswordReset } from '../hooks/use-request-password-reset'
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '../schemas/forgot-password-schema'
+import { AuthError } from '../types/auth-types'
 
 export function ForgotPasswordPage() {
   const requestReset = useRequestPasswordReset()
@@ -13,6 +15,8 @@ export function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -20,7 +24,13 @@ export function ForgotPasswordPage() {
   })
 
   const onSubmit = handleSubmit(async (values) => {
-    await requestReset.mutateAsync(values.email)
+    clearErrors('root')
+    try {
+      await requestReset.mutateAsync(values.email)
+    } catch (err) {
+      const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
+      setError('root', { message })
+    }
   })
 
   return (
@@ -39,6 +49,8 @@ export function ForgotPasswordPage() {
         </p>
       ) : (
         <form onSubmit={onSubmit} noValidate>
+          {errors.root ? <FormErrorBanner message={errors.root.message ?? ''} /> : null}
+
           <div className="mb-5">
             <TextField
               id="email"

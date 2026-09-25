@@ -1,6 +1,11 @@
+import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
 import type {
+  AssignOnboardingTemplatePayload,
   CompanyDocument,
+  CreateDepartmentPayload,
+  CreateEmployeePayload,
+  DecideLeaveRequestPayload,
   Department,
   DocumentTemplate,
   EmployeeDetail,
@@ -13,11 +18,13 @@ import type {
   LeaveType,
   OnboardingTemplate,
   Team,
+  UpdateChecklistItemPayload,
+  UpdateDepartmentPayload,
+  UpdateEmployeePayload,
+  UploadDocumentPayload,
 } from '../types/people-types'
 
-// Real backend calls. Not wired up yet — the endpoints don't exist. Kept
-// behind the same shape as people-mock-api.ts so people-service.ts can swap
-// to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
+
 export const peopleApi = {
   async getEmployees(): Promise<EmployeeSummary[]> {
     const { data } = await http.get<EmployeeSummary[]>('/people/employees')
@@ -82,5 +89,59 @@ export const peopleApi = {
   async getEmployeeOnboarding(): Promise<EmployeeOnboardingRow[]> {
     const { data } = await http.get<EmployeeOnboardingRow[]>('/people/onboarding/employees')
     return data
+  },
+
+  async createEmployee({ firstName, lastName, employmentType, ...rest }: CreateEmployeePayload): Promise<void> {
+    await http.post('/people/employees', {
+      firstName,
+      lastName,
+      fullName: `${firstName} ${lastName}`.trim(),
+      employmentType: toApiEnum(employmentType),
+      ...rest,
+    })
+  },
+
+  async updateEmployee(id: string, { jobTitle, employmentStatus }: UpdateEmployeePayload): Promise<void> {
+    await http.patch(`/people/employees/${id}`, {
+      jobTitle,
+      status: employmentStatus ? toApiEnum(employmentStatus) : undefined,
+    })
+  },
+
+  async resendEmployeeInvitation(employeeId: string): Promise<void> {
+    await http.post(`/people/employees/${employeeId}/invitations`)
+  },
+
+  async createDepartment(payload: CreateDepartmentPayload): Promise<void> {
+    await http.post('/people/departments', payload)
+  },
+
+  async updateDepartment(id: string, payload: UpdateDepartmentPayload): Promise<void> {
+    await http.patch(`/people/departments/${id}`, payload)
+  },
+
+  async deleteDepartment(id: string): Promise<void> {
+    await http.delete(`/people/departments/${id}`)
+  },
+
+  async decideLeaveRequest({ requestId, decision, notes }: DecideLeaveRequestPayload): Promise<void> {
+    await http.patch(`/people/leave/requests/${requestId}/decision`, { status: toApiEnum(decision), notes })
+  },
+
+  async uploadDocument({ file, name, category, scope }: UploadDocumentPayload): Promise<void> {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('name', name)
+    form.append('category', category)
+    form.append('scope', scope)
+    await http.post('/people/documents', form)
+  },
+
+  async assignOnboardingTemplate(payload: AssignOnboardingTemplatePayload): Promise<void> {
+    await http.post('/people/onboarding/employees', payload)
+  },
+
+  async updateChecklistItem({ employeeId, itemId, completed }: UpdateChecklistItemPayload): Promise<void> {
+    await http.patch(`/people/onboarding/employees/${employeeId}/checklist/${itemId}`, { completed })
   },
 }

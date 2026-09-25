@@ -27,22 +27,18 @@ const rememberAwareStorage: StateStorage = {
 
 interface AuthState {
   user: AuthUser | null
-  token: string | null
   rememberMe: boolean
   setSession: (session: AuthSession, rememberMe: boolean) => void
   clearSession: () => void
-  switchOrg: (org: { orgSlug: string; orgName: string }) => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       rememberMe: false,
-      setSession: ({ user, token }, rememberMe) => set({ user, token, rememberMe }),
-      clearSession: () => set({ user: null, token: null, rememberMe: false }),
-      switchOrg: (org) => set((state) => (state.user ? { user: { ...state.user, ...org } } : state)),
+      setSession: ({ user }, rememberMe) => set({ user, rememberMe }),
+      clearSession: () => set({ user: null, rememberMe: false }),
     }),
     {
       name: AUTH_STORAGE_KEY,
@@ -50,7 +46,3 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 )
-
-export function getStoredAuthToken(): string | null {
-  return useAuthStore.getState().token
-}

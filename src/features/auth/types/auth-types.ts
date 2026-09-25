@@ -2,18 +2,17 @@ export interface AuthUser {
   id: string
   email: string
   name: string
-  orgSlug: string
+  organizationId: string
   orgName: string
   role: 'admin' | 'manager' | 'employee'
+  apiRole?: string
 }
 
 export interface AuthSession {
   user: AuthUser
-  token: string
 }
 
 export interface LoginPayload {
-  orgSlug: string
   email: string
   password: string
 }

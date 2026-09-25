@@ -23,3 +23,14 @@ export interface EmployeeDraft {
 }
 
 export type NewEmployeeDraft = Omit<EmployeeDraft, 'id'>
+
+export interface CompleteOnboardingPayload {
+  companyInfo: CompanyInfo
+  employees: EmployeeDraft[]
+}
+
+export interface CompleteOnboardingResult {
+  failedInvitations: string[]
+}
+
+export class OnboardingError extends Error {}

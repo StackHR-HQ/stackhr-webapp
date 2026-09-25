@@ -184,3 +184,51 @@ export interface EmployeeOnboardingRow extends EmployeeRef {
   templateId: string
   completedItemIds: string[]
 }
+
+export interface CreateEmployeePayload {
+  firstName: string
+  lastName: string
+  workEmail: string
+  jobTitle: string
+  employmentType: EmploymentType
+  startDate: string
+  salaryAmount: number
+}
+
+export interface UpdateEmployeePayload {
+  jobTitle?: string
+  employmentStatus?: EmploymentStatus
+}
+
+export interface CreateDepartmentPayload {
+  name: string
+  code: string
+}
+
+export interface UpdateDepartmentPayload {
+  name: string
+}
+
+export interface DecideLeaveRequestPayload {
+  requestId: string
+  decision: 'approved' | 'rejected'
+  notes?: string
+}
+
+export interface UploadDocumentPayload {
+  file: File
+  name: string
+  category: string
+  scope: string
+}
+
+export interface AssignOnboardingTemplatePayload {
+  employeeId: string
+  templateId: string
+}
+
+export interface UpdateChecklistItemPayload {
+  employeeId: string
+  itemId: string
+  completed: boolean
+}

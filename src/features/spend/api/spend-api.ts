@@ -3,7 +3,7 @@ import type { ExpenseClaim, Reimbursement, SpendApprovalRequest } from '../types
 
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
 // behind the same shape as spend-mock-api.ts so spend-service.ts can swap to
-// this by flipping VITE_USE_MOCK_AUTH once the backend is live.
+// this by flipping VITE_USE_MOCK_SPEND once the backend is live.
 export const spendApi = {
   async getExpenses(): Promise<ExpenseClaim[]> {
     const { data } = await http.get<ExpenseClaim[]>('/spend/expenses')

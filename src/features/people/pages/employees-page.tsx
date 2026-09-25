@@ -1,5 +1,8 @@
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
+import { Button } from '../../../components/ui/button'
+import { Modal } from '../../../components/ui/modal'
+import { AddEmployeeForm } from '../components/employees/add-employee-form'
 import { EmployeeStatusTabs, type EmployeeStatusFilter } from '../components/employees/employee-status-tabs'
 import { EmployeesTable } from '../components/employees/employees-table'
 import { useDepartments } from '../hooks/use-departments'
@@ -10,6 +13,7 @@ export function EmployeesPage() {
   const { data: departments } = useDepartments()
   const [statusFilter, setStatusFilter] = useState<EmployeeStatusFilter>('all')
   const [search, setSearch] = useState('')
+  const [adding, setAdding] = useState(false)
 
   const counts = useMemo(() => {
     const base: Record<EmployeeStatusFilter, number> = {
@@ -40,10 +44,21 @@ export function EmployeesPage() {
 
   return (
     <div className="max-w-[1400px] space-y-5">
-      <div>
-        <h1 className="text-xl font-medium text-ink">Employees</h1>
-        <p className="mt-1 text-sm text-muted">Browse and manage everyone in your organization.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-medium text-ink">Employees</h1>
+          <p className="mt-1 text-sm text-muted">Browse and manage everyone in your organization.</p>
+        </div>
+        <div className="shrink-0">
+          <Button type="button" onClick={() => setAdding(true)} className="px-4">
+            Add employee
+          </Button>
+        </div>
       </div>
+
+      <Modal open={adding} onClose={() => setAdding(false)} title="Add employee">
+        <AddEmployeeForm onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
+      </Modal>
 
       {isError ? (
         <div className="rounded-panel border border-line bg-surface p-6 text-center shadow-panel">
