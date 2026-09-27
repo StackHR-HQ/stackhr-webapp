@@ -19,6 +19,12 @@ interface OrganizationResponse {
 
 const FREQUENCY_LABELS: Record<string, string> = { MONTHLY: 'Monthly', BIWEEKLY: 'Bi-weekly', WEEKLY: 'Weekly' }
 
+// The backend only accepts MONTHLY/BIWEEKLY/WEEKLY (no hyphen or underscore),
+// despite docs suggesting "Monthly"/"Bi-weekly" also work.
+function toApiFrequency(payrollFrequency: string): string {
+  return payrollFrequency.toUpperCase().replace(/[^A-Z]/g, '')
+}
+
 function toCompanyInfo(organization: OrganizationResponse): CompanyInfo {
   return {
     name: organization.name,
@@ -49,7 +55,7 @@ export const onboardingApi = {
         industry: company.industry,
         companySize: company.companySize,
         currency: company.currency,
-        payrollFrequency: company.payrollFrequency,
+        payrollFrequency: toApiFrequency(company.payrollFrequency),
         taxId: company.taxId,
         logoDataUrl: company.logoDataUrl,
       })
@@ -63,7 +69,10 @@ export const onboardingApi = {
   // draft in a single call, confirmed live at POST /onboarding/complete.
   async completeOnboarding({ companyInfo, employees }: CompleteOnboardingPayload): Promise<CompleteOnboardingResult> {
     try {
-      await http.post('/onboarding/complete', { companyInfo, employees })
+      await http.post('/onboarding/complete', {
+        companyInfo: { ...companyInfo, payrollFrequency: toApiFrequency(companyInfo.payrollFrequency) },
+        employees,
+      })
     } catch (error) {
       throw new OnboardingError(getApiErrorMessage(error, 'Something went wrong. Please try again.'))
     }
