@@ -25,6 +25,28 @@ const rememberAwareStorage: StateStorage = {
   },
 }
 
+const LAST_LOGIN_HINT_KEY = 'stackhr.last-login'
+
+export interface LastLoginHint {
+  orgSlug?: string
+  email: string
+}
+
+// Outlives a signed-out session so the login form can prefill the workspace
+// and email the next time this person signs in.
+export function getLastLoginHint(): LastLoginHint | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(LAST_LOGIN_HINT_KEY) ?? 'null') as Partial<LastLoginHint> | null
+    return value?.email ? { orgSlug: value.orgSlug ?? undefined, email: value.email } : null
+  } catch {
+    return null
+  }
+}
+
+function saveLastLoginHint(user: AuthUser): void {
+  localStorage.setItem(LAST_LOGIN_HINT_KEY, JSON.stringify({ orgSlug: user.orgSlug ?? undefined, email: user.email }))
+}
+
 interface AuthState {
   user: AuthUser | null
   rememberMe: boolean
@@ -37,7 +59,10 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       rememberMe: false,
-      setSession: ({ user }, rememberMe) => set({ user, rememberMe }),
+      setSession: ({ user }, rememberMe) => {
+        saveLastLoginHint(user)
+        set({ user, rememberMe })
+      },
       clearSession: () => set({ user: null, rememberMe: false }),
     }),
     {

@@ -6,15 +6,18 @@ import { CheckboxField } from '../../../components/ui/checkbox-field'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
+import { notify } from '../../../lib/toast'
 import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
+import { getLastLoginHint } from '../store/auth-store'
 import { AuthError } from '../types/auth-types'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const login = useLogin()
+  const lastLogin = getLastLoginHint()
 
   const {
     register,
@@ -26,18 +29,22 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', rememberMe: false },
+    defaultValues: { orgSlug: lastLogin?.orgSlug ?? '', email: lastLogin?.email ?? '', password: '', rememberMe: false },
   })
 
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
     try {
       await login.mutateAsync(values)
+      notify.success('Welcome back')
       const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
       navigate(redirectTo, { replace: true })
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
+      notify.error('Could not sign in', message)
+      // Keep the workspace and email as typed; only the password needs
+      // re-entering, and re-focusing it saves the user a click.
       resetField('password')
       setFocus('password')
     }
@@ -45,13 +52,13 @@ export function LoginPage() {
 
   return (
     <AuthSplitShell
-      title="Sign in to StackHR"
-      subtitle="Enter your account details"
+      title="Welcome back"
+      subtitle="Sign in to continue to your StackHR workspace."
       footer={
         <>
-          Don&apos;t have an account?{' '}
+          New to StackHR?{' '}
           <Link to="/signup" className="text-accent hover:underline">
-            Sign up
+            Create a workspace
           </Link>
         </>
       }
@@ -61,8 +68,20 @@ export function LoginPage() {
 
         <div className="mb-4">
           <TextField
+            id="orgSlug"
+            label="Workspace slug (optional)"
+            autoCapitalize="none"
+            autoComplete="organization"
+            placeholder="e.g. acme-inc"
+            error={errors.orgSlug?.message}
+            {...register('orgSlug')}
+          />
+        </div>
+
+        <div className="mb-4">
+          <TextField
             id="email"
-            label="Email"
+            label="Work email"
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
@@ -90,11 +109,11 @@ export function LoginPage() {
         </div>
 
         <div className="mb-5">
-          <CheckboxField label="Remember me" {...register('rememberMe')} />
+          <CheckboxField label="Keep me signed in" {...register('rememberMe')} />
         </div>
 
         <Button type="submit" loading={isSubmitting}>
-          Sign in
+          Continue to StackHR
         </Button>
       </form>
     </AuthSplitShell>

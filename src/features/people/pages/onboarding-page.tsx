@@ -4,6 +4,7 @@ import { CompanyOnboardingView } from '../components/onboarding/company-onboardi
 import { EmployeeOnboardingView } from '../components/onboarding/employee-onboarding-view'
 import { OnboardingChecklistView } from '../components/onboarding/onboarding-checklist-view'
 import { OnboardingTemplatesView } from '../components/onboarding/onboarding-templates-view'
+import { PeopleLoadError } from '../components/people-load-error'
 import { useDepartments } from '../hooks/use-departments'
 import { useEmployeeOnboarding } from '../hooks/use-employee-onboarding'
 import { useOnboardingTemplates } from '../hooks/use-onboarding-templates'
@@ -22,15 +23,28 @@ const ONBOARDING_TABS: { key: OnboardingTabKey; label: string }[] = [
 export function PeopleOnboardingPage() {
   const [activeTab, setActiveTab] = useState<OnboardingTabKey>('company')
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
-  const { data: departments, isPending: departmentsPending } = useDepartments()
-  const { data: templates, isPending: templatesPending } = useOnboardingTemplates()
-  const { data: onboardingRows, isPending: rowsPending } = useEmployeeOnboarding()
+  const departmentsQuery = useDepartments()
+  const templatesQuery = useOnboardingTemplates()
+  const onboardingQuery = useEmployeeOnboarding()
+  const { data: departments, isPending: departmentsPending } = departmentsQuery
+  const { data: templates, isPending: templatesPending } = templatesQuery
+  const { data: onboardingRows, isPending: rowsPending } = onboardingQuery
 
   const pendingByTab: Record<OnboardingTabKey, boolean> = {
     company: departmentsPending || templatesPending,
     employees: rowsPending || templatesPending,
     templates: templatesPending || departmentsPending,
     checklist: rowsPending || templatesPending,
+  }
+  const hasError =
+    (activeTab === 'company' || activeTab === 'templates' ? departmentsQuery.isError : false) ||
+    templatesQuery.isError ||
+    (activeTab === 'employees' || activeTab === 'checklist' ? onboardingQuery.isError : false)
+
+  function retryActiveTab() {
+    if (activeTab === 'company' || activeTab === 'templates') void departmentsQuery.refetch()
+    void templatesQuery.refetch()
+    if (activeTab === 'employees' || activeTab === 'checklist') void onboardingQuery.refetch()
   }
 
   return (
@@ -42,7 +56,9 @@ export function PeopleOnboardingPage() {
 
       <UnderlineTabs tabs={ONBOARDING_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {pendingByTab[activeTab] ? (
+      {hasError ? (
+        <PeopleLoadError resource="onboarding data" onRetry={retryActiveTab} />
+      ) : pendingByTab[activeTab] ? (
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
       ) : (
         <>

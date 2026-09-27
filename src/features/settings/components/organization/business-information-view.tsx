@@ -10,7 +10,7 @@ import type { BusinessInformation } from '../../types/settings-types'
 import { SettingsFormFooter } from '../settings-form-footer'
 
 export function BusinessInformationView({ businessInformation }: { businessInformation: BusinessInformation }) {
-  const updateOrganizationSettings = useUpdateOrganizationSettings()
+  const updateOrganizationSettings = useUpdateOrganizationSettings('Business information')
   const {
     register,
     handleSubmit,

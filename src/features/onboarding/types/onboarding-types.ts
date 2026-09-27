@@ -1,3 +1,6 @@
+// The full business-profile fields (address, branding, registration, etc.)
+// live on Settings' own CompanyInformation type; the onboarding wizard only
+// collects this minimal set, matching what /onboarding/complete accepts.
 export interface CompanyInfo {
   name: string
   logoDataUrl?: string

@@ -17,7 +17,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 export function BrandingView({ branding }: { branding: BrandingSettings }) {
-  const updateOrganizationSettings = useUpdateOrganizationSettings()
+  const updateOrganizationSettings = useUpdateOrganizationSettings('Branding')
   const [logoError, setLogoError] = useState<string | null>(null)
   const { control, setValue, handleSubmit, register } = useForm<BrandingFormValues>({
     resolver: zodResolver(brandingSchema),
@@ -31,6 +31,10 @@ export function BrandingView({ branding }: { branding: BrandingSettings }) {
     if (!file) return
     if (!file.type.startsWith('image/')) {
       setLogoError('Please choose an image file.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('Logo files must be 2 MiB or smaller.')
       return
     }
     setLogoError(null)

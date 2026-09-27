@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { TextField } from '../../../components/ui/text-field'
+import { notify } from '../../../lib/toast'
 import { AuthShell } from '../components/auth-shell'
 import { useRequestPasswordReset } from '../hooks/use-request-password-reset'
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '../schemas/forgot-password-schema'
@@ -27,9 +28,11 @@ export function ForgotPasswordPage() {
     clearErrors('root')
     try {
       await requestReset.mutateAsync(values.email)
+      notify.success('Reset link sent', 'Check your inbox for password reset instructions.')
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
+      notify.error('Could not send reset link', message)
     }
   })
 

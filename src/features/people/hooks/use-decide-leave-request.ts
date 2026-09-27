@@ -7,6 +7,10 @@ export function useDecideLeaveRequest() {
 
   return useMutation({
     mutationFn: (payload: DecideLeaveRequestPayload) => peopleApi.decideLeaveRequest(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['people', 'leave'] }),
+    onSuccess: (request) => {
+      void queryClient.invalidateQueries({ queryKey: ['people', 'leave', 'requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['people', 'leave', 'balances'] })
+      void queryClient.invalidateQueries({ queryKey: ['people', 'employees', request.employeeId] })
+    },
   })
 }

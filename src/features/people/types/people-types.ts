@@ -4,14 +4,14 @@ export type EmploymentType = 'Full-time' | 'Part-time' | 'Contract' | 'Intern'
 export interface Department {
   id: string
   name: string
-  headEmployeeId: string
+  headEmployeeId: string | null
 }
 
 export interface Team {
   id: string
   name: string
   description: string
-  leadEmployeeId: string
+  leadEmployeeId: string | null
   memberIds: string[]
 }
 
@@ -26,6 +26,22 @@ export interface EmployeeSummary {
   employmentType: EmploymentType
   employmentStatus: EmploymentStatus
   startDate: string
+}
+
+// GET /people/employees returns a flat array by default, and switches to this
+// paginated shape once page/pageSize query params are supplied (confirmed live).
+export interface EmployeeDirectoryParams {
+  page: number
+  pageSize: number
+  search?: string
+  employmentStatus?: EmploymentStatus
+}
+
+export interface PaginatedEmployees {
+  items: EmployeeSummary[]
+  page: number
+  pageSize: number
+  total: number
 }
 
 export interface PersonalInfo {
@@ -185,14 +201,23 @@ export interface EmployeeOnboardingRow extends EmployeeRef {
   completedItemIds: string[]
 }
 
+// Matches the confirmed-live POST /people/employees contract: a nested
+// personal/employment/compensation body, salary in minor currency units.
 export interface CreateEmployeePayload {
   firstName: string
   lastName: string
   workEmail: string
+  phone?: string
   jobTitle: string
+  departmentId?: string
+  managerId?: string
   employmentType: EmploymentType
   startDate: string
-  salaryAmount: number
+  workLocation?: string
+  annualSalaryMinor: number
+  currency: string
+  payFrequency: string
+  sendInvitation: boolean
 }
 
 export interface UpdateEmployeePayload {
@@ -200,35 +225,43 @@ export interface UpdateEmployeePayload {
   employmentStatus?: EmploymentStatus
 }
 
-export interface CreateDepartmentPayload {
+// Departments and teams own their membership atomically: this list replaces
+// the full member set and head/lead on every write, matching the confirmed
+// backend contract.
+export interface DepartmentInput {
   name: string
-  code: string
+  headEmployeeId: string | null
+  memberIds: string[]
 }
 
-export interface UpdateDepartmentPayload {
+export interface TeamInput {
   name: string
+  description: string
+  leadEmployeeId: string | null
+  memberIds: string[]
 }
+
+export type LeaveDecision = 'approved' | 'rejected'
 
 export interface DecideLeaveRequestPayload {
-  requestId: string
-  decision: 'approved' | 'rejected'
-  notes?: string
+  id: string
+  status: LeaveDecision
 }
 
 export interface UploadDocumentPayload {
   file: File
   name: string
   category: string
-  scope: string
+  scope: 'company' | 'employee'
+  employeeId?: string
+}
+
+export interface UploadDocumentResult {
+  scope: 'company' | 'employee'
+  document: CompanyDocument | EmployeeDocumentRow
 }
 
 export interface AssignOnboardingTemplatePayload {
   employeeId: string
   templateId: string
-}
-
-export interface UpdateChecklistItemPayload {
-  employeeId: string
-  itemId: string
-  completed: boolean
 }

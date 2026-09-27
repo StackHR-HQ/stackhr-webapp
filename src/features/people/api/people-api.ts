@@ -3,12 +3,13 @@ import { http } from '../../../lib/http'
 import type {
   AssignOnboardingTemplatePayload,
   CompanyDocument,
-  CreateDepartmentPayload,
   CreateEmployeePayload,
   DecideLeaveRequestPayload,
   Department,
+  DepartmentInput,
   DocumentTemplate,
   EmployeeDetail,
+  EmployeeDirectoryParams,
   EmployeeDocumentRow,
   EmployeeLeaveBalanceRow,
   EmployeeOnboardingRow,
@@ -17,17 +18,31 @@ import type {
   LeaveRequestWithEmployee,
   LeaveType,
   OnboardingTemplate,
+  PaginatedEmployees,
   Team,
-  UpdateChecklistItemPayload,
-  UpdateDepartmentPayload,
+  TeamInput,
   UpdateEmployeePayload,
   UploadDocumentPayload,
+  UploadDocumentResult,
 } from '../types/people-types'
-
 
 export const peopleApi = {
   async getEmployees(): Promise<EmployeeSummary[]> {
     const { data } = await http.get<EmployeeSummary[]>('/people/employees')
+    return data
+  },
+
+  // Same endpoint, but passing page/pageSize switches the response to this
+  // paginated shape (confirmed live).
+  async getEmployeeDirectory(params: EmployeeDirectoryParams): Promise<PaginatedEmployees> {
+    const { data } = await http.get<PaginatedEmployees>('/people/employees', {
+      params: {
+        page: params.page,
+        pageSize: params.pageSize,
+        search: params.search?.trim() || undefined,
+        employmentStatus: params.employmentStatus,
+      },
+    })
     return data
   },
 
@@ -44,6 +59,20 @@ export const peopleApi = {
   async getTeams(): Promise<Team[]> {
     const { data } = await http.get<Team[]>('/people/teams')
     return data
+  },
+
+  async createTeam(payload: TeamInput): Promise<Team> {
+    const { data } = await http.post<Team>('/people/teams', payload)
+    return data
+  },
+
+  async updateTeam(id: string, payload: TeamInput): Promise<Team> {
+    const { data } = await http.patch<Team>(`/people/teams/${id}`, payload)
+    return data
+  },
+
+  async deleteTeam(id: string): Promise<void> {
+    await http.delete(`/people/teams/${id}`)
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {
@@ -91,14 +120,26 @@ export const peopleApi = {
     return data
   },
 
-  async createEmployee({ firstName, lastName, employmentType, ...rest }: CreateEmployeePayload): Promise<void> {
-    await http.post('/people/employees', {
-      firstName,
-      lastName,
-      fullName: `${firstName} ${lastName}`.trim(),
-      employmentType: toApiEnum(employmentType),
-      ...rest,
+  // Confirmed live: a nested personal/employment/compensation body.
+  async createEmployee(payload: CreateEmployeePayload): Promise<EmployeeSummary> {
+    const { data } = await http.post<EmployeeSummary>('/people/employees', {
+      personal: { firstName: payload.firstName, lastName: payload.lastName, workEmail: payload.workEmail, phone: payload.phone },
+      employment: {
+        jobTitle: payload.jobTitle,
+        departmentId: payload.departmentId || undefined,
+        managerId: payload.managerId || undefined,
+        employmentType: toApiEnum(payload.employmentType),
+        startDate: payload.startDate,
+        workLocation: payload.workLocation,
+      },
+      compensation: {
+        annualSalaryMinor: payload.annualSalaryMinor,
+        currency: payload.currency,
+        payFrequency: payload.payFrequency,
+      },
+      sendInvitation: payload.sendInvitation,
     })
+    return data
   },
 
   async updateEmployee(id: string, { jobTitle, employmentStatus }: UpdateEmployeePayload): Promise<void> {
@@ -112,36 +153,49 @@ export const peopleApi = {
     await http.post(`/people/employees/${employeeId}/invitations`)
   },
 
-  async createDepartment(payload: CreateDepartmentPayload): Promise<void> {
-    await http.post('/people/departments', payload)
+  // Departments own their membership atomically: every write replaces the
+  // full member set and head.
+  async createDepartment(payload: DepartmentInput): Promise<Department> {
+    const { data } = await http.post<Department>('/people/departments', payload)
+    return data
   },
 
-  async updateDepartment(id: string, payload: UpdateDepartmentPayload): Promise<void> {
-    await http.patch(`/people/departments/${id}`, payload)
+  async updateDepartment(id: string, payload: DepartmentInput): Promise<Department> {
+    const { data } = await http.patch<Department>(`/people/departments/${id}`, payload)
+    return data
   },
 
   async deleteDepartment(id: string): Promise<void> {
     await http.delete(`/people/departments/${id}`)
   },
 
-  async decideLeaveRequest({ requestId, decision, notes }: DecideLeaveRequestPayload): Promise<void> {
-    await http.patch(`/people/leave/requests/${requestId}/decision`, { status: toApiEnum(decision), notes })
+  async decideLeaveRequest({ id, status }: DecideLeaveRequestPayload): Promise<LeaveRequestWithEmployee> {
+    const { data } = await http.patch<LeaveRequestWithEmployee>(`/people/leave/requests/${id}/decision`, {
+      status: toApiEnum(status),
+    })
+    return data
   },
 
-  async uploadDocument({ file, name, category, scope }: UploadDocumentPayload): Promise<void> {
+  async uploadDocument({ file, name, category, scope, employeeId }: UploadDocumentPayload): Promise<UploadDocumentResult> {
     const form = new FormData()
     form.append('file', file)
     form.append('name', name)
     form.append('category', category)
     form.append('scope', scope)
-    await http.post('/people/documents', form)
+    if (employeeId) form.append('employeeId', employeeId)
+    const { data } = await http.post<UploadDocumentResult>('/people/documents', form)
+    return data
   },
 
   async assignOnboardingTemplate(payload: AssignOnboardingTemplatePayload): Promise<void> {
     await http.post('/people/onboarding/employees', payload)
   },
 
-  async updateChecklistItem({ employeeId, itemId, completed }: UpdateChecklistItemPayload): Promise<void> {
-    await http.patch(`/people/onboarding/employees/${employeeId}/checklist/${itemId}`, { completed })
+  async updateOnboardingChecklist(employeeId: string, itemId: string, completed: boolean): Promise<EmployeeOnboardingRow> {
+    const { data } = await http.patch<EmployeeOnboardingRow>(
+      `/people/onboarding/employees/${employeeId}/checklist/${itemId}`,
+      { completed },
+    )
+    return data
   },
 }

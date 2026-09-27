@@ -1,24 +1,18 @@
-import { CloudArrowUpIcon, FileTextIcon } from '@phosphor-icons/react'
+import { CloudArrowUpIcon } from '@phosphor-icons/react'
 import { useRef, useState, type DragEvent } from 'react'
 import { Button } from '../../../../components/ui/button'
 import { Card, CardHeader } from '../../../../components/ui/card'
 import { SelectField } from '../../../../components/ui/select-field'
 import { TextField } from '../../../../components/ui/text-field'
-import { formatDate, formatFileSize } from '../../lib/format'
+import { getApiErrorMessage } from '../../../../lib/api-error'
+import { notify } from '../../../../lib/toast'
+import { formatFileSize } from '../../lib/format'
 import type { EmployeeSummary } from '../../types/people-types'
+import { useUploadDocument } from '../../hooks/use-upload-document'
 
 const CATEGORY_OPTIONS = ['Policy', 'Contract', 'Identification', 'Compliance', 'Compensation', 'Other'].map(
   (value) => ({ value, label: value }),
 )
-
-interface UploadedDocument {
-  id: string
-  name: string
-  category: string
-  fileSize: string
-  uploadedAt: string
-  assignToLabel: string
-}
 
 export function UploadDocumentView({ employees }: { employees: EmployeeSummary[] }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -27,7 +21,7 @@ export function UploadDocumentView({ employees }: { employees: EmployeeSummary[]
   const [documentName, setDocumentName] = useState('')
   const [category, setCategory] = useState('Policy')
   const [assignTo, setAssignTo] = useState('company')
-  const [uploadedDocs, setUploadedDocs] = useState<UploadedDocument[]>([])
+  const uploadDocument = useUploadDocument()
 
   const assignToOptions = [
     { value: 'company', label: 'Company-wide' },
@@ -35,6 +29,10 @@ export function UploadDocumentView({ employees }: { employees: EmployeeSummary[]
   ]
 
   function selectFile(file: File) {
+    if (file.size > 10_000_000) {
+      notify.warning('File is too large', 'Choose a file smaller than 10 MB.')
+      return
+    }
     setSelectedFile(file)
     setDocumentName((current) => current || file.name.replace(/\.[^/.]+$/, ''))
   }
@@ -49,21 +47,24 @@ export function UploadDocumentView({ employees }: { employees: EmployeeSummary[]
   function handleSubmit() {
     if (!selectedFile || !documentName.trim()) return
 
-    const assignToLabel = assignToOptions.find((option) => option.value === assignTo)?.label ?? 'Company-wide'
-    setUploadedDocs((prev) => [
+    uploadDocument.mutate(
       {
-        id: `${Date.now()}-${prev.length}`,
+        file: selectedFile,
         name: documentName.trim(),
         category,
-        fileSize: formatFileSize(selectedFile.size),
-        uploadedAt: new Date().toISOString(),
-        assignToLabel,
+        scope: assignTo === 'company' ? 'company' : 'employee',
+        employeeId: assignTo === 'company' ? undefined : assignTo,
       },
-      ...prev,
-    ])
-    setSelectedFile(null)
-    setDocumentName('')
-    if (fileInputRef.current) fileInputRef.current.value = ''
+      {
+        onSuccess: () => {
+          notify.success('Document uploaded')
+          setSelectedFile(null)
+          setDocumentName('')
+          if (fileInputRef.current) fileInputRef.current.value = ''
+        },
+        onError: (error) => notify.error('Could not upload document', getApiErrorMessage(error, 'Please try again.')),
+      },
+    )
   }
 
   return (
@@ -97,6 +98,7 @@ export function UploadDocumentView({ employees }: { employees: EmployeeSummary[]
           <input
             ref={fileInputRef}
             type="file"
+            accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png"
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0]
@@ -125,34 +127,15 @@ export function UploadDocumentView({ employees }: { employees: EmployeeSummary[]
             onChange={(event) => setAssignTo(event.target.value)}
           />
 
-          <Button type="button" onClick={handleSubmit} disabled={!selectedFile || !documentName.trim()}>
-            Add document
+          <Button type="button" onClick={handleSubmit} loading={uploadDocument.isPending} disabled={!selectedFile || !documentName.trim()}>
+            Upload document
           </Button>
         </div>
       </Card>
 
       <Card>
-        <CardHeader title="Added this session" description="Uploads are kept locally for this demo and aren't persisted" />
-        {uploadedDocs.length > 0 ? (
-          <ul className="divide-y divide-line">
-            {uploadedDocs.map((document) => (
-              <li key={document.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2">
-                  <FileTextIcon className="h-4 w-4 text-ink" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink">{document.name}</p>
-                  <p className="text-xs text-muted">
-                    {document.category} · {document.assignToLabel} · {formatDate(document.uploadedAt)} ·{' '}
-                    {document.fileSize}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted">Nothing added yet.</p>
-        )}
+        <CardHeader title="Upload status" description="Successful uploads are saved securely and appear in the relevant document list." />
+        <p className="text-sm text-muted">Choose whether the document is company-wide or assigned to a specific employee.</p>
       </Card>
     </div>
   )

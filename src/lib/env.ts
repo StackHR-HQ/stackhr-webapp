@@ -1,9 +1,7 @@
 const rawApiBaseUrl: string = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
-
 export const API_BASE_URL =
   import.meta.env.DEV && /^https?:\/\//.test(rawApiBaseUrl) ? new URL(rawApiBaseUrl).pathname : rawApiBaseUrl
-
 
 const isMocked = (flag: string | undefined) => flag !== 'false'
 

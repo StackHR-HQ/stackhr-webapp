@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test": "bun test",
+    "test:e2e:mock": "VITE_USE_MOCK_AUTH=true python3 .agents/skills/webapp-testing/scripts/with_server.py --server 'npm run dev -- --host 127.0.0.1' --port 5173 -- python3 tests/auth-flow.e2e.py",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -22,6 +24,7 @@
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
     "react-router": "^8.3.0",
+    "sonner": "^2.0.8",
     "tailwindcss": "^4.3.3",
     "zod": "^4.4.3",
     "zustand": "^5.0.15"

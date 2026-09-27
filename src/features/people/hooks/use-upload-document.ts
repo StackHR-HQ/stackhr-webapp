@@ -7,6 +7,13 @@ export function useUploadDocument() {
 
   return useMutation({
     mutationFn: (payload: UploadDocumentPayload) => peopleApi.uploadDocument(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['people', 'documents'] }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['people', 'documents', result.scope === 'company' ? 'company' : 'employees'],
+      })
+      if (result.scope === 'employee' && 'employeeId' in result.document) {
+        void queryClient.invalidateQueries({ queryKey: ['people', 'employees', result.document.employeeId] })
+      }
+    },
   })
 }

@@ -1,4 +1,22 @@
-export type NavIconName = 'dashboard' | 'people' | 'payroll' | 'spend' | 'compliance' | 'approvals' | 'reports' | 'settings'
+import type { AuthUser } from '../../auth/types/auth-types'
+
+export type NavIconName =
+  | 'dashboard'
+  | 'people'
+  | 'payroll'
+  | 'spend'
+  | 'compliance'
+  | 'approvals'
+  | 'reports'
+  | 'settings'
+  | 'profile'
+  | 'leave'
+  | 'payslips'
+  | 'expenses'
+  | 'reimbursements'
+  | 'salaryAdvance'
+  | 'documents'
+  | 'notifications'
 
 export interface NavLeaf {
   label: string
@@ -13,7 +31,9 @@ export interface NavSection {
 }
 
 // Mirrors sidebar.md — the single source of truth for the dashboard nav tree.
-export const SIDEBAR_NAV: NavSection[] = [
+// Admins and managers share one nav tree for now; the spec doesn't call out
+// manager-specific restrictions yet, so this covers both roles.
+export const ADMIN_SIDEBAR_NAV: NavSection[] = [
   { label: 'Dashboard', icon: 'dashboard', path: '/' },
   {
     label: 'People',
@@ -72,3 +92,23 @@ export const SIDEBAR_NAV: NavSection[] = [
     ],
   },
 ]
+
+// The self-service nav for the 'employee' role — flat, personal-scope pages
+// rather than the org-wide sections admins and managers see.
+export const EMPLOYEE_SIDEBAR_NAV: NavSection[] = [
+  { label: 'Dashboard', icon: 'dashboard', path: '/' },
+  { label: 'My Profile', icon: 'profile', path: '/me/profile' },
+  { label: 'My Leave', icon: 'leave', path: '/me/leave' },
+  { label: 'My Payslips', icon: 'payslips', path: '/me/payslips' },
+  { label: 'My Expenses', icon: 'expenses', path: '/me/expenses' },
+  { label: 'My Reimbursements', icon: 'reimbursements', path: '/me/reimbursements' },
+  { label: 'My Salary Advance', icon: 'salaryAdvance', path: '/me/salary-advance' },
+  { label: 'Documents', icon: 'documents', path: '/me/documents' },
+  { label: 'Approvals', icon: 'approvals', path: '/approvals' },
+  { label: 'Notifications', icon: 'notifications', path: '/me/notifications' },
+  { label: 'Settings', icon: 'settings', path: '/me/settings' },
+]
+
+export function getSidebarNav(role: AuthUser['role'] | undefined): NavSection[] {
+  return role === 'employee' ? EMPLOYEE_SIDEBAR_NAV : ADMIN_SIDEBAR_NAV
+}

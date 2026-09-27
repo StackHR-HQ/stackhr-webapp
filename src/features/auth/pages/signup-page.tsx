@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { TextField } from '../../../components/ui/text-field'
+import { notify } from '../../../lib/toast'
 import { AuthSplitShell } from '../components/auth-split-shell'
 import { useSignup } from '../hooks/use-signup'
 import { signupSchema, type SignupFormValues } from '../schemas/signup-schema'
@@ -22,17 +23,23 @@ export function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { companyName: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { companyName: '', organizationSlug: '', email: '', password: '', confirmPassword: '' },
   })
 
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
     try {
-      const { email } = await signup.mutateAsync(values)
+      const { organizationSlug, ...signupValues } = values
+      const { email } = await signup.mutateAsync({
+        ...signupValues,
+        ...(organizationSlug ? { organizationSlug } : {}),
+      })
+      notify.success('Verification code sent', `Check ${email} for your six-digit code.`)
       navigate('/verify-email', { state: { email } })
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
       setError('root', { message })
+      notify.error('Could not create workspace', message)
     }
   })
 
@@ -60,6 +67,18 @@ export function SignupPage() {
             placeholder="Acme Inc."
             error={errors.companyName?.message}
             {...register('companyName')}
+          />
+        </div>
+
+        <div className="mb-4">
+          <TextField
+            id="organizationSlug"
+            label="Workspace URL"
+            autoComplete="off"
+            placeholder="acme-inc-2026"
+            hint="Optional. Choose a unique value only if the suggested workspace URL is taken."
+            error={errors.organizationSlug?.message}
+            {...register('organizationSlug')}
           />
         </div>
 

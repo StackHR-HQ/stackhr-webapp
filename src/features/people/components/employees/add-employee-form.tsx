@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '../../../../components/ui/button'
+import { CheckboxField } from '../../../../components/ui/checkbox-field'
 import { FormErrorBanner } from '../../../../components/ui/form-error-banner'
 import { SelectField } from '../../../../components/ui/select-field'
 import { TextField } from '../../../../components/ui/text-field'
 import { getApiErrorMessage } from '../../../../lib/http'
 import { EMPLOYMENT_TYPES } from '../../../onboarding/constants/onboarding-options'
 import { useCreateEmployee } from '../../hooks/use-create-employee'
+import { useDepartments } from '../../hooks/use-departments'
 import {
   addEmployeeSchema,
   type AddEmployeeFormInput,
@@ -15,6 +17,7 @@ import {
 
 export function AddEmployeeForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
   const createEmployee = useCreateEmployee()
+  const { data: departments } = useDepartments()
 
   const {
     register,
@@ -29,9 +32,11 @@ export function AddEmployeeForm({ onDone, onCancel }: { onDone: () => void; onCa
       lastName: '',
       workEmail: '',
       jobTitle: '',
+      departmentId: '',
       employmentType: 'Full-time',
       startDate: '',
-      salaryAmount: '',
+      annualSalary: '',
+      sendInvitation: true,
     },
   })
 
@@ -72,6 +77,15 @@ export function AddEmployeeForm({ onDone, onCancel }: { onDone: () => void; onCa
           {...register('jobTitle')}
         />
         <SelectField
+          id="departmentId"
+          label="Department"
+          options={[
+            { value: '', label: 'No department' },
+            ...(departments ?? []).map((department) => ({ value: department.id, label: department.name })),
+          ]}
+          {...register('departmentId')}
+        />
+        <SelectField
           id="employmentType"
           label="Employment type"
           options={EMPLOYMENT_TYPES.map((type) => ({ value: type, label: type }))}
@@ -79,15 +93,19 @@ export function AddEmployeeForm({ onDone, onCancel }: { onDone: () => void; onCa
         />
         <TextField id="startDate" label="Start date" type="date" error={errors.startDate?.message} {...register('startDate')} />
         <TextField
-          id="salaryAmount"
-          label="Salary"
+          id="annualSalary"
+          label="Annual salary (₦)"
           type="number"
           min="0"
           step="0.01"
-          placeholder="450000"
-          error={errors.salaryAmount?.message}
-          {...register('salaryAmount')}
+          placeholder="5400000"
+          error={errors.annualSalary?.message}
+          {...register('annualSalary')}
         />
+      </div>
+
+      <div className="mt-4">
+        <CheckboxField label="Send an invitation email now" {...register('sendInvitation')} />
       </div>
 
       <div className="mt-5 flex gap-3">
