@@ -6,9 +6,7 @@ import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { OtpInput } from '../../../components/ui/otp-input'
 import { TrailingDots } from '../../../components/ui/trailing-dots'
-import { USE_MOCK_AUTH } from '../../../lib/env'
 import { notify } from '../../../lib/toast'
-import { DEMO_OTP_CODE } from '../api/auth-mock-api'
 import { AuthShell } from '../components/auth-shell'
 import { useResendEmailOtp } from '../hooks/use-resend-email-otp'
 import { useVerifyEmailOtp } from '../hooks/use-verify-email-otp'
@@ -65,17 +63,14 @@ export function VerifyEmailPage() {
   })
 
   async function handleResend() {
-    if (cooldown > 0) {
-      notify.warning('Please wait before requesting another code', `You can resend a code in ${cooldown} seconds.`)
-      return
-    }
-
+    clearErrors('root')
     try {
       await resendOtp.mutateAsync(email as string)
       setCooldown(RESEND_COOLDOWN_SECONDS)
       notify.success('Verification code resent', `A new code was sent to ${email}.`)
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Something went wrong. Please try again.'
+      setError('root', { message })
       notify.error('Could not resend verification code', message)
     }
   }
@@ -92,12 +87,6 @@ export function VerifyEmailPage() {
     >
       <form onSubmit={onSubmit} noValidate>
         {errors.root ? <FormErrorBanner message={errors.root.message ?? ''} /> : null}
-
-        {USE_MOCK_AUTH ? (
-          <div className="mb-4 rounded-lg border border-line bg-canvas p-3 text-xs text-muted">
-            No backend yet — use code <span className="font-mono text-ink">{DEMO_OTP_CODE}</span>.
-          </div>
-        ) : null}
 
         <div className="mb-5">
           <Controller

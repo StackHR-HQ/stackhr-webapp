@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import type { EmployeeDirectoryParams } from '../api/people-api'
-import { peopleService } from '../api/people-service'
+import { peopleApi } from '../api/people-api'
+import type { EmployeeDirectoryParams } from '../types/people-types'
 
 export function useEmployees() {
   return useQuery({
     queryKey: ['people', 'employees'],
-    queryFn: () => peopleService.getEmployees(),
+    queryFn: () => peopleApi.getEmployees(),
   })
 }
 
 export function useEmployeeDirectory(params: EmployeeDirectoryParams) {
   return useQuery({
     queryKey: ['people', 'employees', 'directory', params],
-    queryFn: () => peopleService.getEmployeeDirectory(params),
+    queryFn: () => peopleApi.getEmployeeDirectory(params),
   })
 }

@@ -4,6 +4,7 @@ import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
 import { LoginPage } from './features/auth/pages/login-page'
 import { SignupPage } from './features/auth/pages/signup-page'
 import { VerifyEmailPage } from './features/auth/pages/verify-email-page'
+import { WaitlistPage } from './features/waitlist/pages/waitlist-page'
 import { ComplianceOverviewPage } from './features/compliance/pages/overview-page'
 import { RemittancesPage } from './features/compliance/pages/remittances-page'
 import { StatutoryPage } from './features/compliance/pages/statutory-page'
@@ -55,6 +56,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/waitlist" element={<WaitlistPage />} />
       <Route
         path="/onboarding"
         element={

@@ -10,7 +10,7 @@ import { ReviewStep } from '../components/review-step'
 import { WelcomeStep } from '../components/welcome-step'
 import { useOnboardingStore } from '../store/onboarding-store'
 import type { CompanyInfoFormValues } from '../schemas/company-info-schema'
-import { onboardingService } from '../api/onboarding-service'
+import { onboardingApi } from '../api/onboarding-api'
 
 const STEP = {
   welcome: 0,
@@ -24,8 +24,8 @@ export function OnboardingPage() {
   const user = useAuthStore((state) => state.user)
   const { companyInfo, employees, setCompanyInfo, addEmployee, addEmployees, removeEmployee } = useOnboardingStore()
   const [step, setStep] = useState<number>(STEP.welcome)
-  const companyQuery = useQuery({ queryKey: ['onboarding', 'company'], queryFn: () => onboardingService.getCompanyInfo() })
-  const updateCompany = useMutation({ mutationFn: (values: CompanyInfoFormValues) => onboardingService.updateCompanyInfo(values) })
+  const companyQuery = useQuery({ queryKey: ['onboarding', 'company'], queryFn: () => onboardingApi.getCompanyInfo() })
+  const updateCompany = useMutation({ mutationFn: (values: CompanyInfoFormValues) => onboardingApi.updateCompanyInfo(values) })
 
   async function handleCompanyInfoSubmit(values: CompanyInfoFormValues) {
     try {

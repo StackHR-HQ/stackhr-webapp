@@ -28,48 +28,42 @@ const rememberAwareStorage: StateStorage = {
 const LAST_LOGIN_HINT_KEY = 'stackhr.last-login'
 
 export interface LastLoginHint {
-  orgSlug: string
+  orgSlug?: string
   email: string
 }
 
+// Outlives a signed-out session so the login form can prefill the workspace
+// and email the next time this person signs in.
 export function getLastLoginHint(): LastLoginHint | null {
   try {
     const value = JSON.parse(localStorage.getItem(LAST_LOGIN_HINT_KEY) ?? 'null') as Partial<LastLoginHint> | null
-    return value?.orgSlug && value.email ? { orgSlug: value.orgSlug, email: value.email } : null
+    return value?.email ? { orgSlug: value.orgSlug ?? undefined, email: value.email } : null
   } catch {
     return null
   }
 }
 
 function saveLastLoginHint(user: AuthUser): void {
-  localStorage.setItem(LAST_LOGIN_HINT_KEY, JSON.stringify({ orgSlug: user.orgSlug, email: user.email }))
+  localStorage.setItem(LAST_LOGIN_HINT_KEY, JSON.stringify({ orgSlug: user.orgSlug ?? undefined, email: user.email }))
 }
 
 interface AuthState {
   user: AuthUser | null
-  token: string | null
   rememberMe: boolean
   setSession: (session: AuthSession, rememberMe: boolean) => void
   clearSession: () => void
-  switchOrg: (org: { orgSlug: string; orgName: string }) => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       rememberMe: false,
-      setSession: ({ user, token }, rememberMe) => {
+      setSession: ({ user }, rememberMe) => {
         saveLastLoginHint(user)
-        set({ user, token, rememberMe })
+        set({ user, rememberMe })
       },
-      clearSession: () => {
-        const user = useAuthStore.getState().user
-        if (user) saveLastLoginHint(user)
-        set({ user: null, token: null, rememberMe: false })
-      },
-      switchOrg: (org) => set((state) => (state.user ? { user: { ...state.user, ...org } } : state)),
+      clearSession: () => set({ user: null, rememberMe: false }),
     }),
     {
       name: AUTH_STORAGE_KEY,
@@ -77,7 +71,3 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 )
-
-export function getStoredAuthToken(): string | null {
-  return useAuthStore.getState().token
-}

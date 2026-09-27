@@ -1,12 +1,7 @@
 import { useAuthStore } from '../../auth/store/auth-store'
-import { ComplianceAlertsCard } from '../components/home/compliance-alerts-card'
 import { DashboardSkeleton } from '../components/home/dashboard-skeleton'
 import { OverviewStats } from '../components/home/overview-stats'
-import { PayrollStatusCard } from '../components/home/payroll-status-card'
 import { PendingApprovalsCard } from '../components/home/pending-approvals-card'
-import { RecentActivityCard } from '../components/home/recent-activity-card'
-import { SubscriptionStatusCard } from '../components/home/subscription-status-card'
-import { UpcomingPayrollCard } from '../components/home/upcoming-payroll-card'
 import { useDashboardSummary } from '../hooks/use-dashboard-summary'
 
 function greeting(): string {
@@ -55,19 +50,7 @@ export function DashboardHomePage() {
 
       <OverviewStats overview={data.overview} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <PayrollStatusCard payroll={data.payroll} />
-          <PendingApprovalsCard categories={data.approvalCategories} />
-          <RecentActivityCard activity={data.recentActivity} />
-        </div>
-
-        <div className="space-y-6">
-          <UpcomingPayrollCard runs={data.upcomingPayroll} />
-          <ComplianceAlertsCard alerts={data.complianceAlerts} />
-          <SubscriptionStatusCard subscription={data.subscription} />
-        </div>
-      </div>
+      <PendingApprovalsCard categories={data.approvalCategories} />
     </div>
   )
 }

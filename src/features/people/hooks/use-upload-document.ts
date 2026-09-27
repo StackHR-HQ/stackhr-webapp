@@ -1,13 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { DocumentUploadPayload } from '../api/people-api'
-import { peopleService } from '../api/people-service'
+import { peopleApi } from '../api/people-api'
+import type { UploadDocumentPayload } from '../types/people-types'
 
 export function useUploadDocument() {
   const queryClient = useQueryClient()
+
   return useMutation({
-    mutationFn: (payload: DocumentUploadPayload) => peopleService.uploadDocument(payload),
+    mutationFn: (payload: UploadDocumentPayload) => peopleApi.uploadDocument(payload),
     onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: ['people', 'documents', result.scope === 'company' ? 'company' : 'employees'] })
+      void queryClient.invalidateQueries({
+        queryKey: ['people', 'documents', result.scope === 'company' ? 'company' : 'employees'],
+      })
       if (result.scope === 'employee' && 'employeeId' in result.document) {
         void queryClient.invalidateQueries({ queryKey: ['people', 'employees', result.document.employeeId] })
       }

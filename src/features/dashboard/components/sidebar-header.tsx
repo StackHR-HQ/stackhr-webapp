@@ -1,38 +1,44 @@
-import { CaretUpDownIcon, PlusIcon, SidebarSimpleIcon, XIcon } from '@phosphor-icons/react'
+import { BuildingsIcon, CaretUpDownIcon, CheckIcon, PlusIcon, SidebarSimpleIcon, XIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useClickOutside } from '../../../lib/use-click-outside'
+import { useSwitchOrganization } from '../../auth/hooks/use-switch-organization'
 import { useAuthStore } from '../../auth/store/auth-store'
-import { ORGANIZATIONS, type OrganizationOption } from './org-switcher-data'
+import { useOrganizations } from '../../organizations/hooks/use-organizations'
+import type { Organization } from '../../organizations/types/organization-types'
 import { useSidebar } from './use-sidebar'
 
 export function SidebarHeader() {
   const user = useAuthStore((state) => state.user)
-  const switchOrg = useAuthStore((state) => state.switchOrg)
   const navigate = useNavigate()
   const { collapsed, toggleCollapsed, closeMobile } = useSidebar()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   useClickOutside(containerRef, () => setOpen(false))
 
-  const orgInitial = user?.orgName?.trim().charAt(0).toUpperCase() || 'S'
+  const { data: organizations = [] } = useOrganizations()
+  const { mutate: switchOrganization, isError: switchFailed, error: switchError } = useSwitchOrganization()
+
+  const currentOrgId = user?.organizationId
+  const orgName = organizations.find((organization) => organization.id === currentOrgId)?.name ?? user?.orgName
+  const orgInitial = orgName?.trim().charAt(0).toUpperCase() || 'S'
+
+  function handleSelectOrg(organization: Organization) {
+    if (organization.id === currentOrgId) return setOpen(false)
+    switchOrganization(organization, { onSuccess: () => setOpen(false) })
+  }
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!(event.metaKey || event.ctrlKey)) return
-      const org = ORGANIZATIONS[Number(event.key) - 1]
-      if (!org) return
+      const organization = organizations[Number(event.key) - 1]
+      if (!organization) return
       event.preventDefault()
-      switchOrg(org)
+      if (organization.id !== currentOrgId) switchOrganization(organization)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [switchOrg])
-
-  function handleSelectOrg(org: OrganizationOption) {
-    switchOrg(org)
-    setOpen(false)
-  }
+  }, [organizations, currentOrgId, switchOrganization])
 
   function handleAddOrg() {
     setOpen(false)
@@ -44,7 +50,7 @@ export function SidebarHeader() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        title={collapsed ? user?.orgName : undefined}
+        title={collapsed ? orgName : undefined}
         aria-expanded={open}
         className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg p-1.5 hover:bg-surface ${
           collapsed ? 'w-full flex-none justify-center' : ''
@@ -56,7 +62,7 @@ export function SidebarHeader() {
         {!collapsed ? (
           <>
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-sm font-medium text-ink">{user?.orgName ?? 'Workspace'}</span>
+              <span className="block truncate text-sm font-medium text-ink">{orgName ?? 'Workspace'}</span>
               <span className="block truncate text-xs capitalize text-muted">{user?.role ?? ''}</span>
             </span>
             <CaretUpDownIcon className="h-4 w-4 shrink-0 text-muted" />
@@ -88,21 +94,35 @@ export function SidebarHeader() {
         <div role="menu" className="absolute left-3 top-full z-10 mt-2 w-64 overflow-hidden rounded-xl border border-line bg-canvas p-1 shadow-lift">
           <p className="px-2.5 pb-1 pt-1.5 text-xs font-medium text-muted">Organizations</p>
 
-          {ORGANIZATIONS.map((org, index) => (
-            <button
-              key={org.orgSlug}
-              type="button"
-              role="menuitem"
-              onClick={() => handleSelectOrg(org)}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-ink hover:bg-surface"
-            >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-2">
-                <org.icon className="h-3.5 w-3.5 text-ink" />
-              </span>
-              <span className="min-w-0 flex-1 truncate">{org.orgName}</span>
-              <kbd className="shrink-0 rounded border border-line px-1.5 py-0.5 font-sans text-[10px] text-muted">⌘{index + 1}</kbd>
-            </button>
-          ))}
+          {organizations.map((organization, index) => {
+            const isCurrent = organization.id === currentOrgId
+            return (
+              <button
+                key={organization.id}
+                type="button"
+                role="menuitem"
+                aria-current={isCurrent}
+                onClick={() => handleSelectOrg(organization)}
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-ink hover:bg-surface"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-2">
+                  <BuildingsIcon className="h-3.5 w-3.5 text-ink" />
+                </span>
+                <span className="min-w-0 flex-1 truncate">{organization.name}</span>
+                {isCurrent ? (
+                  <CheckIcon className="h-4 w-4 shrink-0 text-accent" />
+                ) : (
+                  <kbd className="shrink-0 rounded border border-line px-1.5 py-0.5 font-sans text-[10px] text-muted">⌘{index + 1}</kbd>
+                )}
+              </button>
+            )
+          })}
+
+          {switchFailed ? (
+            <p role="alert" className="px-2.5 py-1.5 text-xs text-critical">
+              {switchError.message}
+            </p>
+          ) : null}
 
           <div className="my-1 h-px bg-line" />
 

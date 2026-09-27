@@ -4,6 +4,7 @@ import { Badge } from '../../../../components/ui/badge'
 import { formatDate } from '../../lib/format'
 import { EMPLOYMENT_STATUS_META } from '../../lib/status-meta'
 import type { Department, EmployeeSummary } from '../../types/people-types'
+import { ResendInviteButton } from './resend-invite-button'
 
 export function EmployeesTable({
   employees,
@@ -37,6 +38,7 @@ export function EmployeesTable({
             <th className="px-4 py-3 font-medium">Type</th>
             <th className="px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3 font-medium">Start date</th>
+            <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
@@ -64,6 +66,9 @@ export function EmployeesTable({
                   <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>
                 </td>
                 <td className="px-4 py-3 text-muted">{formatDate(employee.startDate)}</td>
+                <td className="px-4 py-3 text-right">
+                  {employee.employmentStatus === 'pending_invitation' ? <ResendInviteButton employeeId={employee.id} /> : null}
+                </td>
               </tr>
             )
           })}

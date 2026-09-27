@@ -1,3 +1,6 @@
+// The full business-profile fields (address, branding, registration, etc.)
+// live on Settings' own CompanyInformation type; the onboarding wizard only
+// collects this minimal set, matching what /onboarding/complete accepts.
 export interface CompanyInfo {
   name: string
   logoDataUrl?: string
@@ -6,18 +9,6 @@ export interface CompanyInfo {
   taxId?: string
   currency: string
   payrollFrequency: string
-  registrationNumber?: string
-  businessType?: string
-  website?: string
-  foundedYear?: number
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  country?: string
-  postalCode?: string
-  primaryColor?: string
-  accentColor?: string
 }
 
 export interface EmployeeDraft {
@@ -35,3 +26,14 @@ export interface EmployeeDraft {
 }
 
 export type NewEmployeeDraft = Omit<EmployeeDraft, 'id'>
+
+export interface CompleteOnboardingPayload {
+  companyInfo: CompanyInfo
+  employees: EmployeeDraft[]
+}
+
+export interface CompleteOnboardingResult {
+  failedInvitations: string[]
+}
+
+export class OnboardingError extends Error {}

@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { TeamInput } from '../api/people-api'
-import { peopleService } from '../api/people-service'
+import { peopleApi } from '../api/people-api'
+import type { TeamInput } from '../types/people-types'
 
 export function useCreateTeam() {
   const queryClient = useQueryClient()
+
   return useMutation({
-    mutationFn: (payload: TeamInput) => peopleService.createTeam(payload),
+    mutationFn: (payload: TeamInput) => peopleApi.createTeam(payload),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['people', 'teams'] }),
   })
 }

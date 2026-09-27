@@ -34,6 +34,12 @@ export function ReviewStep({
           {companyInfo.name} is ready on StackHR with {employees.length} employee{employees.length === 1 ? '' : 's'}{' '}
           on board.
         </p>
+        {completeOnboarding.data.failedInvitations.length > 0 ? (
+          <p className="mx-auto mt-4 max-w-sm text-sm text-muted">
+            We couldn&apos;t send invitations to {completeOnboarding.data.failedInvitations.join(', ')}. You can invite
+            them again later.
+          </p>
+        ) : null}
         <Button type="button" onClick={onFinish} className="mx-auto mt-8 max-w-xs">
           Go to dashboard
         </Button>
@@ -48,7 +54,7 @@ export function ReviewStep({
 
       {completeOnboarding.isError ? (
         <div role="alert" className="mt-4 rounded-lg border border-critical/30 bg-critical/10 p-3 text-sm text-critical">
-          Something went wrong saving your workspace. Please try again.
+          {completeOnboarding.error.message || 'Something went wrong saving your workspace. Please try again.'}
         </div>
       ) : null}
 

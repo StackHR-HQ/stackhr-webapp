@@ -1,17 +1,22 @@
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { useDeferredValue, useState } from 'react'
+import { Button } from '../../../components/ui/button'
+import { Modal } from '../../../components/ui/modal'
+import { AddEmployeeForm } from '../components/employees/add-employee-form'
 import { EmployeeStatusTabs, type EmployeeStatusFilter } from '../components/employees/employee-status-tabs'
 import { EmployeesTable } from '../components/employees/employees-table'
 import { PeopleLoadError } from '../components/people-load-error'
 import { useDepartments } from '../hooks/use-departments'
-import { useEmployeeDirectory } from '../hooks/use-employees'
 import { useEmployeeStatusCounts } from '../hooks/use-employee-status-counts'
+import { useEmployeeDirectory } from '../hooks/use-employees'
 
 export function EmployeesPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [statusFilter, setStatusFilter] = useState<EmployeeStatusFilter>('all')
   const [search, setSearch] = useState('')
+  const [adding, setAdding] = useState(false)
+
   const deferredSearch = useDeferredValue(search)
   const directoryQuery = useEmployeeDirectory({
     page,
@@ -41,10 +46,21 @@ export function EmployeesPage() {
 
   return (
     <div className="max-w-[1400px] space-y-5">
-      <div>
-        <h1 className="text-xl font-medium text-ink">Employees</h1>
-        <p className="mt-1 text-sm text-muted">Browse and manage everyone in your organization.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-medium text-ink">Employees</h1>
+          <p className="mt-1 text-sm text-muted">Browse and manage everyone in your organization.</p>
+        </div>
+        <div className="shrink-0">
+          <Button type="button" onClick={() => setAdding(true)} className="px-4">
+            Add employee
+          </Button>
+        </div>
       </div>
+
+      <Modal open={adding} onClose={() => setAdding(false)} title="Add employee">
+        <AddEmployeeForm onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />
+      </Modal>
 
       {directoryQuery.isError ? (
         <PeopleLoadError resource="employees" onRetry={() => void directoryQuery.refetch()} />
@@ -87,7 +103,8 @@ export function EmployeesPage() {
               {directory && directory.total > 0 ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
                   <p>
-                    Showing {(directory.page - 1) * directory.pageSize + 1}–{Math.min(directory.page * directory.pageSize, directory.total)} of {directory.total}
+                    Showing {(directory.page - 1) * directory.pageSize + 1}–
+                    {Math.min(directory.page * directory.pageSize, directory.total)} of {directory.total}
                   </p>
                   <div className="flex items-center gap-2">
                     <button

@@ -10,8 +10,8 @@ import { notify } from '../../../lib/toast'
 import { AuthSplitShell } from '../components/auth-split-shell'
 import { useLogin } from '../hooks/use-login'
 import { loginSchema, type LoginFormValues } from '../schemas/login-schema'
-import { AuthError } from '../types/auth-types'
 import { getLastLoginHint } from '../store/auth-store'
+import { AuthError } from '../types/auth-types'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -69,7 +69,7 @@ export function LoginPage() {
         <div className="mb-4">
           <TextField
             id="orgSlug"
-            label="Workspace slug"
+            label="Workspace slug (optional)"
             autoCapitalize="none"
             autoComplete="organization"
             placeholder="e.g. acme-inc"

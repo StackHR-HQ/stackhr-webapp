@@ -102,7 +102,7 @@ function organizationUpdatePayload(patch: Partial<OrganizationSettings>) {
 
 // Real backend calls. Not wired up yet — the endpoints don't exist. Kept
 // behind the same shape as settings-mock-api.ts so settings-service.ts can
-// swap to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
+// swap to this by flipping VITE_USE_MOCK_SETTINGS once the backend is live.
 export const settingsApi = {
   async getOrganizationSettings(): Promise<OrganizationSettings> {
     const { data } = await http.get<OrganizationResponse>('/organization/current')

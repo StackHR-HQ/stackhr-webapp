@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { peopleService } from '../api/people-service'
+import { peopleApi } from '../api/people-api'
 
 export function useLeaveTypes() {
   return useQuery({
     queryKey: ['people', 'leave', 'types'],
-    queryFn: () => peopleService.getLeaveTypes(),
+    queryFn: () => peopleApi.getLeaveTypes(),
   })
 }

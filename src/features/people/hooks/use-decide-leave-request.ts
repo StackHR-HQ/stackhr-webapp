@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { peopleService } from '../api/people-service'
-import type { LeaveDecision } from '../api/people-api'
+import { peopleApi } from '../api/people-api'
+import type { DecideLeaveRequestPayload } from '../types/people-types'
 
 export function useDecideLeaveRequest() {
   const queryClient = useQueryClient()
+
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: LeaveDecision }) => peopleService.decideLeaveRequest(id, status),
+    mutationFn: (payload: DecideLeaveRequestPayload) => peopleApi.decideLeaveRequest(payload),
     onSuccess: (request) => {
       void queryClient.invalidateQueries({ queryKey: ['people', 'leave', 'requests'] })
       void queryClient.invalidateQueries({ queryKey: ['people', 'leave', 'balances'] })

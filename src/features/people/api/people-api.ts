@@ -1,9 +1,15 @@
+import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
 import type {
+  AssignOnboardingTemplatePayload,
   CompanyDocument,
+  CreateEmployeePayload,
+  DecideLeaveRequestPayload,
   Department,
+  DepartmentInput,
   DocumentTemplate,
   EmployeeDetail,
+  EmployeeDirectoryParams,
   EmployeeDocumentRow,
   EmployeeLeaveBalanceRow,
   EmployeeOnboardingRow,
@@ -12,55 +18,22 @@ import type {
   LeaveRequestWithEmployee,
   LeaveType,
   OnboardingTemplate,
+  PaginatedEmployees,
   Team,
+  TeamInput,
+  UpdateEmployeePayload,
+  UploadDocumentPayload,
+  UploadDocumentResult,
 } from '../types/people-types'
 
-export type LeaveDecision = 'approved' | 'rejected'
-
-export type EmployeeDirectoryParams = {
-  page: number
-  pageSize: number
-  search?: string
-  employmentStatus?: EmployeeSummary['employmentStatus']
-}
-
-export type PaginatedEmployees = {
-  items: EmployeeSummary[]
-  page: number
-  pageSize: number
-  total: number
-}
-
-export type DocumentUploadPayload = {
-  file: File
-  name: string
-  category: string
-  scope: 'company' | 'employee'
-  employeeId?: string
-}
-
-export type DepartmentInput = {
-  name: string
-  headEmployeeId: string | null
-  memberIds: string[]
-}
-
-export type TeamInput = {
-  name: string
-  description: string
-  leadEmployeeId: string | null
-  memberIds: string[]
-}
-
-// Real backend calls. Not wired up yet — the endpoints don't exist. Kept
-// behind the same shape as people-mock-api.ts so people-service.ts can swap
-// to this by flipping VITE_USE_MOCK_AUTH once the backend is live.
 export const peopleApi = {
   async getEmployees(): Promise<EmployeeSummary[]> {
     const { data } = await http.get<EmployeeSummary[]>('/people/employees')
     return data
   },
 
+  // Same endpoint, but passing page/pageSize switches the response to this
+  // paginated shape (confirmed live).
   async getEmployeeDirectory(params: EmployeeDirectoryParams): Promise<PaginatedEmployees> {
     const { data } = await http.get<PaginatedEmployees>('/people/employees', {
       params: {
@@ -80,16 +53,6 @@ export const peopleApi = {
 
   async getDepartments(): Promise<Department[]> {
     const { data } = await http.get<Department[]>('/people/departments')
-    return data
-  },
-
-  async createDepartment(payload: DepartmentInput): Promise<Department> {
-    const { data } = await http.post<Department>('/people/departments', payload)
-    return data
-  },
-
-  async updateDepartment(id: string, payload: DepartmentInput): Promise<Department> {
-    const { data } = await http.patch<Department>(`/people/departments/${id}`, payload)
     return data
   },
 
@@ -157,21 +120,75 @@ export const peopleApi = {
     return data
   },
 
-  async decideLeaveRequest(id: string, status: LeaveDecision): Promise<LeaveRequestWithEmployee> {
-    const { data } = await http.patch<LeaveRequestWithEmployee>(`/people/leave/requests/${id}/decision`, { status })
+  // Confirmed live: a nested personal/employment/compensation body.
+  async createEmployee(payload: CreateEmployeePayload): Promise<EmployeeSummary> {
+    const { data } = await http.post<EmployeeSummary>('/people/employees', {
+      personal: { firstName: payload.firstName, lastName: payload.lastName, workEmail: payload.workEmail, phone: payload.phone },
+      employment: {
+        jobTitle: payload.jobTitle,
+        departmentId: payload.departmentId || undefined,
+        managerId: payload.managerId || undefined,
+        employmentType: toApiEnum(payload.employmentType),
+        startDate: payload.startDate,
+        workLocation: payload.workLocation,
+      },
+      compensation: {
+        annualSalaryMinor: payload.annualSalaryMinor,
+        currency: payload.currency,
+        payFrequency: payload.payFrequency,
+      },
+      sendInvitation: payload.sendInvitation,
+    })
     return data
   },
 
-  async uploadDocument(payload: DocumentUploadPayload): Promise<{ scope: 'company' | 'employee'; document: CompanyDocument | EmployeeDocumentRow }> {
-    const body = new FormData()
-    body.append('file', payload.file)
-    body.append('name', payload.name)
-    body.append('category', payload.category)
-    body.append('scope', payload.scope)
-    if (payload.employeeId) body.append('employeeId', payload.employeeId)
+  async updateEmployee(id: string, { jobTitle, employmentStatus }: UpdateEmployeePayload): Promise<void> {
+    await http.patch(`/people/employees/${id}`, {
+      jobTitle,
+      status: employmentStatus ? toApiEnum(employmentStatus) : undefined,
+    })
+  },
 
-    const { data } = await http.post<{ scope: 'company' | 'employee'; document: CompanyDocument | EmployeeDocumentRow }>('/people/documents', body)
+  async resendEmployeeInvitation(employeeId: string): Promise<void> {
+    await http.post(`/people/employees/${employeeId}/invitations`)
+  },
+
+  // Departments own their membership atomically: every write replaces the
+  // full member set and head.
+  async createDepartment(payload: DepartmentInput): Promise<Department> {
+    const { data } = await http.post<Department>('/people/departments', payload)
     return data
+  },
+
+  async updateDepartment(id: string, payload: DepartmentInput): Promise<Department> {
+    const { data } = await http.patch<Department>(`/people/departments/${id}`, payload)
+    return data
+  },
+
+  async deleteDepartment(id: string): Promise<void> {
+    await http.delete(`/people/departments/${id}`)
+  },
+
+  async decideLeaveRequest({ id, status }: DecideLeaveRequestPayload): Promise<LeaveRequestWithEmployee> {
+    const { data } = await http.patch<LeaveRequestWithEmployee>(`/people/leave/requests/${id}/decision`, {
+      status: toApiEnum(status),
+    })
+    return data
+  },
+
+  async uploadDocument({ file, name, category, scope, employeeId }: UploadDocumentPayload): Promise<UploadDocumentResult> {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('name', name)
+    form.append('category', category)
+    form.append('scope', scope)
+    if (employeeId) form.append('employeeId', employeeId)
+    const { data } = await http.post<UploadDocumentResult>('/people/documents', form)
+    return data
+  },
+
+  async assignOnboardingTemplate(payload: AssignOnboardingTemplatePayload): Promise<void> {
+    await http.post('/people/onboarding/employees', payload)
   },
 
   async updateOnboardingChecklist(employeeId: string, itemId: string, completed: boolean): Promise<EmployeeOnboardingRow> {
