@@ -1,7 +1,9 @@
+import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
 import { approvalsApi } from '../../approvals/api/approvals-api'
 import type { ApprovalRequest } from '../../approvals/types/approval-request-types'
-import type { EmployeeSummary } from '../../people/types/people-types'
+import { peopleApi } from '../../people/api/people-api'
+import type { EmployeeSummary, LeaveRequestWithEmployee } from '../../people/types/people-types'
 import type { ApprovalCategory, ApprovalCategoryKey, ApprovalItem, DashboardSummary } from '../types/dashboard-types'
 
 const CATEGORIES: Record<string, { key: ApprovalCategoryKey; label: string; title: string; viewAllPath: string }> = {
@@ -19,6 +21,26 @@ const CATEGORIES: Record<string, { key: ApprovalCategoryKey; label: string; titl
     title: 'Salary advance',
     viewAllPath: '/payroll/salary-advances',
   },
+}
+
+const CLOSED_PAYROLL_STATUSES = ['EXECUTED', 'RECONCILED']
+
+interface ApiPayrollRun {
+  id: string
+  periodMonth: number
+  periodYear: number
+  status: string
+}
+
+function countOnLeaveToday(requests: LeaveRequestWithEmployee[]): number {
+  const today = new Date().toLocaleDateString('en-CA')
+  const onLeave = requests.filter(
+    (request) =>
+      toApiEnum(request.status) === 'APPROVED' &&
+      request.startDate.slice(0, 10) <= today &&
+      request.endDate.slice(0, 10) >= today,
+  )
+  return new Set(onLeave.map((request) => request.employeeId)).size
 }
 
 const OTHER = { key: 'other' as const, label: 'Other requests', title: 'Approval request', viewAllPath: '/approvals' }
@@ -68,9 +90,11 @@ function groupApprovals(requests: ApprovalRequest[]): ApprovalCategory[] {
 
 export const dashboardApi = {
   async getSummary(): Promise<DashboardSummary> {
-    const [employees, approvals] = await Promise.all([
+    const [employees, approvals, leaveRequests, payroll] = await Promise.all([
       http.get<EmployeeSummary[]>('/people/employees'),
       approvalsApi.listPending(),
+      peopleApi.getLeaveRequests(),
+      http.get<{ payrollRuns: ApiPayrollRun[] }>('/payroll/runs'),
     ])
 
     const countByStatus = (status: EmployeeSummary['employmentStatus']) =>
@@ -81,6 +105,8 @@ export const dashboardApi = {
         activeEmployees: countByStatus('active'),
         pendingInvitations: countByStatus('pending_invitation'),
         pendingApprovalsCount: approvals.total,
+        onLeaveToday: countOnLeaveToday(leaveRequests),
+        openPayrollRuns: payroll.data.payrollRuns.filter((run) => !CLOSED_PAYROLL_STATUSES.includes(run.status)).length,
       },
       approvalCategories: groupApprovals(approvals.items),
     }

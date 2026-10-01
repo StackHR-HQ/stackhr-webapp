@@ -79,6 +79,8 @@ export interface DashboardOverview {
   activeEmployees: number
   pendingInvitations: number
   pendingApprovalsCount: number
+  onLeaveToday: number
+  openPayrollRuns: number
 }
 
 export interface DashboardSummary {
