@@ -39,4 +39,21 @@ export interface VerifyEmailOtpPayload {
   code: string
 }
 
+export interface ResetTokenStatus {
+  valid: boolean
+  email?: string
+}
+
+export interface ResetPasswordPayload {
+  token: string
+  password: string
+  confirmPassword: string
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
 export class AuthError extends Error {}

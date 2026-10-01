@@ -12,7 +12,7 @@ export type AuthenticationSettingsFormValues = z.infer<typeof authenticationSett
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+    newPassword: z.string().min(12, 'Password must be at least 12 characters'),
     confirmNewPassword: z.string().min(1, 'Confirm your new password'),
   })
   .refine((data) => data.newPassword === data.confirmNewPassword, {
