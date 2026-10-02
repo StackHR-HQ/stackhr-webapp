@@ -39,6 +39,19 @@ export interface VerifyEmailOtpPayload {
   code: string
 }
 
+export interface InvitationPreview {
+  employeeName: string
+  email: string
+  organizationName: string
+  expiresAt: string
+  hasAccount: boolean
+}
+
+export interface AcceptInvitationPayload {
+  token: string
+  password: string
+}
+
 export interface ResetTokenStatus {
   valid: boolean
   email?: string

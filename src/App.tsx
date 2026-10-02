@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
+import { AcceptInvitationPage } from './features/auth/pages/accept-invitation-page'
 import { ForgotPasswordPage } from './features/auth/pages/forgot-password-page'
 import { LoginPage } from './features/auth/pages/login-page'
 import { ResetPasswordPage } from './features/auth/pages/reset-password-page'
@@ -58,6 +59,7 @@ function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="/waitlist" element={<WaitlistPage />} />
       <Route
         path="/onboarding"

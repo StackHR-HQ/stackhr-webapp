@@ -1,9 +1,11 @@
 import { getApiErrorMessage, http } from '../../../lib/http'
 import {
   AuthError,
+  type AcceptInvitationPayload,
   type AuthSession,
   type AuthUser,
   type ChangePasswordPayload,
+  type InvitationPreview,
   type LoginPayload,
   type PendingSignup,
   type ResetPasswordPayload,
@@ -95,6 +97,15 @@ export const authApi = {
 
   async requestPasswordReset(email: string): Promise<void> {
     await request(() => http.post('/auth/forgot-password', { email }))
+  },
+
+  async previewInvitation(token: string): Promise<InvitationPreview> {
+    return request(() => http.get<InvitationPreview>(`/auth/invitations/${encodeURIComponent(token)}`))
+  },
+
+  async acceptInvitation({ token, password }: AcceptInvitationPayload): Promise<AuthSession | null> {
+    const data = await request(() => http.post<{ user?: ApiUser } | null>('/auth/invitations/accept', { token, password }))
+    return data?.user ? { user: toAuthUser(data.user) } : null
   },
 
   async verifyResetToken(token: string): Promise<ResetTokenStatus> {
