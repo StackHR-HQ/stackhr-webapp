@@ -1,7 +1,8 @@
-import { ArrowRight, CalendarBlank, CheckCircle, Clock, CloudArrowUp, FileText, Money, Receipt, ShieldCheck, TrendUp } from '@phosphor-icons/react'
+import { ArrowRight, CalendarBlank, CheckCircle, CloudArrowUp, FileText, Money, Receipt, ShieldCheck, TrendUp } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { greeting } from '../../dashboard/lib/format'
+import { LeaveSummaryCard } from '../components/leave-summary-card'
 
 const actions = [
   ['Request leave', 'Plan time away', '/me/leave', CalendarBlank], ['Submit expense', 'Get reimbursed', '/me/expenses', Receipt],
@@ -137,33 +138,7 @@ export function EmployeeDashboardPage() {
             </div>
           </div>
         </section>
-        <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-ink">Leave summary</h2>
-            <Link to="/me/leave" className="text-xs font-medium text-accent">Manage leave</Link>
-          </div>
-          <div className="flex items-end gap-6">
-            <div>
-              <p className="text-xs text-muted">Available balance</p>
-              <p className="mt-1 text-3xl font-medium text-ink">14 <span className="text-sm font-normal text-muted">days</span></p>
-            </div>
-            <div className="h-12 w-px bg-line" />
-            <div>
-              <p className="text-xs text-muted">Used this year</p>
-              <p className="mt-1 text-xl font-medium text-ink">8 <span className="text-sm font-normal text-muted">days</span></p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Pending</p>
-              <p className="mt-1 text-xl font-medium text-ink">1 <span className="text-sm font-normal text-muted">request</span></p>
-            </div>
-          </div>
-          <div className="mt-6 flex items-center gap-2 rounded-lg bg-canvas px-3 py-3 text-sm text-ink">
-            <Clock size={17} className="text-accent" />
-            <span>
-              <strong className="font-medium">Upcoming:</strong> 12–14 Aug · Annual leave
-            </span>
-          </div>
-        </section>
+        <LeaveSummaryCard />
       </div>
       <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
         <div className="mb-2 flex items-center justify-between">
