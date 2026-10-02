@@ -118,23 +118,26 @@ function readReason(metadata: string | null): string | undefined {
   }
 }
 
-function toApprovalItem(request: ApprovalRequest, title: string, requesterName?: string): ApprovalItem {
+function toApprovalItem(request: ApprovalRequest, title: string, leave?: LeaveRequestWithEmployee): ApprovalItem {
   const isLeave = request.type === 'LEAVE'
   const reason = readReason(request.metadata)
   const days = request.amountSnapshot
+  const leaveDetail = [leave?.type ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
+    .filter(Boolean)
+    .join(' · ')
 
   return {
     id: request.id,
     requesterId: request.requesterId,
-    title: requesterName ?? title,
-    detail: isLeave && days ? `${reason ?? title} · ${days} day${days === 1 ? '' : 's'}` : (reason ?? title),
+    title: leave?.employeeName ?? title,
+    detail: isLeave ? leaveDetail : (reason ?? title),
     submittedAt: request.submittedAt,
     amount: !isLeave && request.amountSnapshot ? request.amountSnapshot : undefined,
   }
 }
 
 function groupApprovals(requests: ApprovalRequest[], leaveRequests: LeaveRequestWithEmployee[]): ApprovalCategory[] {
-  const leaveRequesters = new Map(leaveRequests.map((leave) => [leave.id, leave.employeeName]))
+  const leaveById = new Map(leaveRequests.map((leave) => [leave.id, leave]))
   const categories = new Map<ApprovalCategoryKey, ApprovalCategory>()
 
   for (const request of requests) {
@@ -145,8 +148,8 @@ function groupApprovals(requests: ApprovalRequest[], leaveRequests: LeaveRequest
       viewAllPath: meta.viewAllPath,
       items: [],
     }
-    const requesterName = request.type === 'LEAVE' ? leaveRequesters.get(request.subjectId) : undefined
-    category.items.push(toApprovalItem(request, meta.title, requesterName))
+    const leave = request.type === 'LEAVE' ? leaveById.get(request.subjectId) : undefined
+    category.items.push(toApprovalItem(request, meta.title, leave))
     categories.set(meta.key, category)
   }
 
