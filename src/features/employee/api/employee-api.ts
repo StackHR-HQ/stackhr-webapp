@@ -1,5 +1,5 @@
 import { http } from '../../../lib/http'
-import type { MyLeaveBalance, MyLeaveRequest } from '../types/employee-types'
+import type { LeaveRequestPayload, LeaveTypeOption, MyLeaveBalance, MyLeaveRequest } from '../types/employee-types'
 
 export const employeeApi = {
   async getLeaveBalances(): Promise<MyLeaveBalance[]> {
@@ -10,5 +10,14 @@ export const employeeApi = {
   async getLeaveRequests(): Promise<MyLeaveRequest[]> {
     const { data } = await http.get<{ leaveRequests: MyLeaveRequest[] }>('/me/leave-requests')
     return data.leaveRequests
+  },
+
+  async getLeaveTypes(): Promise<LeaveTypeOption[]> {
+    const { data } = await http.get<{ leaveTypes: LeaveTypeOption[] }>('/leave/types')
+    return data.leaveTypes
+  },
+
+  async submitLeaveRequest(payload: LeaveRequestPayload): Promise<void> {
+    await http.post('/leave/requests', { ...payload, reason: payload.reason || undefined })
   },
 }

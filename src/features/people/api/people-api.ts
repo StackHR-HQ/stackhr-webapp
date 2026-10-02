@@ -1,4 +1,5 @@
 import { toApiEnum } from '../../../lib/api-enum'
+import type { LeaveTypeFormValues } from '../schemas/leave-type-schema'
 import { http } from '../../../lib/http'
 import type {
   AssignOnboardingTemplatePayload,
@@ -83,6 +84,10 @@ export const peopleApi = {
   async getLeavePolicies(): Promise<LeavePolicy[]> {
     const { data } = await http.get<LeavePolicy[]>('/people/leave/policies')
     return data
+  },
+
+  async createLeaveType(payload: LeaveTypeFormValues): Promise<void> {
+    await http.post('/leave/types', { ...payload, description: payload.description || undefined })
   },
 
   async getLeaveRequests(): Promise<LeaveRequestWithEmployee[]> {
