@@ -104,10 +104,6 @@ export const mockSettingsApi = {
     return structuredClone(securitySettings)
   },
 
-  async changePassword(_payload: { currentPassword: string; newPassword: string }): Promise<void> {
-    await delay(700)
-  },
-
   async getIntegrations(): Promise<Integration[]> {
     await delay(300)
     return structuredClone(integrations)

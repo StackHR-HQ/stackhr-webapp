@@ -40,7 +40,8 @@ export function TrialStatusView({ subscription }: { subscription: Subscription }
         </p>
         <Button
           type="button"
-          className="mt-4 w-auto px-6"
+          width="fit"
+          className="mt-4 px-6"
           loading={updateSubscription.isPending}
           onClick={() => updateSubscription.mutate({ status: 'active', trialEndsAt: undefined })}
         >

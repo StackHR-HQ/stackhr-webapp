@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { PasswordField } from '../../../../components/ui/password-field'
 import { Card, CardHeader } from '../../../../components/ui/card'
-import { useChangePassword } from '../../hooks/use-change-password'
+import { useChangePassword } from '../../../auth/hooks/use-change-password'
 import { changePasswordSchema, type ChangePasswordFormValues } from '../../schemas/security-schemas'
 import { SettingsFormFooter } from '../settings-form-footer'
 
@@ -20,7 +20,11 @@ export function PasswordView() {
 
   const onSubmit = handleSubmit((values) => {
     changePassword.mutate(
-      { currentPassword: values.currentPassword, newPassword: values.newPassword },
+      {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+        confirmPassword: values.confirmNewPassword,
+      },
       { onSuccess: () => reset({ currentPassword: '', newPassword: '', confirmNewPassword: '' }) },
     )
   })

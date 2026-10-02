@@ -39,4 +39,34 @@ export interface VerifyEmailOtpPayload {
   code: string
 }
 
+export interface InvitationPreview {
+  employeeName: string
+  email: string
+  organizationName: string
+  expiresAt: string
+  hasAccount: boolean
+}
+
+export interface AcceptInvitationPayload {
+  token: string
+  password: string
+}
+
+export interface ResetTokenStatus {
+  valid: boolean
+  email?: string
+}
+
+export interface ResetPasswordPayload {
+  token: string
+  password: string
+  confirmPassword: string
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
 export class AuthError extends Error {}

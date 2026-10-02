@@ -75,7 +75,7 @@ export function AddEmployeesStep({
       ) : null}
 
       <div className="mt-8 flex gap-3">
-        <Button type="button" variant="secondary" onClick={onBack} className="w-auto px-6">
+        <Button type="button" variant="secondary" onClick={onBack} width="fit" className="px-6">
           Back
         </Button>
         <Button type="button" onClick={onNext} disabled={employees.length === 0}>

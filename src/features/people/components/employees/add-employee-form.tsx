@@ -109,10 +109,10 @@ export function AddEmployeeForm({ onDone, onCancel }: { onDone: () => void; onCa
       </div>
 
       <div className="mt-5 flex gap-3">
-        <Button type="button" variant="secondary" onClick={onCancel} className="w-auto px-6">
+        <Button type="button" variant="secondary" onClick={onCancel} width="fit" className="px-6">
           Cancel
         </Button>
-        <Button type="submit" loading={isSubmitting} className="w-auto px-6">
+        <Button type="submit" loading={isSubmitting} width="fit" className="px-6">
           Add employee
         </Button>
       </div>

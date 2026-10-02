@@ -1,15 +1,11 @@
 import { useAuthStore } from '../../auth/store/auth-store'
 import { DashboardSkeleton } from '../components/home/dashboard-skeleton'
 import { OverviewStats } from '../components/home/overview-stats'
+import { PayrollStatusCard } from '../components/home/payroll-status-card'
 import { PendingApprovalsCard } from '../components/home/pending-approvals-card'
+import { UpcomingPayrollCard } from '../components/home/upcoming-payroll-card'
 import { useDashboardSummary } from '../hooks/use-dashboard-summary'
-
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
+import { greeting } from '../lib/format'
 
 export function DashboardHomePage() {
   const user = useAuthStore((state) => state.user)
@@ -50,7 +46,16 @@ export function DashboardHomePage() {
 
       <OverviewStats overview={data.overview} />
 
-      <PendingApprovalsCard categories={data.approvalCategories} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <PayrollStatusCard payroll={data.currentPayroll} />
+          <PendingApprovalsCard categories={data.approvalCategories} />
+        </div>
+
+        <div className="space-y-6">
+          <UpcomingPayrollCard runs={data.upcomingPayroll} />
+        </div>
+      </div>
     </div>
   )
 }

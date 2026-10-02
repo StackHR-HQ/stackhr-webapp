@@ -1,10 +1,15 @@
 import { getApiErrorMessage, http } from '../../../lib/http'
 import {
   AuthError,
+  type AcceptInvitationPayload,
   type AuthSession,
   type AuthUser,
+  type ChangePasswordPayload,
+  type InvitationPreview,
   type LoginPayload,
   type PendingSignup,
+  type ResetPasswordPayload,
+  type ResetTokenStatus,
   type SignupPayload,
   type VerifyEmailOtpPayload,
 } from '../types/auth-types'
@@ -90,9 +95,29 @@ export const authApi = {
     await request(() => http.post('/auth/business/resend-verification', { email }))
   },
 
-  // No documented password-reset endpoint exists yet.
-  async requestPasswordReset(_email: string): Promise<void> {
-    throw new AuthError('Password reset isn’t available yet. Please contact support.')
+  async requestPasswordReset(email: string): Promise<void> {
+    await request(() => http.post('/auth/forgot-password', { email }))
+  },
+
+  async previewInvitation(token: string): Promise<InvitationPreview> {
+    return request(() => http.get<InvitationPreview>(`/auth/invitations/${encodeURIComponent(token)}`))
+  },
+
+  async acceptInvitation({ token, password }: AcceptInvitationPayload): Promise<AuthSession | null> {
+    const data = await request(() => http.post<{ user?: ApiUser } | null>('/auth/invitations/accept', { token, password }))
+    return data?.user ? { user: toAuthUser(data.user) } : null
+  },
+
+  async verifyResetToken(token: string): Promise<ResetTokenStatus> {
+    return request(() => http.get<ResetTokenStatus>('/auth/reset-password/verify', { params: { token } }))
+  },
+
+  async resetPassword({ token, password, confirmPassword }: ResetPasswordPayload): Promise<void> {
+    await request(() => http.post('/auth/reset-password', { token, password, confirmPassword }))
+  },
+
+  async changePassword({ currentPassword, newPassword, confirmPassword }: ChangePasswordPayload): Promise<void> {
+    await request(() => http.post('/auth/change-password', { currentPassword, newPassword, confirmPassword }))
   },
 
   async logout(): Promise<void> {

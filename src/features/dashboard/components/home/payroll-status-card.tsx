@@ -1,26 +1,48 @@
+import { MoneyIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Badge } from '../../../../components/ui/badge'
 import { Card, CardHeader } from '../../../../components/ui/card'
-import { formatAmount, formatDate } from '../../lib/format'
-import { PAYROLL_STATUS_META } from '../../lib/status-meta'
+import { formatAmount } from '../../lib/format'
+import { payrollStatusMeta } from '../../lib/status-meta'
 import type { PayrollStatusSummary } from '../../types/dashboard-types'
 
-export function PayrollStatusCard({ payroll }: { payroll: PayrollStatusSummary }) {
-  const statusMeta = PAYROLL_STATUS_META[payroll.status]
-  const progressPercent = Math.round((payroll.employeesIncluded / payroll.employeesTotal) * 100)
+export function PayrollStatusCard({ payroll }: { payroll: PayrollStatusSummary | null }) {
+  if (!payroll) {
+    return (
+      <Card>
+        <CardHeader title="Payroll status" />
+        <div className="flex flex-col items-center gap-2 py-6 text-center">
+          <MoneyIcon className="h-5 w-5 text-muted" />
+          <p className="text-sm text-muted">No payroll runs yet.</p>
+        </div>
+        <Link to="/payroll/runs" className="mt-4 inline-block text-xs font-medium text-accent hover:underline">
+          Go to payroll runs →
+        </Link>
+      </Card>
+    )
+  }
+
+  const statusMeta = payrollStatusMeta(payroll.status)
+  const progressPercent = payroll.employeesTotal
+    ? Math.min(100, Math.round((payroll.employeesIncluded / payroll.employeesTotal) * 100))
+    : 0
 
   return (
     <Card>
       <CardHeader
         title="Payroll status"
-        description={payroll.periodLabel}
+        description={payroll.title}
         action={<Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>}
       />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div>
-          <p className="text-xs text-muted">Pay date</p>
-          <p className="mt-0.5 text-sm font-medium text-ink">{formatDate(payroll.payDate)}</p>
+          <p className="text-xs text-muted">Period</p>
+          <p className="mt-0.5 text-sm font-medium text-ink">{payroll.periodLabel}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted">Gross pay</p>
+          <p className="mt-0.5 text-sm font-medium text-ink">{formatAmount(payroll.totalGross, payroll.currency)}</p>
         </div>
         <div>
           <p className="text-xs text-muted">Net pay</p>

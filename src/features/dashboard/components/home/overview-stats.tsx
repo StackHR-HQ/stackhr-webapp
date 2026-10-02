@@ -1,4 +1,11 @@
-import { ClockCountdownIcon, EnvelopeSimpleIcon, UsersIcon, type Icon } from '@phosphor-icons/react'
+import {
+  AirplaneTiltIcon,
+  ClockCountdownIcon,
+  EnvelopeSimpleIcon,
+  MoneyIcon,
+  UsersIcon,
+  type Icon,
+} from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import type { DashboardOverview } from '../../types/dashboard-types'
 
@@ -31,7 +38,7 @@ function StatTile({
 
 export function OverviewStats({ overview }: { overview: DashboardOverview }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <StatTile icon={UsersIcon} label="Active employees" value={overview.activeEmployees.toString()} to="/people/employees" />
       <StatTile
         icon={EnvelopeSimpleIcon}
@@ -44,6 +51,18 @@ export function OverviewStats({ overview }: { overview: DashboardOverview }) {
         label="Pending approvals"
         value={overview.pendingApprovalsCount.toString()}
         to="/approvals"
+      />
+      <StatTile
+        icon={AirplaneTiltIcon}
+        label="On leave today"
+        value={overview.onLeaveToday.toString()}
+        to="/people/leave"
+      />
+      <StatTile
+        icon={MoneyIcon}
+        label="Open payroll runs"
+        value={overview.openPayrollRuns.toString()}
+        to="/payroll/runs"
       />
     </div>
   )

@@ -168,10 +168,6 @@ export const settingsApi = {
     return data
   },
 
-  async changePassword(payload: { currentPassword: string; newPassword: string }): Promise<void> {
-    await http.post('/settings/security/password', payload)
-  },
-
   async getIntegrations(): Promise<Integration[]> {
     const { data } = await http.get<Integration[]>('/settings/integrations')
     return data

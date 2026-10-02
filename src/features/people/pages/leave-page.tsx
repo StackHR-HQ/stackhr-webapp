@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { Button } from '../../../components/ui/button'
+import { Modal } from '../../../components/ui/modal'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
+import { AddLeaveTypeForm } from '../components/leave/add-leave-type-form'
 import { LeaveBalancesView } from '../components/leave/leave-balances-view'
 import { LeaveCalendarView } from '../components/leave/leave-calendar-view'
 import { LeavePoliciesView } from '../components/leave/leave-policies-view'
@@ -23,6 +26,7 @@ const LEAVE_TABS: { key: LeaveTabKey; label: string }[] = [
 
 export function LeavePage() {
   const [activeTab, setActiveTab] = useState<LeaveTabKey>('requests')
+  const [addingType, setAddingType] = useState(false)
   const requestsQuery = useLeaveRequests()
   const typesQuery = useLeaveTypes()
   const policiesQuery = useLeavePolicies()
@@ -55,10 +59,23 @@ export function LeavePage() {
 
   return (
     <div className="max-w-[1400px] space-y-5">
-      <div>
-        <h1 className="text-xl font-medium text-ink">Leave</h1>
-        <p className="mt-1 text-sm text-muted">Track requests, time off, and leave policy across your team.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-medium text-ink">Leave</h1>
+          <p className="mt-1 text-sm text-muted">Track requests, time off, and leave policy across your team.</p>
+        </div>
+        {activeTab === 'types' ? (
+          <div className="shrink-0">
+            <Button type="button" onClick={() => setAddingType(true)} className="px-4">
+              Add leave type
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      <Modal open={addingType} onClose={() => setAddingType(false)} title="Add leave type">
+        <AddLeaveTypeForm onDone={() => setAddingType(false)} onCancel={() => setAddingType(false)} />
+      </Modal>
 
       <UnderlineTabs tabs={LEAVE_TABS} active={activeTab} onChange={setActiveTab} />
 
