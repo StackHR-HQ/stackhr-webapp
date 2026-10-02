@@ -1,11 +1,9 @@
-import type { PayrollRunStatus } from '../../payroll/types/payroll-types'
-
-export type { PayrollRunStatus }
-
 export interface PayrollStatusSummary {
+  id: string
+  title: string
   periodLabel: string
-  status: PayrollRunStatus
-  payDate: string
+  status: string
+  totalGross: number
   totalNet: number
   currency: string
   employeesIncluded: number
@@ -14,9 +12,9 @@ export interface PayrollStatusSummary {
 
 export interface UpcomingPayrollRun {
   id: string
+  title: string
   periodLabel: string
-  payDate: string
-  status: PayrollRunStatus
+  status: string
 }
 
 export type ApprovalCategoryKey = 'employee-changes' | 'leave' | 'expenses' | 'reimbursements' | 'salary-advances' | 'other'
@@ -86,4 +84,6 @@ export interface DashboardOverview {
 export interface DashboardSummary {
   overview: DashboardOverview
   approvalCategories: ApprovalCategory[]
+  currentPayroll: PayrollStatusSummary | null
+  upcomingPayroll: UpcomingPayrollRun[]
 }
