@@ -5,13 +5,7 @@ import { PayrollStatusCard } from '../components/home/payroll-status-card'
 import { PendingApprovalsCard } from '../components/home/pending-approvals-card'
 import { UpcomingPayrollCard } from '../components/home/upcoming-payroll-card'
 import { useDashboardSummary } from '../hooks/use-dashboard-summary'
-
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
+import { greeting } from '../lib/format'
 
 export function DashboardHomePage() {
   const user = useAuthStore((state) => state.user)

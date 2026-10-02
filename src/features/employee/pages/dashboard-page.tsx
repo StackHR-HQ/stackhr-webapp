@@ -1,5 +1,7 @@
 import { ArrowRight, CalendarBlank, CheckCircle, Clock, CloudArrowUp, FileText, Money, Receipt, ShieldCheck, TrendUp } from '@phosphor-icons/react'
 import { Link } from 'react-router'
+import { useAuthStore } from '../../auth/store/auth-store'
+import { greeting } from '../../dashboard/lib/format'
 
 const actions = [
   ['Request leave', 'Plan time away', '/me/leave', CalendarBlank], ['Submit expense', 'Get reimbursed', '/me/expenses', Receipt],
@@ -10,20 +12,44 @@ const activity = [
   ['Payslip generated', '18 Jul 2026', FileText, 'text-accent'], ['Leave approved', '14 Jul 2026', CheckCircle, 'text-positive'], ['Expense reimbursed', '08 Jul 2026', Receipt, 'text-positive'], ['Document uploaded', '02 Jul 2026', CloudArrowUp, 'text-muted']
 ] as const
 
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
+}
+
+function todayLabel(): string {
+  const today = new Date()
+  const weekday = today.toLocaleDateString('en-GB', { weekday: 'long' })
+  return `${weekday}, ${today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+}
+
 export function EmployeeDashboardPage() {
+  const user = useAuthStore((state) => state.user)
+  const name = user?.name ?? ''
+  const firstName = name.split(' ')[0]
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
       <header className="flex flex-col justify-between gap-4 border-b border-line pb-6 sm:flex-row sm:items-end">
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted">Wednesday, 22 July 2026</p>
-          <h1 className="text-3xl font-medium tracking-tight text-ink sm:text-4xl">Good morning, Alex</h1>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted">{todayLabel()}</p>
+          <h1 className="text-3xl font-medium tracking-tight text-ink sm:text-4xl">
+            {greeting()}
+            {firstName ? `, ${firstName}` : ''}
+          </h1>
           <p className="mt-2 text-sm text-muted">Here’s what needs your attention today.</p>
         </div>
         <Link to="/me/profile" className="flex items-center gap-3 self-start rounded-full border border-line bg-surface px-3 py-2 sm:self-auto">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-sm font-medium text-canvas">AR</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-sm font-medium text-canvas">
+            {initials(name) || '?'}
+          </span>
           <span>
-            <span className="block text-sm font-medium text-ink">Alex Rivera</span>
-            <span className="block text-xs text-muted">Product · Tokyo</span>
+            <span className="block text-sm font-medium text-ink">{name}</span>
+            <span className="block text-xs text-muted">{user?.orgName}</span>
           </span>
         </Link>
       </header>
