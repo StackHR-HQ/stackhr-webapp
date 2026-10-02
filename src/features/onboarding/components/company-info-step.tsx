@@ -147,7 +147,7 @@ export function CompanyInfoStep({
         />
 
         <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onBack} className="w-auto px-6">
+          <Button type="button" variant="secondary" onClick={onBack} width="fit" className="px-6">
             Back
           </Button>
           <Button type="submit" loading={isSubmitting || isSaving}>

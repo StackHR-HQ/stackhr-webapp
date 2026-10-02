@@ -46,7 +46,7 @@ export function MyProfilePage() {
           <h1 className="text-3xl font-medium tracking-tight text-ink">My profile</h1>
           <p className="mt-2 text-sm text-muted">Keep your personal details current. Employment and pay information is managed by HR.</p>
         </div>
-        <Button variant="secondary" className="w-auto gap-2" onClick={() => setEditing((value) => !value)}><PencilSimple size={16} />{editing ? 'Done editing' : 'Edit personal details'}</Button>
+        <Button variant="secondary" width="fit" className="gap-2" onClick={() => setEditing((value) => !value)}><PencilSimple size={16} />{editing ? 'Done editing' : 'Edit personal details'}</Button>
       </header>
 
       <section className="rounded-panel border border-line bg-surface p-6 shadow-panel sm:p-7">

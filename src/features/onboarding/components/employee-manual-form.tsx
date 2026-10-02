@@ -115,7 +115,7 @@ export function EmployeeManualForm({
         />
       </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-auto px-6">
+      <Button type="submit" disabled={isSubmitting} width="fit" className="px-6">
         Add employee
       </Button>
     </form>

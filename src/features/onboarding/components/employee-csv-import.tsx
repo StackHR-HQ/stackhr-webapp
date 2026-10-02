@@ -254,10 +254,10 @@ export function EmployeeCsvImport({
               {validCount} of {rows.length} rows valid · {includedCount} selected for import
             </p>
             <div className="flex gap-3">
-              <Button type="button" variant="secondary" onClick={resetImport} className="w-auto px-4">
+              <Button type="button" variant="secondary" onClick={resetImport} width="fit" className="px-4">
                 Discard
               </Button>
-              <Button type="button" onClick={handleImport} disabled={includedCount === 0} className="w-auto px-4">
+              <Button type="button" onClick={handleImport} disabled={includedCount === 0} width="fit" className="px-4">
                 Import {includedCount} employee{includedCount === 1 ? '' : 's'}
               </Button>
             </div>

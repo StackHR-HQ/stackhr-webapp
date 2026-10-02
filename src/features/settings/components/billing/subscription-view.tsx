@@ -62,7 +62,8 @@ export function SubscriptionView({ subscription }: { subscription: Subscription 
           {subscription.status === 'canceled' ? (
             <Button
               type="button"
-              className="w-auto px-6"
+              width="fit"
+              className="px-6"
               loading={updateSubscription.isPending}
               onClick={() => updateSubscription.mutate({ status: 'active' })}
             >
@@ -72,7 +73,8 @@ export function SubscriptionView({ subscription }: { subscription: Subscription 
             <Button
               type="button"
               variant="secondary"
-              className="w-auto px-6"
+              width="fit"
+              className="px-6"
               loading={updateSubscription.isPending}
               onClick={() => updateSubscription.mutate({ status: 'canceled', autoRenew: false })}
             >

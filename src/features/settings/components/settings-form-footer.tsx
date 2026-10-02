@@ -8,7 +8,7 @@ export function SettingsFormFooter({ isPending, isSuccess }: { isPending: boolea
           Saved
         </span>
       ) : null}
-      <Button type="submit" loading={isPending} className="w-auto px-6">
+      <Button type="submit" loading={isPending} width="fit" className="px-6">
         Save changes
       </Button>
     </div>
