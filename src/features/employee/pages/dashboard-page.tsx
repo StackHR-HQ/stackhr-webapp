@@ -8,15 +8,7 @@ import { LeaveSummaryCard } from '../components/leave-summary-card'
 import { PayrollSummaryCard } from '../components/payroll-summary-card'
 import { RecentActivityCard } from '../components/recent-activity-card'
 import { latestPayslip, payslipPeriod, useMyPayslips } from '../hooks/use-my-payslips'
-
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('')
-}
+import { initials } from '../lib/profile-format'
 
 function todayLabel(): string {
   const today = new Date()

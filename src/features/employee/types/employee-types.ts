@@ -62,7 +62,19 @@ export interface MyProfile {
   accountNumber: string | null
   emergencyContactName: string | null
   emergencyContactPhone: string | null
+  emergencyContactRelationship: string | null
   tin: string | null
+  email: string
+  personalEmail: string | null
+  phone: string | null
+  dateOfBirth: string | null
+  gender: string | null
+  address: string | null
+  employmentType: string | null
+  accountName: string | null
+  bankAccountLast4: string | null
+  pensionProvider: string | null
+  pensionRsaNumber: string | null
 }
 
 // Amounts are in minor units (kobo).

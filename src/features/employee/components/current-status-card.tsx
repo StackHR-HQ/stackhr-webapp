@@ -1,23 +1,6 @@
 import { ShieldCheck } from '@phosphor-icons/react'
 import { useMyProfile } from '../hooks/use-my-profile'
-
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Active employee',
-  ONBOARDING: 'Onboarding',
-  PROBATION: 'On probation',
-  ON_LEAVE: 'On leave',
-  SUSPENDED: 'Suspended',
-  TERMINATED: 'Offboarded',
-}
-
-function statusLabel(status: string): string {
-  return STATUS_LABELS[status] ?? status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, ' ')
-}
-
-// Date-only values like "2026-10-25" are parsed as local dates so they don't shift a day.
-function toDate(value: string): Date {
-  return new Date(value.length === 10 ? `${value}T00:00:00` : value)
-}
+import { statusLabel, toDate } from '../lib/profile-format'
 
 export function CurrentStatusCard() {
   const { data: profile, isPending, isError } = useMyProfile()
@@ -44,7 +27,8 @@ export function CurrentStatusCard() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.14em] text-canvas/60">Current status</p>
-          <p className="mt-3 text-2xl font-medium">{statusLabel(profile.employmentStatus)}</p>
+          <p className="mt-3 text-2xl font-medium">{profile.employmentStatus === 'ACTIVE' ? 'Active employee' : statusLabel(profile.employmentStatus)}
+          </p>
           {subtitle ? <p className="mt-1 text-sm text-canvas/65">{subtitle}</p> : null}
         </div>
         <ShieldCheck size={28} weight="duotone" className="text-canvas/75" />

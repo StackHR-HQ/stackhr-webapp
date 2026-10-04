@@ -1,42 +1,92 @@
 import { LockKey, PencilSimple, ShieldCheck } from '@phosphor-icons/react'
-import { useState } from 'react'
 import { Avatar } from '../../../components/ui/avatar'
 import { Button } from '../../../components/ui/button'
+import { formatAmount } from '../../dashboard/lib/format'
+import { useMyProfile } from '../hooks/use-my-profile'
+import { formatLongDate, humanizeEnum, initials, statusLabel } from '../lib/profile-format'
+import type { MyProfile } from '../types/employee-types'
 
-const personalDetails = [
-  ['Full name', 'Alex Rivera'],
-  ['Date of birth', '14 March 1994'],
-  ['Gender', 'Prefer not to say'],
-  ['Phone', '+81 90 1234 5678'],
-  ['Email', 'alex.rivera@stackhr.com'],
-  ['Address', '2-14-8 Shibuya, Tokyo 150-0002'],
-  ['Emergency contact', 'Jordan Rivera · +81 90 8765 4321'],
-] as const
+type Detail = readonly [label: string, value: string | null]
 
-const employmentDetails = [
-  ['Employee ID', 'STK-00428'],
-  ['Job title', 'Product Designer'],
-  ['Department', 'Product Design'],
-  ['Employment type', 'Full-time'],
-  ['Employment date', '18 April 2022'],
-  ['Manager', 'Maya Chen'],
-  ['Work location', 'Tokyo, Japan'],
-  ['Employment status', 'Active'],
-] as const
+const NOT_SET = '—'
 
-const compensationDetails = [
-  ['Salary', '¥7,200,000 / year'],
-  ['Pay frequency', 'Monthly'],
-  ['Allowances', '¥35,000 transport / month'],
-  ['Effective date', '01 April 2026'],
-] as const
+function joined(...parts: (string | null | undefined)[]): string | null {
+  const present = parts.filter(Boolean)
+  return present.length ? present.join(' · ') : null
+}
 
-function DetailList({ items, status }: { items: readonly (readonly [string, string])[]; status?: boolean }) {
-  return <dl className="divide-y divide-line">{items.map(([label, value]) => <div key={label} className="grid gap-1 py-3 sm:grid-cols-[minmax(9rem,0.8fr)_1.4fr] sm:gap-4"><dt className="text-xs text-muted">{label}</dt><dd className={status && label === 'Employment status' ? 'text-sm font-medium text-positive' : 'text-sm text-ink'}>{value}</dd></div>)}</dl>
+function personalDetails(profile: MyProfile): Detail[] {
+  return [
+    ['Full name', profile.fullName],
+    ['Date of birth', profile.dateOfBirth && formatLongDate(profile.dateOfBirth)],
+    ['Gender', profile.gender && humanizeEnum(profile.gender).replace(/-/g, ' ')],
+    ['Phone', profile.phone],
+    ['Email', profile.personalEmail ?? profile.email],
+    ['Address', profile.address],
+    [
+      'Emergency contact',
+      joined(profile.emergencyContactName, profile.emergencyContactRelationship, profile.emergencyContactPhone),
+    ],
+    ['Bank account', joined(profile.bankName, profile.bankAccountLast4 && `•••• ${profile.bankAccountLast4}`)],
+    ['Tax ID (TIN)', profile.tin],
+    ['Pension', joined(profile.pensionProvider, profile.pensionRsaNumber)],
+  ]
+}
+
+function employmentDetails(profile: MyProfile): Detail[] {
+  return [
+    // There's no employee number on the profile yet.
+    ['Employee ID', null],
+    ['Job title', profile.jobTitle],
+    ['Department', profile.department],
+    ['Employment type', profile.employmentType && humanizeEnum(profile.employmentType)],
+    ['Employment date', profile.startDate && formatLongDate(profile.startDate)],
+    ['Manager', profile.manager?.fullName ?? null],
+    ['Work location', profile.workLocation],
+    ['Employment status', statusLabel(profile.employmentStatus)],
+  ]
+}
+
+function compensationDetails(profile: MyProfile): Detail[] {
+  return [
+    [
+      'Salary',
+      profile.annualSalaryMinor
+        ? `${formatAmount(profile.annualSalaryMinor / 100, profile.currency ?? 'NGN')} / year`
+        : null,
+    ],
+    ['Pay frequency', profile.payFrequency && humanizeEnum(profile.payFrequency)],
+    // Allowances and the salary effective date aren't returned by the backend yet.
+    ['Allowances', null],
+    ['Effective date', null],
+  ]
+}
+
+function DetailList({ items, positiveStatus }: { items: Detail[]; positiveStatus?: boolean }) {
+  return (
+    <dl className="divide-y divide-line">
+      {items.map(([label, value]) => (
+        <div key={label} className="grid gap-1 py-3 sm:grid-cols-[minmax(9rem,0.8fr)_1.4fr] sm:gap-4">
+          <dt className="text-xs text-muted">{label}</dt>
+          <dd
+            className={
+              !value
+                ? 'text-sm text-muted'
+                : positiveStatus && label === 'Employment status'
+                  ? 'text-sm font-medium text-positive'
+                  : 'text-sm text-ink'
+            }
+          >
+            {value || NOT_SET}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
 }
 
 export function MyProfilePage() {
-  const [editing, setEditing] = useState(false)
+  const { data: profile, isPending, isError, refetch } = useMyProfile()
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 pb-8">
@@ -44,71 +94,104 @@ export function MyProfilePage() {
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted">Employee record</p>
           <h1 className="text-3xl font-medium tracking-tight text-ink">My profile</h1>
-          <p className="mt-2 text-sm text-muted">Keep your personal details current. Employment and pay information is managed by HR.</p>
+          <p className="mt-2 text-sm text-muted">
+            Keep your personal details current. Employment and pay information is managed by HR.
+          </p>
         </div>
-        <Button variant="secondary" width="fit" className="gap-2" onClick={() => setEditing((value) => !value)}><PencilSimple size={16} />{editing ? 'Done editing' : 'Edit personal details'}</Button>
+        {/* There's no endpoint for employees to update their own details yet. */}
+        <Button variant="secondary" width="fit" className="gap-2" disabled title="Editing isn't available yet">
+          <PencilSimple size={16} />
+          Edit personal details
+        </Button>
       </header>
 
-      <section className="rounded-panel border border-line bg-surface p-6 shadow-panel sm:p-7">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <Avatar initials="AR" size="lg" className="bg-ink text-canvas" />
-          <div>
-            <h2 className="text-xl font-medium text-ink">Alex Rivera</h2>
-            <p className="mt-1 text-sm text-muted">Product Designer · Product Design</p>
-            <p className="mt-2 text-xs text-muted">Profile photo and personal details can be updated by you.</p>
+      {isPending ? (
+        <div className="space-y-6">
+          <div className="h-28 animate-pulse rounded-panel bg-surface" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="h-96 animate-pulse rounded-panel bg-surface" />
+            <div className="h-96 animate-pulse rounded-panel bg-surface" />
           </div>
         </div>
-      </section>
+      ) : isError ? (
+        <div className="rounded-panel border border-line bg-surface p-6 text-center shadow-panel">
+          <p className="text-sm font-medium text-ink">Couldn't load your profile</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-3 text-sm font-medium text-accent hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      ) : (
+        <>
+          <section className="rounded-panel border border-line bg-surface p-6 shadow-panel sm:p-7">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <Avatar initials={initials(profile.fullName) || '?'} size="lg" className="bg-ink text-canvas" />
+              <div>
+                <h2 className="text-xl font-medium text-ink">{profile.fullName}</h2>
+                {joined(profile.jobTitle, profile.department) ? (
+                  <p className="mt-1 text-sm text-muted">{joined(profile.jobTitle, profile.department)}</p>
+                ) : null}
+                <p className="mt-2 text-xs text-muted">Profile photo and personal details can be updated by you.</p>
+              </div>
+            </div>
+          </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-          <div className="mb-2 flex items-start justify-between">
-            <div>
-              <h2 className="text-lg font-medium text-ink">Personal information</h2>
-              <p className="mt-1 text-xs text-muted">Details you can update yourself.</p>
-            </div>
-            <PencilSimple size={19} className="text-accent" />
-          </div>
-          {editing ? (
-            <div className="rounded-lg border border-accent/25 bg-accent/10 px-3 py-3 text-sm text-ink">
-              Editing is enabled for your personal record. Save changes when finished.
-            </div>
-          ) : null}
-          <DetailList items={personalDetails} />
-        </section>
-        
-        <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-          <div className="mb-2 flex items-start justify-between">
-            <div>
-              <h2 className="text-lg font-medium text-ink">Employment</h2>
-              <p className="mt-1 text-xs text-muted">Controlled by your organisation.</p>
-            </div>
-            <ShieldCheck size={20} className="text-muted" />
-          </div>
-          <DetailList items={employmentDetails} status />
-        </section>
-      </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
+              <div className="mb-2 flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-ink">Personal information</h2>
+                  <p className="mt-1 text-xs text-muted">Details you can update yourself.</p>
+                </div>
+                <PencilSimple size={19} className="text-accent" />
+              </div>
+              <DetailList items={personalDetails(profile)} />
+            </section>
 
-      <section className="rounded-panel border border-line bg-surface p-6 shadow-panel sm:p-7">
-        <div className="flex flex-col justify-between gap-3 border-b border-line pb-5 sm:flex-row sm:items-start">
-          <div>
-            <h2 className="text-lg font-medium text-ink">Compensation</h2>
-            <p className="mt-1 text-xs text-muted">Visible to you, but managed by HR and payroll.</p>
+            <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
+              <div className="mb-2 flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-ink">Employment</h2>
+                  <p className="mt-1 text-xs text-muted">Controlled by your organisation.</p>
+                </div>
+                <ShieldCheck size={20} className="text-muted" />
+              </div>
+              <DetailList
+                items={employmentDetails(profile)}
+                positiveStatus={profile.employmentStatus === 'ACTIVE'}
+              />
+            </section>
           </div>
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-line bg-canvas px-3 py-1.5 text-xs text-muted">
-            <LockKey size={14} /> Restricted access</span>
-        </div>
-        <div className="grid gap-x-8 sm:grid-cols-2">
-          <DetailList items={compensationDetails.slice(0, 2)} />
-          <DetailList items={compensationDetails.slice(2)} />
-        </div>
-        <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
-          <div>
-            <p className="text-sm font-medium text-ink">Compensation history</p>
-            <p className="mt-1 text-xs text-muted">Your latest salary update took effect on 01 April 2026.</p>
-          </div>
-          <button type="button" className="text-sm font-medium text-accent hover:underline">View history</button></div></section>
+
+          <section className="rounded-panel border border-line bg-surface p-6 shadow-panel sm:p-7">
+            <div className="flex flex-col justify-between gap-3 border-b border-line pb-5 sm:flex-row sm:items-start">
+              <div>
+                <h2 className="text-lg font-medium text-ink">Compensation</h2>
+                <p className="mt-1 text-xs text-muted">Visible to you, but managed by HR and payroll.</p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-line bg-canvas px-3 py-1.5 text-xs text-muted">
+                <LockKey size={14} /> Restricted access
+              </span>
+            </div>
+            <div className="grid gap-x-8 sm:grid-cols-2">
+              <DetailList items={compensationDetails(profile).slice(0, 2)} />
+              <DetailList items={compensationDetails(profile).slice(2)} />
+            </div>
+            <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
+              <div>
+                <p className="text-sm font-medium text-ink">Compensation history</p>
+                <p className="mt-1 text-xs text-muted">Your salary history isn't available yet.</p>
+              </div>
+              <button type="button" disabled className="text-sm font-medium text-accent disabled:opacity-50">
+                View history
+              </button>
+            </div>
+          </section>
+        </>
+      )}
     </div>
-
   )
 }
