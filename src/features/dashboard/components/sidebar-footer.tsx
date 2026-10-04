@@ -2,6 +2,7 @@ import { BellIcon, CaretUpDownIcon, CreditCardIcon, SignOutIcon, UserCircleIcon 
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useClickOutside } from '../../../lib/use-click-outside'
+import { useLogout } from '../../auth/hooks/use-logout'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { useSidebar } from './use-sidebar'
 
@@ -13,7 +14,7 @@ const MENU_ITEMS = [
 
 export function SidebarFooter() {
   const user = useAuthStore((state) => state.user)
-  const clearSession = useAuthStore((state) => state.clearSession)
+  const logout = useLogout()
   const navigate = useNavigate()
   const { collapsed, closeMobile } = useSidebar()
   const [open, setOpen] = useState(false)
@@ -24,8 +25,7 @@ export function SidebarFooter() {
 
   function handleLogout() {
     setOpen(false)
-    clearSession()
-    navigate('/login', { replace: true })
+    logout.mutate(undefined, { onSettled: () => navigate('/login', { replace: true }) })
   }
 
   return (
@@ -97,7 +97,8 @@ export function SidebarFooter() {
               type="button"
               role="menuitem"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-critical hover:bg-critical/10"
+              disabled={logout.isPending}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-critical hover:bg-critical/10 disabled:opacity-50"
             >
               <SignOutIcon className="h-4 w-4" weight="regular" />
               Log out
