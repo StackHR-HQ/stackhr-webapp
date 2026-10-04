@@ -3,11 +3,6 @@ import { formatAmount } from '../../dashboard/lib/format'
 import { latestPayslip, payslipPeriod, useMyPayslips } from '../hooks/use-my-payslips'
 import { useMyProfile } from '../hooks/use-my-profile'
 
-function frequencyLabel(frequency: string | null): string {
-  if (!frequency) return 'Not set'
-  return frequency.charAt(0) + frequency.slice(1).toLowerCase().replace(/_/g, ' ')
-}
-
 export function PayrollSummaryCard() {
   const profile = useMyProfile()
   const payslips = useMyPayslips()
@@ -62,8 +57,9 @@ export function PayrollSummaryCard() {
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted">Pay frequency</p>
-            <p className="mt-1 text-sm font-medium text-ink">{frequencyLabel(profile.data?.payFrequency ?? null)}</p>
+            <p className="text-xs text-muted">Salary changes</p>
+            {/* No salary history is available to employees yet. */}
+            <p className="mt-1 text-sm font-medium text-muted">—</p>
           </div>
         </div>
       )}

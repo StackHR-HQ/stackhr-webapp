@@ -1,4 +1,5 @@
 import { CalendarBlank, FileText, Money, Receipt, type Icon } from '@phosphor-icons/react'
+import { Link } from 'react-router'
 import { useMyActivity } from '../hooks/use-my-activity'
 import type { ActivityTone, MyActivityItem } from '../types/employee-types'
 
@@ -25,7 +26,10 @@ export function RecentActivityCard() {
 
   return (
     <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-      <h2 className="mb-2 text-lg font-medium text-ink">Recent activity</h2>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-lg font-medium text-ink">Recent activity</h2>
+        <Link to="/me/notifications" className="text-xs font-medium text-accent">View all</Link>
+      </div>
 
       {isPending ? (
         <div className="h-24 animate-pulse rounded-lg bg-canvas" />
