@@ -1,26 +1,14 @@
-import { ArrowRight, CalendarBlank, CheckCircle, CloudArrowUp, FileText, Money, Receipt, ShieldCheck, TrendUp } from '@phosphor-icons/react'
+import { ArrowRight, CalendarBlank, CloudArrowUp, FileText, Money, Receipt } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { greeting } from '../../dashboard/lib/format'
+import { AttentionCard } from '../components/attention-card'
+import { CurrentStatusCard } from '../components/current-status-card'
 import { LeaveSummaryCard } from '../components/leave-summary-card'
-
-const actions = [
-  ['Request leave', 'Plan time away', '/me/leave', CalendarBlank], ['Submit expense', 'Get reimbursed', '/me/expenses', Receipt],
-  ['Salary advance', 'Request an advance', '/me/salary-advance', Money], ['View payslip', 'Latest: July 2026', '/me/payslips', FileText], ['Upload document', 'Keep records current', '/me/documents', CloudArrowUp],
-] as const
-
-const activity = [
-  ['Payslip generated', '18 Jul 2026', FileText, 'text-accent'], ['Leave approved', '14 Jul 2026', CheckCircle, 'text-positive'], ['Expense reimbursed', '08 Jul 2026', Receipt, 'text-positive'], ['Document uploaded', '02 Jul 2026', CloudArrowUp, 'text-muted']
-] as const
-
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('')
-}
+import { PayrollSummaryCard } from '../components/payroll-summary-card'
+import { RecentActivityCard } from '../components/recent-activity-card'
+import { latestPayslip, payslipPeriod, useMyPayslips } from '../hooks/use-my-payslips'
+import { initials } from '../lib/profile-format'
 
 function todayLabel(): string {
   const today = new Date()
@@ -32,6 +20,21 @@ export function EmployeeDashboardPage() {
   const user = useAuthStore((state) => state.user)
   const name = user?.name ?? ''
   const firstName = name.split(' ')[0]
+  const { data: payslips } = useMyPayslips()
+  const latest = payslips ? latestPayslip(payslips) : undefined
+
+  const actions = [
+    { label: 'Request leave', detail: 'Plan time away', href: '/me/leave', Icon: CalendarBlank },
+    { label: 'Submit expense', detail: 'Get reimbursed', href: '/me/expenses', Icon: Receipt },
+    { label: 'Salary advance', detail: 'Request an advance', href: '/me/salary-advance', Icon: Money },
+    {
+      label: 'View payslip',
+      detail: latest ? `Latest: ${payslipPeriod(latest)}` : 'No payslips yet',
+      href: '/me/payslips',
+      Icon: FileText,
+    },
+    { label: 'Upload document', detail: 'Keep records current', href: '/me/documents', Icon: CloudArrowUp },
+  ]
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
@@ -56,40 +59,9 @@ export function EmployeeDashboardPage() {
       </header>
 
       <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-panel border border-line bg-ink p-6 text-canvas shadow-panel sm:p-7">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-canvas/60">Current status</p>
-              <p className="mt-3 text-2xl font-medium">Active employee</p><p className="mt-1 text-sm text-canvas/65">Product Design · Manager: Maya Chen</p>
-            </div>
-            <ShieldCheck size={28} weight="duotone" className="text-canvas/75" />
-          </div>
+        <CurrentStatusCard />
 
-          <div className="mt-8 grid grid-cols-2 gap-4 border-t border-canvas/15 pt-4 text-sm sm:grid-cols-3">
-            <div>
-              <span className="block text-canvas/55">Next payday</span>
-              <strong className="mt-1 block font-medium">31 Jul 2026</strong>
-            </div>
-            <div>
-              <span className="block text-canvas/55">Work location</span>
-              <strong className="mt-1 block font-medium">Tokyo, Japan</strong>
-            </div>
-            <div className="hidden sm:block">
-              <span className="block text-canvas/55">Joined</span>
-              <strong className="mt-1 block font-medium">Apr 2022</strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-panel border border-accent/25 bg-accent/10 p-6 shadow-panel sm:p-7">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.14em] text-accent">Needs your attention</p>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm font-medium text-white">2</span>
-          </div>
-          <h2 className="mt-3 text-xl font-medium text-ink">Complete your profile</h2>
-          <p className="mt-1 text-sm text-muted">Add your emergency contact and bank details to finish setup.</p>
-          <Link to="/me/profile" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-accent">Continue <ArrowRight size={16} /></Link>
-        </div>
+        <AttentionCard />
       </section>
 
       <section>
@@ -99,7 +71,7 @@ export function EmployeeDashboardPage() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {actions.map(
-            ([label, detail, href, Icon]) => 
+            ({ label, detail, href, Icon }) =>
               <Link key={label} to={href} className="group rounded-panel border border-line bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-accent/40">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-canvas text-accent"><Icon size={19} weight="duotone" />
                 </span>
@@ -112,52 +84,10 @@ export function EmployeeDashboardPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-ink">Payroll summary</h2>
-            <Link to="/me/payslips" className="text-xs font-medium text-accent">All payslips</Link>
-          </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <div>
-              <p className="text-xs text-muted">Current salary</p>
-              <p className="mt-1 text-xl font-medium text-ink">¥7,200,000 <span className="text-xs font-normal text-muted">/ year</span></p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Latest net pay</p>
-              <p className="mt-1 text-xl font-medium text-ink">¥468,240</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Last payslip</p>
-              <p className="mt-1 text-sm font-medium text-ink">18 Jul 2026 <span className="text-xs font-normal text-positive">Available</span></p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Salary changes</p>
-              <p className="mt-1 flex items-center gap-1 text-sm font-medium text-positive">
-                <TrendUp size={16} /> +4.5% this year
-              </p>
-            </div>
-          </div>
-        </section>
+        <PayrollSummaryCard />
         <LeaveSummaryCard />
       </div>
-      <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-ink">Recent activity</h2>
-          <Link to="/me/notifications" className="text-xs font-medium text-accent">View all</Link>
-        </div>
-        <div className="divide-y divide-line">
-          {activity.map(
-            ([label, date, Icon, tone]) => 
-            <div key={label} className="flex items-center justify-between gap-4 py-3">
-              <div className="flex items-center gap-3">
-                <Icon size={19} weight="duotone" className={tone} />
-                <span className="text-sm text-ink">{label}</span>
-              </div>
-              <span className="text-xs text-muted">{date}</span>
-            </div>
-          )}
-        </div>
-      </section>
+      <RecentActivityCard />
     </div>
   )
 }

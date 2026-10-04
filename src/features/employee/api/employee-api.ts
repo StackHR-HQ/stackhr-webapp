@@ -1,7 +1,35 @@
 import { http } from '../../../lib/http'
-import type { LeaveRequestPayload, LeaveTypeOption, MyLeaveBalance, MyLeaveRequest } from '../types/employee-types'
+import type {
+  LeaveRequestPayload,
+  LeaveTypeOption,
+  MyLeaveBalance,
+  MyLeaveRequest,
+  MyPayslip,
+  MyProfile,
+  MySpendRequest,
+} from '../types/employee-types'
 
 export const employeeApi = {
+  async getProfile(): Promise<MyProfile> {
+    const { data } = await http.get<{ profile: MyProfile }>('/me/profile')
+    return data.profile
+  },
+
+  async getPayslips(): Promise<MyPayslip[]> {
+    const { data } = await http.get<{ payslips: MyPayslip[] }>('/me/payslips')
+    return data.payslips
+  },
+
+  async getExpenses(): Promise<MySpendRequest[]> {
+    const { data } = await http.get<{ expenses: MySpendRequest[] }>('/me/expenses')
+    return data.expenses
+  },
+
+  async getSalaryAdvances(): Promise<MySpendRequest[]> {
+    const { data } = await http.get<{ salaryAdvances: MySpendRequest[] }>('/me/advances')
+    return data.salaryAdvances
+  },
+
   async getLeaveBalances(): Promise<MyLeaveBalance[]> {
     const { data } = await http.get<{ leaveBalances: MyLeaveBalance[] }>('/me/leave-balances')
     return data.leaveBalances

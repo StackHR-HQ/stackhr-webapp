@@ -13,6 +13,9 @@ export interface MyLeaveRequest {
   totalDays: number
   status: string
   leaveType?: { id: string; name: string }
+  createdAt: string
+  updatedAt: string
+  decidedAt: string | null
 }
 
 export interface LeaveTypeOption {
@@ -40,4 +43,62 @@ export interface LeaveSummary {
   usedDays: number
   pendingRequests: number
   upcoming?: UpcomingLeave
+}
+
+export interface MyProfile {
+  id: string
+  fullName: string
+  jobTitle: string | null
+  department: string | null
+  employmentStatus: string
+  workLocation: string | null
+  startDate: string | null
+  nextPayDate: string | null
+  manager: { id: string; fullName: string; jobTitle?: string | null } | null
+  annualSalaryMinor: number | null
+  currency: string | null
+  payFrequency: string | null
+  bankName: string | null
+  accountNumber: string | null
+  emergencyContactName: string | null
+  emergencyContactPhone: string | null
+  emergencyContactRelationship: string | null
+  tin: string | null
+  email: string
+  personalEmail: string | null
+  phone: string | null
+  dateOfBirth: string | null
+  gender: string | null
+  address: string | null
+  employmentType: string | null
+  accountName: string | null
+  bankAccountLast4: string | null
+  pensionProvider: string | null
+  pensionRsaNumber: string | null
+}
+
+// Amounts are in minor units (kobo).
+export interface MyPayslip {
+  id: string
+  periodMonth: number
+  periodYear: number
+  netSalary: number
+  createdAt?: string
+}
+
+export interface MySpendRequest {
+  id: string
+  status: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export type ActivityTone = 'accent' | 'positive' | 'critical' | 'muted'
+
+export interface MyActivityItem {
+  id: string
+  kind: 'leave' | 'payslip' | 'expense' | 'salary-advance'
+  label: string
+  timestamp: string
+  tone: ActivityTone
 }

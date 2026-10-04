@@ -7,6 +7,8 @@ import { organizationsApi } from '../../organizations/api/organizations-api'
 import { peopleApi } from '../../people/api/people-api'
 import type { EmployeeSummary, LeaveRequestWithEmployee } from '../../people/types/people-types'
 import type {
+  ActivityItem,
+  ActivityKind,
   ApprovalCategory,
   ApprovalCategoryKey,
   ApprovalItem,
@@ -15,20 +17,42 @@ import type {
   UpcomingPayrollRun,
 } from '../types/dashboard-types'
 
-const CATEGORIES: Record<string, { key: ApprovalCategoryKey; label: string; title: string; viewAllPath: string }> = {
-  LEAVE: { key: 'leave', label: 'Leave requests', title: 'Leave request', viewAllPath: '/people/leave' },
-  EXPENSE: { key: 'expenses', label: 'Expense claims', title: 'Expense claim', viewAllPath: '/spend/expenses' },
+interface ApprovalCategoryMeta {
+  key: ApprovalCategoryKey
+  label: string
+  title: string
+  viewAllPath: string
+  activityKind: ActivityKind
+}
+
+const CATEGORIES: Record<string, ApprovalCategoryMeta> = {
+  LEAVE: {
+    key: 'leave',
+    label: 'Leave requests',
+    title: 'Leave request',
+    viewAllPath: '/people/leave',
+    activityKind: 'leave',
+  },
+  EXPENSE: {
+    key: 'expenses',
+    label: 'Expense claims',
+    title: 'Expense claim',
+    viewAllPath: '/spend/expenses',
+    activityKind: 'expense',
+  },
   REIMBURSEMENT: {
     key: 'reimbursements',
     label: 'Reimbursements',
     title: 'Reimbursement',
     viewAllPath: '/spend/reimbursements',
+    activityKind: 'reimbursement',
   },
   SALARY_ADVANCE: {
     key: 'salary-advances',
     label: 'Salary advances',
     title: 'Salary advance',
     viewAllPath: '/payroll/salary-advances',
+    activityKind: 'salary-advance',
   },
 }
 
@@ -106,7 +130,13 @@ function countOnLeaveToday(requests: LeaveRequestWithEmployee[]): number {
   return new Set(onLeave.map((request) => request.employeeId)).size
 }
 
-const OTHER = { key: 'other' as const, label: 'Other requests', title: 'Approval request', viewAllPath: '/approvals' }
+const OTHER: ApprovalCategoryMeta = {
+  key: 'other',
+  label: 'Other requests',
+  title: 'Approval request',
+  viewAllPath: '/approvals',
+  activityKind: 'other',
+}
 
 function readReason(metadata: string | null): string | undefined {
   if (!metadata) return undefined
@@ -118,26 +148,26 @@ function readReason(metadata: string | null): string | undefined {
   }
 }
 
-function toApprovalItem(request: ApprovalRequest, title: string, leave?: LeaveRequestWithEmployee): ApprovalItem {
+function toApprovalItem(request: ApprovalRequest, title: string): ApprovalItem {
   const isLeave = request.type === 'LEAVE'
-  const reason = readReason(request.metadata)
-  const days = request.amountSnapshot
-  const leaveDetail = [leave?.type ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
+  const summary = request.subjectSummary
+  const reason = summary?.reason ?? readReason(request.metadata)
+  const days = summary?.totalDays ?? request.amountSnapshot
+  const leaveDetail = [summary?.leaveType ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
     .filter(Boolean)
     .join(' · ')
 
   return {
     id: request.id,
     requesterId: request.requesterId,
-    title: leave?.employeeName ?? title,
+    title: request.requester?.fullName ?? title,
     detail: isLeave ? leaveDetail : (reason ?? title),
     submittedAt: request.submittedAt,
     amount: !isLeave && request.amountSnapshot ? request.amountSnapshot : undefined,
   }
 }
 
-function groupApprovals(requests: ApprovalRequest[], leaveRequests: LeaveRequestWithEmployee[]): ApprovalCategory[] {
-  const leaveById = new Map(leaveRequests.map((leave) => [leave.id, leave]))
+function groupApprovals(requests: ApprovalRequest[]): ApprovalCategory[] {
   const categories = new Map<ApprovalCategoryKey, ApprovalCategory>()
 
   for (const request of requests) {
@@ -148,25 +178,62 @@ function groupApprovals(requests: ApprovalRequest[], leaveRequests: LeaveRequest
       viewAllPath: meta.viewAllPath,
       items: [],
     }
-    const leave = request.type === 'LEAVE' ? leaveById.get(request.subjectId) : undefined
-    category.items.push(toApprovalItem(request, meta.title, leave))
+    category.items.push(toApprovalItem(request, meta.title))
     categories.set(meta.key, category)
   }
 
   return [...categories.values()]
 }
 
+const RECENT_ACTIVITY_LIMIT = 6
+
+function toRecentActivity(requests: ApprovalRequest[], currentUserId?: string): ActivityItem[] {
+  const nameOf = (person: { id: string; fullName: string } | null) =>
+    person?.id === currentUserId ? 'You' : (person?.fullName ?? 'Someone')
+
+  const events = requests.flatMap((request) => {
+    const meta = CATEGORIES[request.type] ?? OTHER
+    const leaveType = request.subjectSummary?.leaveType
+    const subject = leaveType ?? meta.title.toLowerCase()
+    const items: ActivityItem[] = [
+      {
+        id: `${request.id}-submitted`,
+        kind: meta.activityKind,
+        actor: nameOf(request.requester),
+        description: leaveType ? `Requested ${leaveType}` : `Submitted ${/^[aeiou]/.test(subject) ? 'an' : 'a'} ${subject}`,
+        timestamp: request.submittedAt,
+      },
+    ]
+
+    if (request.decidedAt && (request.status === 'APPROVED' || request.status === 'REJECTED')) {
+      const requester = request.requester?.id === currentUserId ? 'your' : `${nameOf(request.requester)}'s`
+      items.push({
+        id: `${request.id}-decided`,
+        kind: meta.activityKind,
+        actor: nameOf(request.approver),
+        description: `${request.status === 'APPROVED' ? 'Approved' : 'Rejected'} ${requester} ${subject}`,
+        timestamp: request.decidedAt,
+      })
+    }
+    return items
+  })
+
+  return events.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, RECENT_ACTIVITY_LIMIT)
+}
+
 export const dashboardApi = {
   async getSummary(): Promise<DashboardSummary> {
-    const [employees, approvals, leaveRequests, payroll, organizations] = await Promise.all([
+    const [employees, approvals, recentApprovals, leaveRequests, payroll, organizations] = await Promise.all([
       http.get<EmployeeSummary[]>('/people/employees'),
       approvalsApi.listPending(),
+      approvalsApi.listRecent(),
       peopleApi.getLeaveRequests(),
       http.get<{ payrollRuns: ApiPayrollRun[] }>('/payroll/runs'),
       organizationsApi.getOrganizations(),
     ])
 
-    const orgId = useAuthStore.getState().user?.organizationId
+    const currentUser = useAuthStore.getState().user
+    const orgId = currentUser?.organizationId
     const currency = organizations.find((organization) => organization.id === orgId)?.currency ?? 'NGN'
     const currentRun = pickCurrentRun(payroll.data.payrollRuns)
 
@@ -181,9 +248,10 @@ export const dashboardApi = {
         onLeaveToday: countOnLeaveToday(leaveRequests),
         openPayrollRuns: payroll.data.payrollRuns.filter(isOpenRun).length,
       },
-      approvalCategories: groupApprovals(approvals.items, leaveRequests),
+      approvalCategories: groupApprovals(approvals.items),
       currentPayroll: currentRun ? await getPayrollStatus(currentRun, currency, employees.data.length) : null,
       upcomingPayroll: toUpcomingRuns(payroll.data.payrollRuns),
+      recentActivity: toRecentActivity(recentApprovals, currentUser?.id),
     }
   },
 }
