@@ -44,6 +44,7 @@ export type ActivityKind =
   | 'salary-advance'
   | 'employee'
   | 'compliance'
+  | 'other'
 
 export interface ActivityItem {
   id: string
@@ -86,4 +87,5 @@ export interface DashboardSummary {
   approvalCategories: ApprovalCategory[]
   currentPayroll: PayrollStatusSummary | null
   upcomingPayroll: UpcomingPayrollRun[]
+  recentActivity: ActivityItem[]
 }

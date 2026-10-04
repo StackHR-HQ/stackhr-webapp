@@ -3,6 +3,7 @@ import { DashboardSkeleton } from '../components/home/dashboard-skeleton'
 import { OverviewStats } from '../components/home/overview-stats'
 import { PayrollStatusCard } from '../components/home/payroll-status-card'
 import { PendingApprovalsCard } from '../components/home/pending-approvals-card'
+import { RecentActivityCard } from '../components/home/recent-activity-card'
 import { UpcomingPayrollCard } from '../components/home/upcoming-payroll-card'
 import { useDashboardSummary } from '../hooks/use-dashboard-summary'
 import { greeting } from '../lib/format'
@@ -50,6 +51,7 @@ export function DashboardHomePage() {
         <div className="space-y-6 lg:col-span-2">
           <PayrollStatusCard payroll={data.currentPayroll} />
           <PendingApprovalsCard categories={data.approvalCategories} />
+          {data.recentActivity.length > 0 && <RecentActivityCard activity={data.recentActivity} />}
         </div>
 
         <div className="space-y-6">

@@ -1,5 +1,6 @@
 import {
   CalendarBlankIcon,
+  ClipboardTextIcon,
   HandCoinsIcon,
   IdentificationCardIcon,
   MoneyIcon,
@@ -20,6 +21,7 @@ const ACTIVITY_ICONS: Record<ActivityKind, Icon> = {
   'salary-advance': HandCoinsIcon,
   employee: IdentificationCardIcon,
   compliance: ShieldCheckIcon,
+  other: ClipboardTextIcon,
 }
 
 export function RecentActivityCard({ activity }: { activity: ActivityItem[] }) {

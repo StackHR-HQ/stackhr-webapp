@@ -15,6 +15,7 @@ export interface ApprovalRequest {
   subjectId: string
   requesterId: string
   requester: { id: string; fullName: string } | null
+  approver: { id: string; fullName: string } | null
   status: string
   amountSnapshot: number | null
   unit: string | null
@@ -22,4 +23,5 @@ export interface ApprovalRequest {
   subjectSummary: ApprovalSubjectSummary | null
   metadata: string | null
   submittedAt: string
+  decidedAt: string | null
 }
