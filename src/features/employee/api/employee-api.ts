@@ -1,7 +1,12 @@
 import { http } from '../../../lib/http'
-import type { LeaveRequestPayload, LeaveTypeOption, MyLeaveBalance, MyLeaveRequest } from '../types/employee-types'
+import type { LeaveRequestPayload, LeaveTypeOption, MyLeaveBalance, MyLeaveRequest, MyProfile } from '../types/employee-types'
 
 export const employeeApi = {
+  async getProfile(): Promise<MyProfile> {
+    const { data } = await http.get<{ profile: MyProfile }>('/me/profile')
+    return data.profile
+  },
+
   async getLeaveBalances(): Promise<MyLeaveBalance[]> {
     const { data } = await http.get<{ leaveBalances: MyLeaveBalance[] }>('/me/leave-balances')
     return data.leaveBalances

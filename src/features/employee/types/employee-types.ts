@@ -41,3 +41,15 @@ export interface LeaveSummary {
   pendingRequests: number
   upcoming?: UpcomingLeave
 }
+
+export interface MyProfile {
+  id: string
+  fullName: string
+  jobTitle: string | null
+  department: string | null
+  employmentStatus: string
+  workLocation: string | null
+  startDate: string | null
+  nextPayDate: string | null
+  manager: { id: string; fullName: string; jobTitle?: string | null } | null
+}

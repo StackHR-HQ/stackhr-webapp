@@ -1,7 +1,8 @@
-import { ArrowRight, CalendarBlank, CheckCircle, CloudArrowUp, FileText, Money, Receipt, ShieldCheck, TrendUp } from '@phosphor-icons/react'
+import { ArrowRight, CalendarBlank, CheckCircle, CloudArrowUp, FileText, Money, Receipt, TrendUp } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { greeting } from '../../dashboard/lib/format'
+import { CurrentStatusCard } from '../components/current-status-card'
 import { LeaveSummaryCard } from '../components/leave-summary-card'
 
 const actions = [
@@ -56,30 +57,7 @@ export function EmployeeDashboardPage() {
       </header>
 
       <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-panel border border-line bg-ink p-6 text-canvas shadow-panel sm:p-7">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-canvas/60">Current status</p>
-              <p className="mt-3 text-2xl font-medium">Active employee</p><p className="mt-1 text-sm text-canvas/65">Product Design · Manager: Maya Chen</p>
-            </div>
-            <ShieldCheck size={28} weight="duotone" className="text-canvas/75" />
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-4 border-t border-canvas/15 pt-4 text-sm sm:grid-cols-3">
-            <div>
-              <span className="block text-canvas/55">Next payday</span>
-              <strong className="mt-1 block font-medium">31 Jul 2026</strong>
-            </div>
-            <div>
-              <span className="block text-canvas/55">Work location</span>
-              <strong className="mt-1 block font-medium">Tokyo, Japan</strong>
-            </div>
-            <div className="hidden sm:block">
-              <span className="block text-canvas/55">Joined</span>
-              <strong className="mt-1 block font-medium">Apr 2022</strong>
-            </div>
-          </div>
-        </div>
+        <CurrentStatusCard />
 
         <div className="rounded-panel border border-accent/25 bg-accent/10 p-6 shadow-panel sm:p-7">
           <div className="flex items-center justify-between">
