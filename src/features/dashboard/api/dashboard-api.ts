@@ -118,26 +118,26 @@ function readReason(metadata: string | null): string | undefined {
   }
 }
 
-function toApprovalItem(request: ApprovalRequest, title: string, leave?: LeaveRequestWithEmployee): ApprovalItem {
+function toApprovalItem(request: ApprovalRequest, title: string): ApprovalItem {
   const isLeave = request.type === 'LEAVE'
-  const reason = readReason(request.metadata)
-  const days = request.amountSnapshot
-  const leaveDetail = [leave?.type ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
+  const summary = request.subjectSummary
+  const reason = summary?.reason ?? readReason(request.metadata)
+  const days = summary?.totalDays ?? request.amountSnapshot
+  const leaveDetail = [summary?.leaveType ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
     .filter(Boolean)
     .join(' · ')
 
   return {
     id: request.id,
     requesterId: request.requesterId,
-    title: leave?.employeeName ?? title,
+    title: request.requester?.fullName ?? title,
     detail: isLeave ? leaveDetail : (reason ?? title),
     submittedAt: request.submittedAt,
     amount: !isLeave && request.amountSnapshot ? request.amountSnapshot : undefined,
   }
 }
 
-function groupApprovals(requests: ApprovalRequest[], leaveRequests: LeaveRequestWithEmployee[]): ApprovalCategory[] {
-  const leaveById = new Map(leaveRequests.map((leave) => [leave.id, leave]))
+function groupApprovals(requests: ApprovalRequest[]): ApprovalCategory[] {
   const categories = new Map<ApprovalCategoryKey, ApprovalCategory>()
 
   for (const request of requests) {
@@ -148,8 +148,7 @@ function groupApprovals(requests: ApprovalRequest[], leaveRequests: LeaveRequest
       viewAllPath: meta.viewAllPath,
       items: [],
     }
-    const leave = request.type === 'LEAVE' ? leaveById.get(request.subjectId) : undefined
-    category.items.push(toApprovalItem(request, meta.title, leave))
+    category.items.push(toApprovalItem(request, meta.title))
     categories.set(meta.key, category)
   }
 
@@ -181,7 +180,7 @@ export const dashboardApi = {
         onLeaveToday: countOnLeaveToday(leaveRequests),
         openPayrollRuns: payroll.data.payrollRuns.filter(isOpenRun).length,
       },
-      approvalCategories: groupApprovals(approvals.items, leaveRequests),
+      approvalCategories: groupApprovals(approvals.items),
       currentPayroll: currentRun ? await getPayrollStatus(currentRun, currency, employees.data.length) : null,
       upcomingPayroll: toUpcomingRuns(payroll.data.payrollRuns),
     }
