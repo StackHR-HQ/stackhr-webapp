@@ -221,9 +221,11 @@ export interface CreateEmployeePayload {
   sendInvitation: boolean
 }
 
+// Department, employment type, start date and status can't be changed through this endpoint.
 export interface UpdateEmployeePayload {
   jobTitle?: string
-  employmentStatus?: EmploymentStatus
+  managerId?: string | null
+  workLocation?: string | null
 }
 
 // Departments and teams own their membership atomically: this list replaces

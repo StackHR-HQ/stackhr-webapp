@@ -75,7 +75,13 @@ export function EmployeeProfilePage() {
         {activeTab === 'overview' ? <OverviewTab employee={employee} department={department} manager={manager} /> : null}
         {activeTab === 'personal' ? <PersonalInfoTab employee={employee} /> : null}
         {activeTab === 'employment' ? (
-          <EmploymentTab employee={employee} department={department} manager={manager} directReports={directReports} />
+          <EmploymentTab
+            employee={employee}
+            department={department}
+            manager={manager}
+            directReports={directReports}
+            employees={employees ?? []}
+          />
         ) : null}
         {activeTab === 'compensation' ? <CompensationTab employee={employee} /> : null}
         {activeTab === 'leave' ? <LeaveTab employee={employee} /> : null}
