@@ -1,7 +1,9 @@
 import { LockKey, PencilSimple, ShieldCheck } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { Avatar } from '../../../components/ui/avatar'
 import { Button } from '../../../components/ui/button'
 import { formatAmount } from '../../dashboard/lib/format'
+import { EditProfileForm } from '../components/edit-profile-form'
 import { useMyProfile } from '../hooks/use-my-profile'
 import { formatLongDate, humanizeEnum, initials, statusLabel } from '../lib/profile-format'
 import type { MyProfile } from '../types/employee-types'
@@ -20,6 +22,8 @@ function personalDetails(profile: MyProfile): Detail[] {
     ['Full name', profile.fullName],
     ['Date of birth', profile.dateOfBirth && formatLongDate(profile.dateOfBirth)],
     ['Gender', profile.gender && humanizeEnum(profile.gender).replace(/-/g, ' ')],
+    ['Marital status', profile.maritalStatus && humanizeEnum(profile.maritalStatus).replace(/-/g, ' ')],
+    ['Nationality', profile.nationality],
     ['Phone', profile.phone],
     ['Email', profile.personalEmail ?? profile.email],
     ['Address', profile.address],
@@ -87,6 +91,7 @@ function DetailList({ items, positiveStatus }: { items: Detail[]; positiveStatus
 
 export function MyProfilePage() {
   const { data: profile, isPending, isError, refetch } = useMyProfile()
+  const [editing, setEditing] = useState(false)
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 pb-8">
@@ -98,8 +103,13 @@ export function MyProfilePage() {
             Keep your personal details current. Employment and pay information is managed by HR.
           </p>
         </div>
-        {/* There's no endpoint for employees to update their own details yet. */}
-        <Button variant="secondary" width="fit" className="gap-2" disabled title="Editing isn't available yet">
+        <Button
+          variant="secondary"
+          width="fit"
+          className="gap-2"
+          disabled={!profile || editing}
+          onClick={() => setEditing(true)}
+        >
           <PencilSimple size={16} />
           Edit personal details
         </Button>
@@ -140,15 +150,25 @@ export function MyProfilePage() {
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
-              <div className="mb-2 flex items-start justify-between">
+            <section
+              className={`rounded-panel border border-line bg-surface p-6 shadow-panel ${editing ? 'lg:col-span-2' : ''}`}
+            >
+              <div className={`flex items-start justify-between ${editing ? 'mb-5' : 'mb-2'}`}>
                 <div>
                   <h2 className="text-lg font-medium text-ink">Personal information</h2>
                   <p className="mt-1 text-xs text-muted">Details you can update yourself.</p>
                 </div>
-                <PencilSimple size={19} className="text-accent" />
+                {editing ? null : (
+                  <button type="button" onClick={() => setEditing(true)} aria-label="Edit personal details">
+                    <PencilSimple size={19} className="text-accent" />
+                  </button>
+                )}
               </div>
-              <DetailList items={personalDetails(profile)} />
+              {editing ? (
+                <EditProfileForm profile={profile} onDone={() => setEditing(false)} />
+              ) : (
+                <DetailList items={personalDetails(profile)} />
+              )}
             </section>
 
             <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">

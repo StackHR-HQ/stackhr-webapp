@@ -75,7 +75,36 @@ export interface MyProfile {
   bankAccountLast4: string | null
   pensionProvider: string | null
   pensionRsaNumber: string | null
+  firstName: string | null
+  lastName: string | null
+  maritalStatus: string | null
+  nationality: string | null
 }
+
+// Fields an employee can change via PATCH /me/profile; null clears a value.
+export type ProfileUpdate = Partial<
+  Pick<
+    MyProfile,
+    | 'firstName'
+    | 'lastName'
+    | 'dateOfBirth'
+    | 'gender'
+    | 'maritalStatus'
+    | 'nationality'
+    | 'phone'
+    | 'personalEmail'
+    | 'address'
+    | 'emergencyContactName'
+    | 'emergencyContactRelationship'
+    | 'emergencyContactPhone'
+    | 'bankName'
+    | 'accountNumber'
+    | 'accountName'
+    | 'tin'
+    | 'pensionProvider'
+    | 'pensionRsaNumber'
+  >
+>
 
 // Amounts are in minor units (kobo).
 export interface MyPayslip {

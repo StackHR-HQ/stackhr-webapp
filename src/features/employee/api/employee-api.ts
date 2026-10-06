@@ -7,12 +7,17 @@ import type {
   MyPayslip,
   MyProfile,
   MySpendRequest,
+  ProfileUpdate,
 } from '../types/employee-types'
 
 export const employeeApi = {
   async getProfile(): Promise<MyProfile> {
     const { data } = await http.get<{ profile: MyProfile }>('/me/profile')
     return data.profile
+  },
+
+  async updateProfile(update: ProfileUpdate): Promise<void> {
+    await http.patch('/me/profile', update)
   },
 
   async getPayslips(): Promise<MyPayslip[]> {
