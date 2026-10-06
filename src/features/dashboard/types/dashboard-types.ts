@@ -88,4 +88,6 @@ export interface DashboardSummary {
   currentPayroll: PayrollStatusSummary | null
   upcomingPayroll: UpcomingPayrollRun[]
   recentActivity: ActivityItem[]
+  complianceAlerts: ComplianceAlert[] | null
+  subscription: SubscriptionStatus | null
 }

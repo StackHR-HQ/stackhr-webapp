@@ -1,6 +1,8 @@
 export type ApprovalDecision = 'APPROVED' | 'REJECTED'
 
 export interface ApprovalSubjectSummary {
+  // Set instead of the details below when the subject was deleted, e.g. "Leave Request (Archived)".
+  label?: string
   leaveType?: string
   startDate?: string
   endDate?: string
