@@ -40,8 +40,7 @@ function personalDetails(profile: MyProfile): Detail[] {
 
 function employmentDetails(profile: MyProfile): Detail[] {
   return [
-    // There's no employee number on the profile yet.
-    ['Employee ID', null],
+    ['Employee ID', profile.employeeNumber],
     ['Job title', profile.jobTitle],
     ['Department', profile.department],
     ['Employment type', profile.employmentType && humanizeEnum(profile.employmentType)],

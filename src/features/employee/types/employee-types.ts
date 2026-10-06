@@ -47,6 +47,7 @@ export interface LeaveSummary {
 
 export interface MyProfile {
   id: string
+  employeeNumber: string | null
   fullName: string
   jobTitle: string | null
   department: string | null
