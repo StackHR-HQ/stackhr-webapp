@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Avatar } from '../../../components/ui/avatar'
 import { Button } from '../../../components/ui/button'
 import { Modal } from '../../../components/ui/modal'
+import { maskedAccountNumber } from '../../../lib/bank-account'
 import { formatAmount } from '../../dashboard/lib/format'
 import { EditProfileForm } from '../components/edit-profile-form'
 import { useMyProfile } from '../hooks/use-my-profile'
@@ -32,7 +33,7 @@ function personalDetails(profile: MyProfile): Detail[] {
       'Emergency contact',
       joined(profile.emergencyContactName, profile.emergencyContactRelationship, profile.emergencyContactPhone),
     ],
-    ['Bank account', joined(profile.bankName, profile.bankAccountLast4 && `•••• ${profile.bankAccountLast4}`)],
+    ['Bank account', joined(profile.bankName, maskedAccountNumber(profile.bankAccountLast4, profile.accountNumber))],
     ['Tax ID (TIN)', profile.tin],
     ['Pension', joined(profile.pensionProvider, profile.pensionRsaNumber)],
   ]

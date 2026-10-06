@@ -1,4 +1,5 @@
 import { Card, CardHeader } from '../../../../components/ui/card'
+import { maskedAccountNumber } from '../../../../lib/bank-account'
 import { formatAmount } from '../../lib/format'
 import type { EmployeeDetail } from '../../types/people-types'
 import { FieldGrid } from './field-grid'
@@ -25,8 +26,11 @@ export function CompensationTab({ employee }: { employee: EmployeeDetail }) {
         <CardHeader title="Payment details" />
         <FieldGrid
           fields={[
-            { label: 'Bank', value: compensation.bankName },
-            { label: 'Account number', value: `•••• •••• ${compensation.bankAccountLast4}` },
+            { label: 'Bank', value: compensation.bankName ?? '—' },
+            {
+              label: 'Account number',
+              value: maskedAccountNumber(compensation.bankAccountLast4, compensation.accountNumber) ?? '—',
+            },
           ]}
         />
       </Card>

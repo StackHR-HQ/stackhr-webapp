@@ -60,8 +60,9 @@ export interface CompensationInfo {
   salary: number
   currency: string
   payFrequency: string
-  bankName: string
-  bankAccountLast4: string
+  bankName: string | null
+  bankAccountLast4: string | null
+  accountNumber?: string | null
 }
 
 export interface LeaveBalanceEntry {

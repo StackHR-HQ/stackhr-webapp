@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { Card, CardHeader } from '../../../../components/ui/card'
+import { maskedAccountNumber } from '../../../../lib/bank-account'
 import { tenureLabel } from '../../lib/dates'
 import { formatAmount, formatDate } from '../../lib/format'
 import type { Department, EmployeeDetail, EmployeeSummary } from '../../types/people-types'
@@ -69,7 +70,16 @@ export function OverviewTab({
             fields={[
               { label: 'Salary', value: `${formatAmount(employee.compensation.salary, employee.compensation.currency)}/yr` },
               { label: 'Pay frequency', value: employee.compensation.payFrequency },
-              { label: 'Bank', value: `${employee.compensation.bankName} •••• ${employee.compensation.bankAccountLast4}` },
+              {
+                label: 'Bank',
+                value:
+                  [
+                    employee.compensation.bankName,
+                    maskedAccountNumber(employee.compensation.bankAccountLast4, employee.compensation.accountNumber),
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || '—',
+              },
             ]}
           />
         </Card>
