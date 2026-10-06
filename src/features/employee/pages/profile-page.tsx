@@ -2,6 +2,7 @@ import { LockKey, PencilSimple, ShieldCheck } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Avatar } from '../../../components/ui/avatar'
 import { Button } from '../../../components/ui/button'
+import { Modal } from '../../../components/ui/modal'
 import { formatAmount } from '../../dashboard/lib/format'
 import { EditProfileForm } from '../components/edit-profile-form'
 import { useMyProfile } from '../hooks/use-my-profile'
@@ -107,11 +108,11 @@ export function MyProfilePage() {
           variant="secondary"
           width="fit"
           className="gap-2"
-          disabled={!profile || editing}
+          disabled={!profile}
           onClick={() => setEditing(true)}
         >
           <PencilSimple size={16} />
-          Edit personal details
+          Edit
         </Button>
       </header>
 
@@ -150,25 +151,17 @@ export function MyProfilePage() {
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <section
-              className={`rounded-panel border border-line bg-surface p-6 shadow-panel ${editing ? 'lg:col-span-2' : ''}`}
-            >
-              <div className={`flex items-start justify-between ${editing ? 'mb-5' : 'mb-2'}`}>
+            <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
+              <div className="mb-2 flex items-start justify-between">
                 <div>
                   <h2 className="text-lg font-medium text-ink">Personal information</h2>
                   <p className="mt-1 text-xs text-muted">Details you can update yourself.</p>
                 </div>
-                {editing ? null : (
-                  <button type="button" onClick={() => setEditing(true)} aria-label="Edit personal details">
-                    <PencilSimple size={19} className="text-accent" />
-                  </button>
-                )}
+                <button type="button" onClick={() => setEditing(true)} aria-label="Edit personal details">
+                  <PencilSimple size={19} className="text-accent" />
+                </button>
               </div>
-              {editing ? (
-                <EditProfileForm profile={profile} onDone={() => setEditing(false)} />
-              ) : (
-                <DetailList items={personalDetails(profile)} />
-              )}
+              <DetailList items={personalDetails(profile)} />
             </section>
 
             <section className="rounded-panel border border-line bg-surface p-6 shadow-panel">
@@ -210,6 +203,10 @@ export function MyProfilePage() {
               </button>
             </div>
           </section>
+
+          <Modal open={editing} onClose={() => setEditing(false)} title="Edit personal details">
+            <EditProfileForm profile={profile} onDone={() => setEditing(false)} />
+          </Modal>
         </>
       )}
     </div>
