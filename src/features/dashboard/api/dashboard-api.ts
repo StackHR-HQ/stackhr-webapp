@@ -67,6 +67,7 @@ interface ApiPayrollRun {
   title: string | null
   periodMonth: number
   periodYear: number
+  payDate: string | null
   status: string
   totalGross: number
   totalNet: number
@@ -98,6 +99,7 @@ function toUpcomingRuns(runs: ApiPayrollRun[]): UpcomingPayrollRun[] {
       id: run.id,
       title: run.title ?? periodLabel(run),
       periodLabel: periodLabel(run),
+      payDate: run.payDate ?? undefined,
       status: run.status,
     }))
 }
@@ -227,17 +229,19 @@ function toRecentActivity(requests: ApprovalRequest[], currentUserId?: string): 
 
 interface ApiComplianceAlert {
   type: string
+  title?: string
   severity: string
   message: string
   count?: number
   dueDate?: string
-  deadline?: string
 }
 
 interface ApiBillingStatus {
   status: string
   planName: string
+  trialStartedAt: string | null
   trialEndsAt: string | null
+  trialLengthDays: number | null
   activeEmployeeCount: number
   seatLimit: number
 }
@@ -259,17 +263,15 @@ function humanize(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, ' ')
 }
 
-// Alerts with a count of 0 ("0 employees are missing...") aren't issues.
+// The backend already leaves out alerts with a count of 0.
 function toComplianceAlerts(alerts: ApiComplianceAlert[]): ComplianceAlert[] {
-  return alerts
-    .filter((alert) => alert.count === undefined || alert.count > 0)
-    .map((alert) => ({
-      id: alert.type,
-      title: COMPLIANCE_TITLES[alert.type] ?? humanize(alert.type),
-      description: alert.message,
-      severity: toSeverity(alert.severity),
-      dueDate: alert.dueDate ?? alert.deadline,
-    }))
+  return alerts.map((alert) => ({
+    id: alert.type,
+    title: alert.title ?? COMPLIANCE_TITLES[alert.type] ?? humanize(alert.type),
+    description: alert.message,
+    severity: toSeverity(alert.severity),
+    dueDate: alert.dueDate,
+  }))
 }
 
 function toPlanStatus(status: string): SubscriptionPlanStatus {
@@ -285,6 +287,7 @@ function toSubscription(billing: ApiBillingStatus): SubscriptionStatus {
     planName: status === 'trial' ? `${plan} (Trial)` : plan,
     status,
     trialEndsAt: status === 'trial' ? (billing.trialEndsAt ?? undefined) : undefined,
+    trialLengthDays: billing.trialLengthDays ?? undefined,
     seatsUsed: billing.activeEmployeeCount,
     seatsLimit: billing.seatLimit,
   }

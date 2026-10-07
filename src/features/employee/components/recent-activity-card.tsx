@@ -1,4 +1,4 @@
-import { CalendarBlank, FileText, Money, Receipt, type Icon } from '@phosphor-icons/react'
+import { CalendarBlank, FileText, Money, Receipt, UserCircle, type Icon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { useMyActivity } from '../hooks/use-my-activity'
 import type { ActivityTone, MyActivityItem } from '../types/employee-types'
@@ -8,6 +8,7 @@ const ICONS: Record<MyActivityItem['kind'], Icon> = {
   payslip: FileText,
   expense: Receipt,
   'salary-advance': Money,
+  profile: UserCircle,
 }
 
 const TONES: Record<ActivityTone, string> = {

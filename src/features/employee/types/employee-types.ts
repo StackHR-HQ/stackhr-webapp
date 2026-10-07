@@ -2,6 +2,7 @@ export interface MyLeaveBalance {
   allocatedDays: number
   usedDays: number
   pendingDays?: number
+  upcomingDays?: number
   remainingDays: number
   leaveType?: { id: string; name: string }
 }
@@ -16,6 +17,7 @@ export interface MyLeaveRequest {
   createdAt: string
   updatedAt: string
   decidedAt: string | null
+  decidedByUserId?: string | null
 }
 
 export interface LeaveTypeOption {
@@ -80,6 +82,16 @@ export interface MyProfile {
   lastName: string | null
   maritalStatus: string | null
   nationality: string | null
+  compensation: MyCompensation | null
+}
+
+// Monthly amounts in whole currency units (not kobo), unlike annualSalaryMinor.
+export interface MyCompensation {
+  basicSalary: number
+  housingAllowance: number
+  transportAllowance: number
+  otherAllowances: number
+  effectiveFrom: string
 }
 
 // Fields an employee can change via PATCH /me/profile; null clears a value.
@@ -127,8 +139,15 @@ export type ActivityTone = 'accent' | 'positive' | 'critical' | 'muted'
 
 export interface MyActivityItem {
   id: string
-  kind: 'leave' | 'payslip' | 'expense' | 'salary-advance'
+  kind: 'leave' | 'payslip' | 'expense' | 'salary-advance' | 'profile'
   label: string
   timestamp: string
   tone: ActivityTone
+}
+
+// Audit events from /me/activity and /me/notifications, e.g. PROFILE_UPDATED, LEAVE_APPROVED.
+export interface MyAuditEvent {
+  id: string
+  action: string
+  createdAt: string
 }

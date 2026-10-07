@@ -4,8 +4,8 @@ import { Card } from '../../../../components/ui/card'
 import { daysUntil } from '../../lib/format'
 import type { SubscriptionStatus } from '../../types/dashboard-types'
 
-// /billing/status has no trial start date; staging trials run 30 days from signup.
-const TRIAL_LENGTH_DAYS = 30
+// Fallback for older /billing/status responses without trialLengthDays.
+const DEFAULT_TRIAL_LENGTH_DAYS = 30
 
 const STATUS_META: Record<SubscriptionStatus['status'], { label: string; tone: 'accent' | 'positive' | 'critical' }> = {
   trial: { label: 'Trial', tone: 'accent' },
@@ -15,10 +15,11 @@ const STATUS_META: Record<SubscriptionStatus['status'], { label: string; tone: '
 
 export function SubscriptionStatusCard({ subscription }: { subscription: SubscriptionStatus }) {
   const statusMeta = STATUS_META[subscription.status]
+  const trialLength = subscription.trialLengthDays ?? DEFAULT_TRIAL_LENGTH_DAYS
   const daysRemaining = subscription.trialEndsAt ? Math.max(0, daysUntil(subscription.trialEndsAt)) : null
   const trialProgress =
     daysRemaining !== null
-      ? Math.min(100, Math.max(0, Math.round(((TRIAL_LENGTH_DAYS - daysRemaining) / TRIAL_LENGTH_DAYS) * 100)))
+      ? Math.min(100, Math.max(0, Math.round(((trialLength - daysRemaining) / trialLength) * 100)))
       : null
 
   return (

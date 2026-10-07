@@ -14,6 +14,10 @@ export function useUpdateMyProfile() {
 
   return useMutation({
     mutationFn: (update: ProfileUpdate) => employeeApi.updateProfile(update),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me', 'profile'] }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['me', 'profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['me', 'activity'] }),
+      ]),
   })
 }

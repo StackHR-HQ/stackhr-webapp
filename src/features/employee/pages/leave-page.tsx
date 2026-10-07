@@ -77,6 +77,7 @@ export function MyLeavePage() {
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   {plural(balance.usedDays, 'day')} used
+                  {balance.upcomingDays ? ` · ${plural(balance.upcomingDays, 'day')} upcoming` : ''}
                   {balance.pendingDays ? ` · ${plural(balance.pendingDays, 'day')} pending` : ''}
                 </p>
               </Card>

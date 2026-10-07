@@ -62,7 +62,6 @@ export interface CompensationInfo {
   payFrequency: string
   bankName: string | null
   bankAccountLast4: string | null
-  accountNumber?: string | null
 }
 
 export interface LeaveBalanceEntry {
@@ -222,9 +221,14 @@ export interface CreateEmployeePayload {
 }
 
 // Department, employment type, start date and status can't be changed through this endpoint.
+// Enum fields (employmentType, status) go over the wire in API casing, e.g. FULL_TIME.
 export interface UpdateEmployeePayload {
   jobTitle?: string
+  departmentId?: string | null
   managerId?: string | null
+  employmentType?: string
+  startDate?: string
+  status?: string
   workLocation?: string | null
 }
 

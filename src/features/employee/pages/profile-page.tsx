@@ -33,7 +33,7 @@ function personalDetails(profile: MyProfile): Detail[] {
       'Emergency contact',
       joined(profile.emergencyContactName, profile.emergencyContactRelationship, profile.emergencyContactPhone),
     ],
-    ['Bank account', joined(profile.bankName, maskedAccountNumber(profile.bankAccountLast4, profile.accountNumber))],
+    ['Bank account', joined(profile.bankName, maskedAccountNumber(profile.bankAccountLast4))],
     ['Tax ID (TIN)', profile.tin],
     ['Pension', joined(profile.pensionProvider, profile.pensionRsaNumber)],
   ]
@@ -52,6 +52,22 @@ function employmentDetails(profile: MyProfile): Detail[] {
   ]
 }
 
+function allowancesSummary(profile: MyProfile): string | null {
+  const { compensation } = profile
+  if (!compensation) return null
+  const currency = profile.currency ?? 'NGN'
+  const parts = (
+    [
+      ['Housing', compensation.housingAllowance],
+      ['Transport', compensation.transportAllowance],
+      ['Other', compensation.otherAllowances],
+    ] as const
+  )
+    .filter(([, amount]) => amount > 0)
+    .map(([label, amount]) => `${label} ${formatAmount(amount, currency)}`)
+  return parts.length ? `${parts.join(' · ')} / month` : null
+}
+
 function compensationDetails(profile: MyProfile): Detail[] {
   return [
     [
@@ -61,9 +77,8 @@ function compensationDetails(profile: MyProfile): Detail[] {
         : null,
     ],
     ['Pay frequency', profile.payFrequency && humanizeEnum(profile.payFrequency)],
-    // Allowances and the salary effective date aren't returned by the backend yet.
-    ['Allowances', null],
-    ['Effective date', null],
+    ['Allowances', allowancesSummary(profile)],
+    ['Effective date', profile.compensation?.effectiveFrom ? formatLongDate(profile.compensation.effectiveFrom) : null],
   ]
 }
 

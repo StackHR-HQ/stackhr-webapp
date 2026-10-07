@@ -27,10 +27,7 @@ export function CompensationTab({ employee }: { employee: EmployeeDetail }) {
         <FieldGrid
           fields={[
             { label: 'Bank', value: compensation.bankName ?? '—' },
-            {
-              label: 'Account number',
-              value: maskedAccountNumber(compensation.bankAccountLast4, compensation.accountNumber) ?? '—',
-            },
+            { label: 'Account number', value: maskedAccountNumber(compensation.bankAccountLast4) ?? '—' },
           ]}
         />
       </Card>

@@ -73,10 +73,7 @@ export function OverviewTab({
               {
                 label: 'Bank',
                 value:
-                  [
-                    employee.compensation.bankName,
-                    maskedAccountNumber(employee.compensation.bankAccountLast4, employee.compensation.accountNumber),
-                  ]
+                  [employee.compensation.bankName, maskedAccountNumber(employee.compensation.bankAccountLast4)]
                     .filter(Boolean)
                     .join(' ') || '—',
               },

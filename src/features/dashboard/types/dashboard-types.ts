@@ -14,6 +14,7 @@ export interface UpcomingPayrollRun {
   id: string
   title: string
   periodLabel: string
+  payDate?: string
   status: string
 }
 
@@ -70,6 +71,7 @@ export interface SubscriptionStatus {
   planName: string
   status: SubscriptionPlanStatus
   trialEndsAt?: string
+  trialLengthDays?: number
   seatsUsed: number
   seatsLimit: number
 }

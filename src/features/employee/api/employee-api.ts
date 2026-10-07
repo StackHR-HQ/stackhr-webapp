@@ -2,6 +2,7 @@ import { http } from '../../../lib/http'
 import type {
   LeaveRequestPayload,
   LeaveTypeOption,
+  MyAuditEvent,
   MyLeaveBalance,
   MyLeaveRequest,
   MyPayslip,
@@ -33,6 +34,11 @@ export const employeeApi = {
   async getSalaryAdvances(): Promise<MySpendRequest[]> {
     const { data } = await http.get<{ salaryAdvances: MySpendRequest[] }>('/me/advances')
     return data.salaryAdvances
+  },
+
+  async getActivity(): Promise<MyAuditEvent[]> {
+    const { data } = await http.get<{ activity: MyAuditEvent[] }>('/me/activity')
+    return data.activity
   },
 
   async getLeaveBalances(): Promise<MyLeaveBalance[]> {

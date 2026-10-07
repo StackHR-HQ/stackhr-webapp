@@ -1,7 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { toApiEnum } from '../../../lib/api-enum'
 import { employeeApi } from '../api/employee-api'
-import type { ActivityTone, MyActivityItem, MyLeaveRequest, MyPayslip, MySpendRequest } from '../types/employee-types'
+import type {
+  ActivityTone,
+  MyActivityItem,
+  MyAuditEvent,
+  MyLeaveRequest,
+  MyPayslip,
+  MySpendRequest,
+} from '../types/employee-types'
 import { payslipPeriod } from './use-my-payslips'
 
 const ACTIVITY_LIMIT = 5
@@ -23,7 +30,6 @@ function leaveEvents(request: MyLeaveRequest): MyActivityItem[] {
       id: `${request.id}-decided`,
       kind: 'leave',
       label: `${type} ${status === 'APPROVED' ? 'approved' : 'rejected'}`,
-      // The backend doesn't set decidedAt on leave requests yet, so updatedAt stands in.
       timestamp: request.decidedAt ?? request.updatedAt,
       tone: statusTone(status),
     })
@@ -58,15 +64,25 @@ function payslipEvent(payslip: MyPayslip): MyActivityItem {
   }
 }
 
+// Leave, payslip and spend events are built from their own endpoints, which carry
+// richer detail, so /me/activity only contributes the events nothing else covers.
+function profileEvents(events: MyAuditEvent[]): MyActivityItem[] {
+  return events
+    .filter((event) => event.action === 'PROFILE_UPDATED')
+    .map((event) => ({ id: event.id, kind: 'profile', label: 'Profile updated', timestamp: event.createdAt, tone: 'accent' }))
+}
+
 export function useMyActivity() {
   return useQuery({
     queryKey: ['me', 'activity'],
     queryFn: async () => {
-      const [leaveRequests, payslips, expenses, advances] = await Promise.all([
+      const [leaveRequests, payslips, expenses, advances, auditEvents] = await Promise.all([
         employeeApi.getLeaveRequests(),
         employeeApi.getPayslips(),
         employeeApi.getExpenses(),
         employeeApi.getSalaryAdvances(),
+        // Profile updates are a nice-to-have; don't fail the whole feed over them.
+        employeeApi.getActivity().catch(() => []),
       ])
 
       return [
@@ -74,6 +90,7 @@ export function useMyActivity() {
         ...payslips.map(payslipEvent),
         ...expenses.flatMap((expense) => spendEvents(expense, 'expense', 'Expense claim')),
         ...advances.flatMap((advance) => spendEvents(advance, 'salary-advance', 'Salary advance')),
+        ...profileEvents(auditEvents),
       ]
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
         .slice(0, ACTIVITY_LIMIT)
