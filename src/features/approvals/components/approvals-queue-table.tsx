@@ -11,11 +11,13 @@ export function ApprovalsQueueTable({
   showDomain,
   onApprove,
   onReject,
+  deciding = false,
 }: {
   items: GlobalApprovalItem[]
   showDomain: boolean
   onApprove: (item: GlobalApprovalItem) => void
   onReject: (item: GlobalApprovalItem) => void
+  deciding?: boolean
 }) {
   if (items.length === 0) {
     return (
@@ -66,16 +68,18 @@ export function ApprovalsQueueTable({
                       <button
                         type="button"
                         onClick={() => onReject(item)}
+                        disabled={deciding}
                         aria-label={`Reject request from ${item.title}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical disabled:opacity-50"
                       >
                         <XIcon className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
                         onClick={() => onApprove(item)}
+                        disabled={deciding}
                         aria-label={`Approve request from ${item.title}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
                       >
                         <CheckIcon className="h-3.5 w-3.5" />
                       </button>

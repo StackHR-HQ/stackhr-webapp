@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Pagination } from '../../../components/ui/pagination'
+import { getApiErrorMessage } from '../../../lib/http'
+import { notify } from '../../../lib/toast'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { ApprovalDomainTabs, type ApprovalTabKey } from '../components/approval-domain-tabs'
 import { ApprovalHistoryTable } from '../components/approval-history-table'
 import { ApprovalsQueueTable } from '../components/approvals-queue-table'
+import { useDecideLeaveRequest } from '../../people/hooks/use-decide-leave-request'
+import { useDecideApproval } from '../hooks/use-decide-approval'
 import { useGlobalApprovals } from '../hooks/use-global-approvals'
 import type { GlobalApprovalItem, GlobalApprovalStatus } from '../types/approval-types'
 
@@ -13,7 +17,10 @@ export function GlobalApprovalsPage() {
   const { data: approvals, isPending, isError, refetch } = useGlobalApprovals()
   const [activeTab, setActiveTab] = useState<ApprovalTabKey>('all')
   const [historyPage, setHistoryPage] = useState(1)
+  // Only mock-backed items (no approval record) fall back to a local decision.
   const [decisions, setDecisions] = useState<Partial<Record<string, GlobalApprovalStatus>>>({})
+  const decideApproval = useDecideApproval()
+  const decideLeave = useDecideLeaveRequest()
   const approverName = useAuthStore((state) => state.user?.name) ?? 'You'
 
   function changeTab(tab: ApprovalTabKey) {
@@ -29,8 +36,23 @@ export function GlobalApprovalsPage() {
     })
   }, [approvals, decisions, approverName])
 
-  function decide(item: GlobalApprovalItem, status: 'approved' | 'rejected') {
-    setDecisions((prev) => ({ ...prev, [`${item.domain}-${item.id}`]: status }))
+  async function decide(item: GlobalApprovalItem, status: 'approved' | 'rejected') {
+    const apiStatus = status === 'approved' ? 'APPROVED' : 'REJECTED'
+    // Spend approvals are listed by their approval request id already.
+    const approvalId = item.domain === 'expenses' ? item.id : item.approvalId
+    try {
+      if (item.domain === 'leave') {
+        await decideLeave.mutateAsync({ id: item.id, status })
+      } else if (approvalId) {
+        await decideApproval.mutateAsync({ id: approvalId, status: apiStatus })
+      } else {
+        setDecisions((prev) => ({ ...prev, [`${item.domain}-${item.id}`]: status }))
+        return
+      }
+      notify.success(status === 'approved' ? 'Request approved' : 'Request rejected')
+    } catch (err) {
+      notify.error("Couldn't record the decision", getApiErrorMessage(err))
+    }
   }
 
   const counts = useMemo(() => {
@@ -115,6 +137,7 @@ export function GlobalApprovalsPage() {
               showDomain={activeTab === 'all'}
               onApprove={(item) => decide(item, 'approved')}
               onReject={(item) => decide(item, 'rejected')}
+              deciding={decideApproval.isPending || decideLeave.isPending}
             />
           )}
         </div>
