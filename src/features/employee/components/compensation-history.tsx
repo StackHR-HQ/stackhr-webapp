@@ -2,18 +2,13 @@ import { ArrowRight } from '@phosphor-icons/react'
 import { formatAmount } from '../../dashboard/lib/format'
 import { useMyCompensationHistory } from '../hooks/use-my-compensation-history'
 import { formatLongDate } from '../lib/profile-format'
+import { formatSalaryChange } from '../lib/salary-change'
 
 interface Entry {
   id: string
   effectiveDate: string
   previous?: number
   amount: number
-}
-
-function percentChange(previous: number, next: number): string | null {
-  if (!previous) return null
-  const change = ((next - previous) / previous) * 100
-  return `${change > 0 ? '+' : ''}${change.toFixed(1).replace(/\.0$/, '')}%`
 }
 
 export function CompensationHistory({ currency }: { currency: string }) {
@@ -52,7 +47,7 @@ export function CompensationHistory({ currency }: { currency: string }) {
   return (
     <ol className="divide-y divide-line">
       {entries.map((entry) => {
-        const change = entry.previous !== undefined ? percentChange(entry.previous, entry.amount) : null
+        const change = entry.previous !== undefined ? formatSalaryChange(entry.previous, entry.amount) : null
         return (
           <li key={entry.id} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
             <div className="min-w-0">

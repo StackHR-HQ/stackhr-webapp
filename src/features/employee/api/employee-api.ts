@@ -1,16 +1,19 @@
 import { http } from '../../../lib/http'
 import type {
+  ExpensePayload,
   LeaveRequestPayload,
   LeaveTypeOption,
   MyAuditEvent,
   MyCompensationHistory,
   MyDocument,
+  MyExpense,
   MyLeaveBalance,
   MyLeaveRequest,
   MyPayslip,
   MyProfile,
-  MySpendRequest,
+  MySalaryAdvance,
   ProfileUpdate,
+  SalaryAdvancePayload,
 } from '../types/employee-types'
 
 export const employeeApi = {
@@ -28,14 +31,22 @@ export const employeeApi = {
     return data.payslips
   },
 
-  async getExpenses(): Promise<MySpendRequest[]> {
-    const { data } = await http.get<{ expenses: MySpendRequest[] }>('/me/expenses')
+  async getExpenses(): Promise<MyExpense[]> {
+    const { data } = await http.get<{ expenses: MyExpense[] }>('/me/expenses')
     return data.expenses
   },
 
-  async getSalaryAdvances(): Promise<MySpendRequest[]> {
-    const { data } = await http.get<{ salaryAdvances: MySpendRequest[] }>('/me/advances')
+  async submitExpense(payload: ExpensePayload): Promise<void> {
+    await http.post('/spend/expenses', { ...payload, description: payload.description || undefined })
+  },
+
+  async getSalaryAdvances(): Promise<MySalaryAdvance[]> {
+    const { data } = await http.get<{ salaryAdvances: MySalaryAdvance[] }>('/me/advances')
     return data.salaryAdvances
+  },
+
+  async submitSalaryAdvance(payload: SalaryAdvancePayload): Promise<void> {
+    await http.post('/spend/advances', { ...payload, reason: payload.reason || undefined })
   },
 
   async getActivity(): Promise<MyAuditEvent[]> {

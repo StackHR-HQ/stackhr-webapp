@@ -135,6 +135,35 @@ export interface MySpendRequest {
   updatedAt?: string
 }
 
+// Spend amounts are in whole currency units (e.g. 25000 = ₦25,000), unlike payslips.
+export interface MyExpense extends MySpendRequest {
+  category: string
+  amount: number
+  currency?: string
+  description?: string | null
+  receiptUrl?: string | null
+}
+
+export interface MySalaryAdvance extends MySpendRequest {
+  amount: number
+  repaymentMonths: number
+  monthlyDeduction?: number
+  reason?: string | null
+}
+
+export interface ExpensePayload {
+  category: string
+  amount: number
+  currency: string
+  description?: string
+}
+
+export interface SalaryAdvancePayload {
+  amount: number
+  repaymentMonths: number
+  reason?: string
+}
+
 export type ActivityTone = 'accent' | 'positive' | 'critical' | 'muted'
 
 export interface MyActivityItem {
