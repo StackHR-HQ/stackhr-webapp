@@ -3,6 +3,7 @@ import type {
   LeaveRequestPayload,
   LeaveTypeOption,
   MyAuditEvent,
+  MyCompensationHistory,
   MyLeaveBalance,
   MyLeaveRequest,
   MyPayslip,
@@ -39,6 +40,16 @@ export const employeeApi = {
   async getActivity(): Promise<MyAuditEvent[]> {
     const { data } = await http.get<{ activity: MyAuditEvent[] }>('/me/activity')
     return data.activity
+  },
+
+  async getNotifications(): Promise<MyAuditEvent[]> {
+    const { data } = await http.get<{ notifications: MyAuditEvent[] }>('/me/notifications')
+    return data.notifications
+  },
+
+  async getCompensationHistory(): Promise<MyCompensationHistory> {
+    const { data } = await http.get<MyCompensationHistory>('/me/compensation-history')
+    return { records: data.records ?? [], history: data.history ?? [] }
   },
 
   async getLeaveBalances(): Promise<MyLeaveBalance[]> {

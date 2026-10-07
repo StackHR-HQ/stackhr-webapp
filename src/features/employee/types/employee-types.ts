@@ -151,3 +151,22 @@ export interface MyAuditEvent {
   action: string
   createdAt: string
 }
+
+// GET /me/compensation-history. Amounts are in whole currency units, like MyCompensation.
+export interface MyCompensationRecord {
+  id: string
+  baseSalary: number
+  effectiveDate: string
+}
+
+export interface MySalaryChange {
+  id: string
+  previousSalary: number
+  newSalary: number
+  effectiveDate: string
+}
+
+export interface MyCompensationHistory {
+  records: MyCompensationRecord[]
+  history: MySalaryChange[]
+}

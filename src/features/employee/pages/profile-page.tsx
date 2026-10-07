@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/button'
 import { Modal } from '../../../components/ui/modal'
 import { maskedAccountNumber } from '../../../lib/bank-account'
 import { formatAmount } from '../../dashboard/lib/format'
+import { CompensationHistory } from '../components/compensation-history'
 import { EditProfileForm } from '../components/edit-profile-form'
 import { useMyProfile } from '../hooks/use-my-profile'
 import { formatLongDate, humanizeEnum, initials, statusLabel } from '../lib/profile-format'
@@ -108,6 +109,7 @@ function DetailList({ items, positiveStatus }: { items: Detail[]; positiveStatus
 export function MyProfilePage() {
   const { data: profile, isPending, isError, refetch } = useMyProfile()
   const [editing, setEditing] = useState(false)
+  const [viewingHistory, setViewingHistory] = useState(false)
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 pb-8">
@@ -211,9 +213,13 @@ export function MyProfilePage() {
             <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
               <div>
                 <p className="text-sm font-medium text-ink">Compensation history</p>
-                <p className="mt-1 text-xs text-muted">Your salary history isn't available yet.</p>
+                <p className="mt-1 text-xs text-muted">Every change to your salary, with its effective date.</p>
               </div>
-              <button type="button" disabled className="text-sm font-medium text-accent disabled:opacity-50">
+              <button
+                type="button"
+                onClick={() => setViewingHistory(true)}
+                className="text-sm font-medium text-accent hover:underline"
+              >
                 View history
               </button>
             </div>
@@ -221,6 +227,10 @@ export function MyProfilePage() {
 
           <Modal open={editing} onClose={() => setEditing(false)} title="Edit personal details">
             <EditProfileForm profile={profile} onDone={() => setEditing(false)} />
+          </Modal>
+
+          <Modal open={viewingHistory} onClose={() => setViewingHistory(false)} title="Compensation history">
+            {viewingHistory ? <CompensationHistory currency={profile.currency ?? 'NGN'} /> : null}
           </Modal>
         </>
       )}
