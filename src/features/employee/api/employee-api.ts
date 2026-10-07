@@ -4,6 +4,7 @@ import type {
   LeaveTypeOption,
   MyAuditEvent,
   MyCompensationHistory,
+  MyDocument,
   MyLeaveBalance,
   MyLeaveRequest,
   MyPayslip,
@@ -65,6 +66,15 @@ export const employeeApi = {
   async getLeaveTypes(): Promise<LeaveTypeOption[]> {
     const { data } = await http.get<{ leaveTypes: LeaveTypeOption[] }>('/leave/types')
     return data.leaveTypes
+  },
+
+  async getDocuments(): Promise<MyDocument[]> {
+    const { data } = await http.get<{ documents: MyDocument[] }>('/me/documents')
+    return data.documents
+  },
+
+  async cancelLeaveRequest(id: string): Promise<void> {
+    await http.patch(`/leave/requests/${id}/cancel`)
   },
 
   async submitLeaveRequest(payload: LeaveRequestPayload): Promise<void> {

@@ -3,9 +3,12 @@ import { Badge, type BadgeTone } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import { Card } from '../../../components/ui/card'
 import { Modal } from '../../../components/ui/modal'
+import { getApiErrorMessage } from '../../../lib/http'
+import { notify } from '../../../lib/toast'
 import { formatDate } from '../../dashboard/lib/format'
 import { RequestLeaveForm } from '../components/request-leave-form'
-import { useLeaveTypeOptions, useMyLeaveBalances, useMyLeaveRequests } from '../hooks/use-my-leave'
+import { useCancelLeaveRequest, useLeaveTypeOptions, useMyLeaveBalances, useMyLeaveRequests } from '../hooks/use-my-leave'
+import type { MyLeaveRequest } from '../types/employee-types'
 
 const STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
   PENDING: { label: 'Pending', tone: 'warning' },
@@ -18,6 +21,19 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 
 export function MyLeavePage() {
   const [requesting, setRequesting] = useState(false)
+  const [cancelling, setCancelling] = useState<MyLeaveRequest | null>(null)
+  const cancelLeave = useCancelLeaveRequest()
+
+  const confirmCancel = async () => {
+    if (!cancelling) return
+    try {
+      await cancelLeave.mutateAsync(cancelling.id)
+      notify.success('Leave request cancelled')
+      setCancelling(null)
+    } catch (err) {
+      notify.error("Couldn't cancel the request", getApiErrorMessage(err))
+    }
+  }
   const balances = useMyLeaveBalances()
   const requests = useMyLeaveRequests()
   const leaveTypes = useLeaveTypeOptions()
@@ -54,6 +70,25 @@ export function MyLeavePage() {
           onDone={() => setRequesting(false)}
           onCancel={() => setRequesting(false)}
         />
+      </Modal>
+
+      <Modal open={cancelling !== null} onClose={() => setCancelling(null)} title="Cancel leave request">
+        {cancelling ? (
+          <div className="space-y-5">
+            <p className="text-sm text-muted">
+              Cancel your {cancelling.leaveType?.name ?? 'leave'} request for {formatDate(cancelling.startDate)} –{' '}
+              {formatDate(cancelling.endDate)}? You can submit a new request later.
+            </p>
+            <div className="flex gap-3">
+              <Button type="button" variant="secondary" width="fit" className="px-6" onClick={() => setCancelling(null)}>
+                Keep request
+              </Button>
+              <Button type="button" width="fit" className="px-6" loading={cancelLeave.isPending} onClick={confirmCancel}>
+                Cancel request
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Modal>
 
       <section className="space-y-3">
@@ -109,7 +144,18 @@ export function MyLeavePage() {
                         {formatDate(request.startDate)} – {formatDate(request.endDate)} · {plural(request.totalDays, 'day')}
                       </p>
                     </div>
-                    <Badge tone={status.tone}>{status.label}</Badge>
+                    <div className="flex shrink-0 items-center gap-3">
+                      {request.status === 'PENDING' ? (
+                        <button
+                          type="button"
+                          onClick={() => setCancelling(request)}
+                          className="text-xs font-medium text-muted hover:text-critical"
+                        >
+                          Cancel
+                        </button>
+                      ) : null}
+                      <Badge tone={status.tone}>{status.label}</Badge>
+                    </div>
                   </li>
                 )
               })}

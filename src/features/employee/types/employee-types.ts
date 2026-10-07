@@ -170,3 +170,11 @@ export interface MyCompensationHistory {
   records: MyCompensationRecord[]
   history: MySalaryChange[]
 }
+
+export interface MyDocument {
+  id: string
+  title: string
+  fileUrl: string
+  category?: string | null
+  createdAt?: string
+}
