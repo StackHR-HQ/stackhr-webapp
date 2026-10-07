@@ -1,11 +1,19 @@
 export type ApprovalDecision = 'APPROVED' | 'REJECTED'
 
 export interface ApprovalSubjectSummary {
+  // Set instead of the details below when the subject was deleted, e.g. "Leave Request (Archived)".
+  label?: string
   leaveType?: string
   startDate?: string
   endDate?: string
   totalDays?: number
   reason?: string | null
+  // Expense subjects
+  category?: string
+  description?: string | null
+  amount?: number
+  currency?: string
+  receiptUrl?: string | null
 }
 
 export interface ApprovalRequest {
@@ -24,4 +32,5 @@ export interface ApprovalRequest {
   metadata: string | null
   submittedAt: string
   decidedAt: string | null
+  rejectionReason?: string | null
 }

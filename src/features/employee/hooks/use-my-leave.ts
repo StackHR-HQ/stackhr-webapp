@@ -24,3 +24,14 @@ export function useSubmitLeaveRequest() {
     },
   })
 }
+
+export function useCancelLeaveRequest() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => employeeApi.cancelLeaveRequest(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}

@@ -147,11 +147,9 @@ export const peopleApi = {
     return data
   },
 
-  async updateEmployee(id: string, { jobTitle, employmentStatus }: UpdateEmployeePayload): Promise<void> {
-    await http.patch(`/people/employees/${id}`, {
-      jobTitle,
-      status: employmentStatus ? toApiEnum(employmentStatus) : undefined,
-    })
+  // Confirmed live: fields go under a nested `employment` object, like createEmployee.
+  async updateEmployee(id: string, employment: UpdateEmployeePayload): Promise<void> {
+    await http.patch(`/people/employees/${id}`, { employment })
   },
 
   async resendEmployeeInvitation(employeeId: string): Promise<void> {

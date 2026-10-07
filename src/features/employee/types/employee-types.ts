@@ -2,6 +2,7 @@ export interface MyLeaveBalance {
   allocatedDays: number
   usedDays: number
   pendingDays?: number
+  upcomingDays?: number
   remainingDays: number
   leaveType?: { id: string; name: string }
 }
@@ -16,6 +17,7 @@ export interface MyLeaveRequest {
   createdAt: string
   updatedAt: string
   decidedAt: string | null
+  decidedByUserId?: string | null
 }
 
 export interface LeaveTypeOption {
@@ -47,6 +49,7 @@ export interface LeaveSummary {
 
 export interface MyProfile {
   id: string
+  employeeNumber: string | null
   fullName: string
   jobTitle: string | null
   department: string | null
@@ -75,7 +78,46 @@ export interface MyProfile {
   bankAccountLast4: string | null
   pensionProvider: string | null
   pensionRsaNumber: string | null
+  firstName: string | null
+  lastName: string | null
+  maritalStatus: string | null
+  nationality: string | null
+  compensation: MyCompensation | null
 }
+
+// Monthly amounts in whole currency units (not kobo), unlike annualSalaryMinor.
+export interface MyCompensation {
+  basicSalary: number
+  housingAllowance: number
+  transportAllowance: number
+  otherAllowances: number
+  effectiveFrom: string
+}
+
+// Fields an employee can change via PATCH /me/profile; null clears a value.
+export type ProfileUpdate = Partial<
+  Pick<
+    MyProfile,
+    | 'firstName'
+    | 'lastName'
+    | 'dateOfBirth'
+    | 'gender'
+    | 'maritalStatus'
+    | 'nationality'
+    | 'phone'
+    | 'personalEmail'
+    | 'address'
+    | 'emergencyContactName'
+    | 'emergencyContactRelationship'
+    | 'emergencyContactPhone'
+    | 'bankName'
+    | 'accountNumber'
+    | 'accountName'
+    | 'tin'
+    | 'pensionProvider'
+    | 'pensionRsaNumber'
+  >
+>
 
 // Amounts are in minor units (kobo).
 export interface MyPayslip {
@@ -93,12 +135,75 @@ export interface MySpendRequest {
   updatedAt?: string
 }
 
+// Spend amounts are in whole currency units (e.g. 25000 = ₦25,000), unlike payslips.
+export interface MyExpense extends MySpendRequest {
+  category: string
+  amount: number
+  currency?: string
+  description?: string | null
+  receiptUrl?: string | null
+}
+
+export interface MySalaryAdvance extends MySpendRequest {
+  amount: number
+  repaymentMonths: number
+  monthlyDeduction?: number
+  reason?: string | null
+}
+
+export interface ExpensePayload {
+  category: string
+  amount: number
+  currency: string
+  description?: string
+}
+
+export interface SalaryAdvancePayload {
+  amount: number
+  repaymentMonths: number
+  reason?: string
+}
+
 export type ActivityTone = 'accent' | 'positive' | 'critical' | 'muted'
 
 export interface MyActivityItem {
   id: string
-  kind: 'leave' | 'payslip' | 'expense' | 'salary-advance'
+  kind: 'leave' | 'payslip' | 'expense' | 'salary-advance' | 'profile'
   label: string
   timestamp: string
   tone: ActivityTone
+}
+
+// Audit events from /me/activity and /me/notifications, e.g. PROFILE_UPDATED, LEAVE_APPROVED.
+export interface MyAuditEvent {
+  id: string
+  action: string
+  createdAt: string
+}
+
+// GET /me/compensation-history. Amounts are in whole currency units, like MyCompensation.
+export interface MyCompensationRecord {
+  id: string
+  baseSalary: number
+  effectiveDate: string
+}
+
+export interface MySalaryChange {
+  id: string
+  previousSalary: number
+  newSalary: number
+  effectiveDate: string
+}
+
+export interface MyCompensationHistory {
+  records: MyCompensationRecord[]
+  history: MySalaryChange[]
+}
+
+export interface MyDocument {
+  id: string
+  title: string
+  fileUrl: string
+  category?: string | null
+  createdAt?: string
 }

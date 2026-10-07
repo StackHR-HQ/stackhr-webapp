@@ -23,7 +23,7 @@ export function spendApprovalsToApprovals(requests: SpendApprovalRequest[]): Glo
     id: request.id,
     domain: 'expenses',
     title: request.employeeName,
-    subtitle: `${request.category} · ${request.description}`,
+    subtitle: [request.category, request.description].filter(Boolean).join(' · '),
     avatarInitials: request.avatarInitials,
     amount: request.amount,
     currency: request.currency,
@@ -84,6 +84,7 @@ export function salaryAdvancesToApprovals(advances: SalaryAdvanceStatusEntry[]):
     status: ADVANCE_STATUS_MAP[advance.status],
     detailPath: `/payroll/salary-advances`,
     actionable: advance.status === 'pending',
+    approvalId: advance.approvalId,
   }))
 }
 
