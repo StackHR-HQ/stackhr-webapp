@@ -10,10 +10,12 @@ export function ApprovalsTable({
   requests,
   onApprove,
   onReject,
+  deciding = false,
 }: {
   requests: SpendApprovalRequest[]
   onApprove?: (id: string) => void
   onReject?: (id: string) => void
+  deciding?: boolean
 }) {
   const showActions = Boolean(onApprove && onReject)
   const showDecision = requests.some((request) => request.status !== 'pending')
@@ -74,16 +76,18 @@ export function ApprovalsTable({
                         <button
                           type="button"
                           onClick={() => onReject?.(request.id)}
+                          disabled={deciding}
                           aria-label={`Reject expense claim from ${request.employeeName}`}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical disabled:opacity-50"
                         >
                           <XIcon className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onApprove?.(request.id)}
+                          disabled={deciding}
                           aria-label={`Approve expense claim from ${request.employeeName}`}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
                           <CheckIcon className="h-3.5 w-3.5" />
                         </button>

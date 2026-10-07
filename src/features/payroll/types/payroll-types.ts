@@ -167,6 +167,8 @@ export interface SalaryAdvanceStatusEntry extends EmployeeRef {
   currency: string
   repaymentMonths: number
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid'
+  // Set for advances loaded from the backend; decisions go through /approvals/:id/decide.
+  approvalId?: string
 }
 
 export interface PayslipRecord extends EmployeeRef {

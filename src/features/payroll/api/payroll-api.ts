@@ -8,7 +8,6 @@ import type {
   PayrollRunDetail,
   PayrollRunListItem,
   PayslipRecord,
-  SalaryAdvanceStatusEntry,
   SalaryBand,
   SalaryChangeEntry,
   TaxRuleSet,
@@ -60,11 +59,6 @@ export const payrollApi = {
 
   async getSalaryChanges(): Promise<SalaryChangeEntry[]> {
     const { data } = await http.get<SalaryChangeEntry[]>('/payroll/salaries/changes')
-    return data
-  },
-
-  async getSalaryAdvances(): Promise<SalaryAdvanceStatusEntry[]> {
-    const { data } = await http.get<SalaryAdvanceStatusEntry[]>('/payroll/salary-advances')
     return data
   },
 

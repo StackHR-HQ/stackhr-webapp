@@ -1,4 +1,8 @@
 import { useMemo, useState } from 'react'
+import { USE_MOCK_SPEND } from '../../../lib/env'
+import { getApiErrorMessage } from '../../../lib/http'
+import { notify } from '../../../lib/toast'
+import { useDecideApproval } from '../../approvals/hooks/use-decide-approval'
 import { AdvanceStatusTabs, type AdvanceStatusFilter } from '../components/advances/advance-status-tabs'
 import { AdvancesTable } from '../components/advances/advances-table'
 import { useSalaryAdvances } from '../hooks/use-salary-advances'
@@ -7,7 +11,9 @@ import type { SalaryAdvanceStatusEntry } from '../types/payroll-types'
 export function SalaryAdvancesPage() {
   const { data, isPending, isError, refetch } = useSalaryAdvances()
   const [statusFilter, setStatusFilter] = useState<AdvanceStatusFilter>('all')
+  // Mock data has no approval records, so decisions there only change local state.
   const [overrides, setOverrides] = useState<Partial<Record<string, SalaryAdvanceStatusEntry['status']>>>({})
+  const decideApproval = useDecideApproval()
 
   const advances = useMemo(
     () => (data ?? []).map((advance) => ({ ...advance, status: overrides[advance.id] ?? advance.status })),
@@ -28,6 +34,20 @@ export function SalaryAdvancesPage() {
 
   function setStatus(id: string, status: SalaryAdvanceStatusEntry['status']) {
     setOverrides((prev) => ({ ...prev, [id]: status }))
+  }
+
+  async function decide(id: string, status: 'approved' | 'rejected') {
+    const approvalId = advances.find((advance) => advance.id === id)?.approvalId
+    if (!approvalId) {
+      setStatus(id, status)
+      return
+    }
+    try {
+      await decideApproval.mutateAsync({ id: approvalId, status: status === 'approved' ? 'APPROVED' : 'REJECTED' })
+      notify.success(status === 'approved' ? 'Salary advance approved' : 'Salary advance rejected')
+    } catch (err) {
+      notify.error("Couldn't record the decision", getApiErrorMessage(err))
+    }
   }
 
   return (
@@ -57,9 +77,11 @@ export function SalaryAdvancesPage() {
           ) : (
             <AdvancesTable
               advances={filteredAdvances}
-              onApprove={(id) => setStatus(id, 'approved')}
-              onReject={(id) => setStatus(id, 'rejected')}
-              onDisburse={(id) => setStatus(id, 'disbursed')}
+              onApprove={(id) => decide(id, 'approved')}
+              onReject={(id) => decide(id, 'rejected')}
+              // The backend has no disbursement endpoint yet.
+              onDisburse={USE_MOCK_SPEND ? (id) => setStatus(id, 'disbursed') : undefined}
+              deciding={decideApproval.isPending}
             />
           )}
         </div>
