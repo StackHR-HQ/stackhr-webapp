@@ -11,7 +11,8 @@ export function useDecideApproval() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['spend'] }),
-        queryClient.invalidateQueries({ queryKey: ['payroll', 'salary-advances'] }),
+        // Salary advances and payroll runs both live under ['payroll'].
+        queryClient.invalidateQueries({ queryKey: ['payroll'] }),
       ]),
   })
 }

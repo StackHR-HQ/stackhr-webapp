@@ -65,13 +65,18 @@ export interface PayrollRunMeta {
   payPeriodEnd: string
   payDate: string
   status: PayrollRunStatus
-  taxRuleSetId: TaxRuleSetId
-  payrollEngineVersion: string
-  generatedBy: string
+  // Not returned by the backend's payroll runs yet.
+  taxRuleSetId?: TaxRuleSetId
+  payrollEngineVersion?: string
+  generatedBy?: string
   generatedAt: string
   approvedBy?: string
   approvedAt?: string
   failureReason?: string
+  // Set on runs awaiting approval that were loaded from the backend; decisions go through /approvals/:id/decide.
+  approvalId?: string
+  // The user who submitted the run, who can't decide on it.
+  approvalRequesterId?: string
 }
 
 export interface PayrollRunSummary {
@@ -89,7 +94,7 @@ export interface PayrollRunListItem extends PayrollRunMeta {
 }
 
 export interface PayrollRunDetail extends PayrollRunMeta {
-  taxRuleSet: TaxRuleSet
+  taxRuleSet?: TaxRuleSet
   summary: PayrollRunSummary
   statutoryContributions: StatutoryContributionRule[]
   lines: RunEmployeeLine[]
@@ -98,10 +103,17 @@ export interface PayrollRunDetail extends PayrollRunMeta {
 }
 
 export interface PayrollOverview {
-  currentRun: PayrollRunDetail
+  // Null until the organization has a payroll run.
+  currentRun: PayrollRunDetail | null
   previousRuns: PayrollRunMeta[]
   upcomingRuns: PayrollRunMeta[]
   complianceWarnings: ComplianceWarning[]
+}
+
+// The Compliance pages need the tax rule set and statutory rules, which the
+// backend doesn't serve yet, so they read a mock-filled overview.
+export interface ComplianceOverview extends PayrollOverview {
+  currentRun: PayrollRunDetail & Required<Pick<PayrollRunDetail, 'taxRuleSet' | 'taxRuleSetId'>>
 }
 
 export interface EmployeeRef {

@@ -1,3 +1,4 @@
+import type { MockPayrollRunMeta } from '../data/payroll-runs'
 import type { AuditLogEntry, ComplianceWarning, PayrollRunMeta } from '../types/payroll-types'
 
 function addHours(iso: string, hours: number): string {
@@ -36,7 +37,7 @@ export function buildComplianceWarnings(run: PayrollRunMeta): ComplianceWarning[
   return warnings
 }
 
-export function buildAuditLog(run: PayrollRunMeta): AuditLogEntry[] {
+export function buildAuditLog(run: MockPayrollRunMeta): AuditLogEntry[] {
   const entries: AuditLogEntry[] = [
     { id: `${run.id}-generated`, actor: run.generatedBy, action: 'Payroll run generated', timestamp: run.generatedAt },
   ]

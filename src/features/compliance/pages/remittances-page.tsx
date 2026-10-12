@@ -2,7 +2,7 @@ import { ClockCounterClockwiseIcon, DownloadSimpleIcon } from '@phosphor-icons/r
 import { useState } from 'react'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
 import { EmployerContributionsTab } from '../../payroll/components/run-detail/employer-contributions-tab'
-import { usePayrollOverview } from '../../payroll/hooks/use-payroll-overview'
+import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
 import { ComingSoonPanel } from '../components/remittances/coming-soon-panel'
 import { EmployeeContributionsTab } from '../components/remittances/employee-contributions-tab'
 
@@ -17,7 +17,7 @@ const REMITTANCES_TABS: { key: RemittancesTabKey; label: string }[] = [
 
 export function RemittancesPage() {
   const [activeTab, setActiveTab] = useState<RemittancesTabKey>('employee')
-  const { data, isPending, isError, refetch } = usePayrollOverview()
+  const { data, isPending, isError, refetch } = useComplianceOverview()
 
   return (
     <div className="max-w-[1400px] space-y-5">

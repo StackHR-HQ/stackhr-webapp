@@ -1,13 +1,13 @@
 import { Card, CardHeader } from '../../../components/ui/card'
 import { ComplianceWarningsList } from '../../payroll/components/compliance-warnings-list'
-import { usePayrollOverview } from '../../payroll/hooks/use-payroll-overview'
+import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
 import { ActiveTaxRuleCard } from '../components/overview/active-tax-rule-card'
 import { ComplianceStatTiles } from '../components/overview/compliance-stat-tiles'
 import { OutstandingActionsCard } from '../components/overview/outstanding-actions-card'
 import { StatutoryContributionsCard } from '../components/overview/statutory-contributions-card'
 
 export function ComplianceOverviewPage() {
-  const { data, isPending, isError, refetch } = usePayrollOverview()
+  const { data, isPending, isError, refetch } = useComplianceOverview()
 
   if (isPending) {
     return (

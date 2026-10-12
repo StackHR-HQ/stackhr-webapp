@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+import { Card } from '../../../components/ui/card'
 import { ComplianceWarningsCard } from '../components/overview/compliance-warnings-card'
 import { CurrentPayrollCard } from '../components/overview/current-payroll-card'
 import { PayrollOverviewStats } from '../components/overview/payroll-overview-stats'
@@ -53,11 +55,25 @@ export function PayrollOverviewPage() {
         <p className="mt-1 text-sm text-muted">Where payroll stands right now, and what needs your review.</p>
       </div>
 
-      <PayrollOverviewStats summary={data.currentRun.summary} nextPayDate={data.currentRun.payDate} />
+      {data.currentRun ? (
+        <PayrollOverviewStats summary={data.currentRun.summary} nextPayDate={data.currentRun.payDate} />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <CurrentPayrollCard run={data.currentRun} />
+          {data.currentRun ? (
+            <CurrentPayrollCard run={data.currentRun} />
+          ) : (
+            <Card>
+              <div className="py-6 text-center">
+                <p className="text-sm font-medium text-ink">No payroll runs yet</p>
+                <p className="mt-1 text-sm text-muted">Your first run will show here once it&apos;s created.</p>
+                <Link to="/payroll/runs" className="mt-3 inline-block text-xs font-medium text-accent hover:underline">
+                  Go to payroll runs →
+                </Link>
+              </div>
+            </Card>
+          )}
           <PreviousPayrollsCard runs={data.previousRuns} />
         </div>
 

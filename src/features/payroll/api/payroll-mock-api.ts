@@ -1,5 +1,5 @@
 import { DEDUCTION_TYPES } from '../data/deduction-types'
-import { getRunMeta, PAYROLL_RUNS } from '../data/payroll-runs'
+import { getRunMeta, PAYROLL_RUNS, type MockPayrollRunMeta } from '../data/payroll-runs'
 import { SALARY_CHANGES } from '../data/salary-changes'
 import { getBonusPayouts as computeBonusPayouts } from '../lib/bonuses'
 import { buildAuditLog, buildComplianceWarnings } from '../lib/compliance-and-audit'
@@ -13,13 +13,12 @@ import { getStatutoryContributions } from '../lib/statutory-contributions'
 import { TAX_RULE_SETS } from '../lib/tax-rules'
 import type {
   BonusPayout,
+  ComplianceOverview,
   DeductionType,
   EarningComponent,
   EmployeeSalaryRow,
-  PayrollOverview,
   PayrollRunDetail,
   PayrollRunListItem,
-  PayrollRunMeta,
   PayslipRecord,
   SalaryAdvanceStatusEntry,
   SalaryBand,
@@ -34,7 +33,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function buildRunDetail(meta: PayrollRunMeta): PayrollRunDetail {
+function buildRunDetail(meta: MockPayrollRunMeta) {
   const employees = getEmployeesAsOf(meta.payDate)
   const statutoryContributions = getStatutoryContributions(employees.length)
   const lines = calculateRunLines(employees, meta.taxRuleSetId, statutoryContributions)
@@ -69,7 +68,7 @@ export const mockPayrollApi = {
     return meta ? buildRunDetail(meta) : null
   },
 
-  async getOverview(): Promise<PayrollOverview> {
+  async getOverview(): Promise<ComplianceOverview> {
     await delay(400)
     const currentMeta = getRunMeta(CURRENT_RUN_ID)!
     const currentRun = buildRunDetail(currentMeta)

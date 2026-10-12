@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
 import { TaxTab as PayePayrollTab } from '../../payroll/components/run-detail/tax-tab'
-import { usePayrollOverview } from '../../payroll/hooks/use-payroll-overview'
+import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
 import { usePayrollRuns } from '../../payroll/hooks/use-payroll-runs'
 import { useTaxRuleSets } from '../../payroll/hooks/use-tax-rule-sets'
 import { TaxConfigurationTab } from '../components/tax/tax-configuration-tab'
@@ -19,7 +19,7 @@ const TAX_TABS: { key: TaxTabKey; label: string }[] = [
 
 export function TaxPage() {
   const [activeTab, setActiveTab] = useState<TaxTabKey>('configuration')
-  const overview = usePayrollOverview()
+  const overview = useComplianceOverview()
   const ruleSets = useTaxRuleSets()
   const runs = usePayrollRuns()
 
