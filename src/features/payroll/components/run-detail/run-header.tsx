@@ -23,7 +23,7 @@ export function RunHeader({ run }: { run: PayrollRunDetail }) {
 
         <div className="flex flex-col items-end gap-3">
           <div className="text-right text-xs text-muted">
-            {run.taxRuleSet ? <p>{run.taxRuleSet.label}</p> : null}
+            {run.taxRuleSet || run.taxRuleSetId ? <p>{run.taxRuleSet?.label ?? run.taxRuleSetId}</p> : null}
             {run.payrollEngineVersion ? <p>Payroll engine {run.payrollEngineVersion}</p> : null}
           </div>
           {run.status === 'pending_approval' && run.approvalId ? (

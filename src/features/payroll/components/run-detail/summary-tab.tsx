@@ -50,7 +50,7 @@ export function SummaryTab({ run }: { run: PayrollRunDetail }) {
           <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>
               <dt className="text-xs text-muted">Tax rule set</dt>
-              <dd className="mt-0.5 text-sm font-medium text-ink">{run.taxRuleSet?.label ?? '—'}</dd>
+              <dd className="mt-0.5 text-sm font-medium text-ink">{run.taxRuleSet?.label ?? run.taxRuleSetId ?? '—'}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted">Tax rule version</dt>

@@ -4,8 +4,6 @@ import { formatDate } from '../../lib/format'
 import type { PayrollRunListItem, TaxRuleSet } from '../../../payroll/types/payroll-types'
 
 export function TaxHistoryTab({ runs, ruleSets }: { runs: PayrollRunListItem[]; ruleSets: TaxRuleSet[] }) {
-  const ruleSetById = new Map(ruleSets.map((ruleSet) => [ruleSet.id, ruleSet]))
-
   return (
     <div className="overflow-x-auto rounded-panel border border-line">
       <table className="w-full text-left text-sm">
@@ -20,7 +18,7 @@ export function TaxHistoryTab({ runs, ruleSets }: { runs: PayrollRunListItem[]; 
         </thead>
         <tbody className="divide-y divide-line">
           {runs.map((run) => {
-            const ruleSet = run.taxRuleSetId ? ruleSetById.get(run.taxRuleSetId) : undefined
+            const ruleSet = ruleSets.find((candidate) => candidate.id === run.taxRuleSetId)
             const statusMeta = PAYROLL_RUN_STATUS_META[run.status]
             return (
               <tr key={run.id} className="bg-canvas">

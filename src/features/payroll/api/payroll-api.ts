@@ -2,7 +2,6 @@ import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
 import type { ApprovalRequest } from '../../approvals/types/approval-request-types'
 import { humanizeEnum, initials } from '../../employee/lib/profile-format'
-import { peopleApi } from '../../people/api/people-api'
 import { EARNING_COMPONENTS } from '../lib/earning-structure'
 import { summarizeRun } from '../lib/payroll-calculation'
 import type {
@@ -13,23 +12,32 @@ import type {
   PayrollRunListItem,
   PayrollRunMeta,
   PayrollRunStatus,
+  PayrollRunSummary,
   PayslipRecord,
   RunEmployeeLine,
   SalaryBand,
   SalaryChangeEntry,
 } from '../types/payroll-types'
 
-// Shapes confirmed against staging. Amounts are whole currency units per
-// month (gross × 12 matches the compensation's annualSalaryMinor / 100).
+// Shapes confirmed against staging. Run, item, payslip and compensation
+// amounts are whole currency units per month; annualSalaryMinor and the
+// compensation history's previousSalary / newSalary are kobo per year.
 interface ApiPayrollRun {
   id: string
   periodMonth: number
   periodYear: number
   title: string
   status: string
+  currency: string
+  payrollEngineVersion: string | null
+  taxRuleSetId: string | null
+  employeeCount: number
   totalGross: number
   totalTax: number
   totalPension: number
+  totalNhf: number
+  totalOtherDeductions: number
+  totalEmployerPension: number
   totalNet: number
   approvedAt: string | null
   executedAt: string | null
@@ -42,7 +50,7 @@ interface ApiPayrollRun {
 interface ApiPayrollRunItem {
   id: string
   employeeId: string
-  employee: { id: string; fullName: string; email?: string; department?: string | null } | null
+  employee: { id: string; fullName: string; email?: string; department?: string | null; jobTitle?: string | null } | null
   basicSalary: number
   housingAllowance: number
   transportAllowance: number
@@ -56,32 +64,46 @@ interface ApiPayrollRunItem {
   netSalary: number
 }
 
+interface ApiPayrollRunDetail extends ApiPayrollRun {
+  items: ApiPayrollRunItem[]
+  rejectionReason?: string | null
+}
+
 // Created for every item when a run is approved.
 interface ApiPayslip {
   id: string
+  payrollRunId: string
   employeeId: string
-  grossSalary: number
+  periodMonth: number
+  periodYear: number
   netSalary: number
-  generatedAt: string
+  employee: { id: string; fullName: string } | null
 }
 
-interface ApiPayrollRunDetail extends ApiPayrollRun {
-  items: ApiPayrollRunItem[]
-  payslips: ApiPayslip[]
-}
-
-// GET /payroll/compensation/:employeeId. Amounts are whole currency units per month.
-interface ApiCompensationRecord {
-  id: string
+// GET /payroll/compensation: each employee's current compensation.
+interface ApiCompensation {
   employeeId: string
-  effectiveFrom: string
-  effectiveTo: string | null
+  fullName: string
+  jobTitle: string | null
+  department: string | null
+  currency: string
+  paymentFrequency: string
   basicSalary: number
   housingAllowance: number
   transportAllowance: number
   otherAllowances: number
-  currency: string
-  paymentFrequency: string
+  grossMonthlySalary: number
+}
+
+// GET /people/employees/:id/compensation-history. An employee's first
+// salary is recorded with previousSalary 0.
+interface ApiCompensationChange {
+  id: string
+  effectiveDate: string
+  previousSalary: number
+  newSalary: number
+  reason: string | null
+  currency: string | null
 }
 
 // Backend lifecycle: DRAFT → CALCULATED → PENDING_APPROVAL → APPROVED | REJECTED
@@ -98,15 +120,9 @@ const RUN_STATUS: Record<string, PayrollRunStatus> = {
   FUNDING_SHORTFALL: 'failed',
 }
 
-const FAILURE_REASON: Record<string, string> = {
-  REJECTED: 'This payroll run was rejected during approval.',
-  FUNDING_SHORTFALL: 'The funding check found a shortfall. Top up the account and attest funding again.',
-}
+const FUNDING_SHORTFALL_REASON = 'The funding check found a shortfall. Fund the account, then attest funding again.'
 
-// Runs don't carry a currency; they're paid in the org's payroll currency.
-const CURRENCY = 'NGN'
-
-function toRunMeta(run: ApiPayrollRun): PayrollRunMeta {
+function toRunMeta(run: ApiPayrollRun & { rejectionReason?: string | null }): PayrollRunMeta {
   const status = toApiEnum(run.status)
   const periodStart = new Date(run.periodYear, run.periodMonth - 1, 1)
   const periodEnd = new Date(run.periodYear, run.periodMonth, 0)
@@ -117,21 +133,38 @@ function toRunMeta(run: ApiPayrollRun): PayrollRunMeta {
     payPeriodEnd: periodEnd.toISOString(),
     payDate: run.payDate,
     status: RUN_STATUS[status] ?? 'draft',
+    taxRuleSetId: run.taxRuleSetId ?? undefined,
+    payrollEngineVersion: run.payrollEngineVersion ?? undefined,
     generatedAt: run.createdAt,
     approvedAt: run.approvedAt ?? undefined,
-    failureReason: FAILURE_REASON[status],
+    failureReason:
+      status === 'REJECTED'
+        ? (run.rejectionReason ?? 'This payroll run was rejected during approval.')
+        : status === 'FUNDING_SHORTFALL'
+          ? FUNDING_SHORTFALL_REASON
+          : undefined,
+  }
+}
+
+function toRunSummary(run: ApiPayrollRun): PayrollRunSummary {
+  return {
+    employeeCount: run.employeeCount,
+    currency: run.currency,
+    grossPay: run.totalGross,
+    totalEmployeeDeductions: run.totalTax + run.totalPension + run.totalNhf + run.totalOtherDeductions,
+    totalEmployerContributions: run.totalEmployerPension,
+    netPay: run.totalNet,
+    totalEmployerCost: run.totalGross + run.totalEmployerPension,
   }
 }
 
 function toRunLine(item: ApiPayrollRunItem): RunEmployeeLine {
   const name = item.employee?.fullName ?? 'Unknown employee'
-  const totalDeductions = item.taxDeduction + item.pensionDeduction + item.nhfDeduction + item.otherDeductions
   return {
     employeeId: item.employeeId,
     employeeName: name,
     avatarInitials: initials(name),
-    // Run items have no job title, so the department stands in.
-    jobTitle: item.employee?.department ?? '',
+    jobTitle: item.employee?.jobTitle ?? '',
     basic: item.basicSalary,
     housing: item.housingAllowance,
     transport: item.transportAllowance,
@@ -140,10 +173,10 @@ function toRunLine(item: ApiPayrollRunItem): RunEmployeeLine {
     paye: item.taxDeduction,
     pensionEmployee: item.pensionDeduction,
     nhfEmployee: item.nhfDeduction,
-    totalDeductions,
+    totalDeductions: item.taxDeduction + item.pensionDeduction + item.nhfDeduction + item.otherDeductions,
     netPay: item.netSalary,
     pensionEmployer: item.employerPensionDeduction,
-    // The engine doesn't calculate NHIA or NSITF yet.
+    // NHIA and NSITF are planned for the engine's next statutory phase.
     nhiaEmployer: 0,
     nsitfEmployer: 0,
     totalEmployerContributions: item.employerPensionDeduction,
@@ -155,7 +188,7 @@ function toRunDetail(run: ApiPayrollRunDetail): PayrollRunDetail {
   const lines = run.items.map(toRunLine)
   return {
     ...toRunMeta(run),
-    summary: summarizeRun(lines, CURRENCY),
+    summary: summarizeRun(lines, run.currency),
     // Not returned by the backend yet.
     statutoryContributions: [],
     complianceWarnings: [],
@@ -164,75 +197,41 @@ function toRunDetail(run: ApiPayrollRunDetail): PayrollRunDetail {
   }
 }
 
+const toListItem = (run: ApiPayrollRun): PayrollRunListItem => ({ ...toRunMeta(run), summary: toRunSummary(run) })
+
+async function fetchRuns(): Promise<ApiPayrollRun[]> {
+  const { data } = await http.get<{ payrollRuns: ApiPayrollRun[] }>('/payroll/runs')
+  return data.payrollRuns.toSorted((a, b) => b.payDate.localeCompare(a.payDate))
+}
+
 async function fetchRun(id: string): Promise<ApiPayrollRunDetail> {
   const { data } = await http.get<{ payrollRun: ApiPayrollRunDetail }>(`/payroll/runs/${id}`)
   return data.payrollRun
 }
 
-// The list has no employee count or deduction totals, so each run's detail is fetched too.
-async function fetchFullRuns(): Promise<ApiPayrollRunDetail[]> {
-  const { data } = await http.get<{ payrollRuns: ApiPayrollRun[] }>('/payroll/runs')
-  const runs = await Promise.all(data.payrollRuns.map((run) => fetchRun(run.id)))
-  return runs.sort((a, b) => b.payDate.localeCompare(a.payDate))
-}
-
-async function fetchRunDetails(): Promise<PayrollRunDetail[]> {
-  return (await fetchFullRuns()).map(toRunDetail)
-}
-
-const monthlyGross = (record: ApiCompensationRecord) =>
-  record.basicSalary + record.housingAllowance + record.transportAllowance + record.otherAllowances
-
-// There's no org-wide salary endpoint, so each employee's compensation is fetched.
-async function fetchCompensation() {
-  const employees = await peopleApi.getEmployees()
-  return Promise.all(
-    employees.map(async (employee) => {
-      const { data } = await http.get<{ history: ApiCompensationRecord[] }>(`/payroll/compensation/${employee.id}`)
-      const records = data.history.toSorted((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
-      const current = records.find((record) => record.effectiveTo === null) ?? records.at(-1)
-      return { employee, records, current }
-    }),
-  )
+async function fetchCompensation(): Promise<ApiCompensation[]> {
+  const { data } = await http.get<{ compensations: ApiCompensation[] }>('/payroll/compensation')
+  return data.compensations
 }
 
 async function getEmployeeSalaryRows(): Promise<EmployeeSalaryRow[]> {
-  const compensation = await fetchCompensation()
-  return compensation.flatMap(({ employee, current }) => {
-    if (!current) return []
-    const monthlySalary = monthlyGross(current)
-    return [
-      {
-        employeeId: employee.id,
-        employeeName: employee.fullName,
-        avatarInitials: employee.avatarInitials || initials(employee.fullName),
-        jobTitle: employee.jobTitle,
-        departmentId: employee.departmentId,
-        annualSalary: monthlySalary * 12,
-        monthlySalary,
-        currency: current.currency,
-        payFrequency: humanizeEnum(current.paymentFrequency),
-      },
-    ]
-  })
+  return (await fetchCompensation()).map((compensation) => ({
+    employeeId: compensation.employeeId,
+    employeeName: compensation.fullName,
+    avatarInitials: initials(compensation.fullName),
+    jobTitle: compensation.jobTitle ?? '',
+    // Compensation carries the department's name, not its ID.
+    departmentId: compensation.department ?? '',
+    annualSalary: compensation.grossMonthlySalary * 12,
+    monthlySalary: compensation.grossMonthlySalary,
+    currency: compensation.currency,
+    payFrequency: humanizeEnum(compensation.paymentFrequency),
+  }))
 }
-
-const toListItem = (run: PayrollRunDetail): PayrollRunListItem => ({
-  id: run.id,
-  periodLabel: run.periodLabel,
-  payPeriodStart: run.payPeriodStart,
-  payPeriodEnd: run.payPeriodEnd,
-  payDate: run.payDate,
-  status: run.status,
-  generatedAt: run.generatedAt,
-  approvedAt: run.approvedAt,
-  failureReason: run.failureReason,
-  summary: run.summary,
-})
 
 export const payrollApi = {
   async getRuns(): Promise<PayrollRunListItem[]> {
-    return (await fetchRunDetails()).map(toListItem)
+    return (await fetchRuns()).map(toListItem)
   },
 
   async getRun(id: string): Promise<PayrollRunDetail | null> {
@@ -248,48 +247,47 @@ export const payrollApi = {
   // No overview endpoint: the current run is the latest one not yet completed,
   // falling back to the latest run.
   async getOverview(): Promise<PayrollOverview> {
-    const runs = await fetchRunDetails()
-    const currentRun = runs.find((run) => run.status !== 'completed') ?? runs[0] ?? null
+    const runs = await fetchRuns()
+    const current = runs.find((run) => RUN_STATUS[toApiEnum(run.status)] !== 'completed') ?? runs[0]
+    const items = runs.map(toListItem)
     return {
-      currentRun,
-      previousRuns: runs.filter((run) => run.status === 'completed').slice(0, 6).map(toListItem),
-      upcomingRuns: runs
-        .filter((run) => run.status === 'draft' && run.id !== currentRun?.id)
-        .reverse()
-        .map(toListItem),
-      complianceWarnings: currentRun?.complianceWarnings ?? [],
+      currentRun: current ? toRunDetail(await fetchRun(current.id)) : null,
+      previousRuns: items.filter((run) => run.status === 'completed').slice(0, 6),
+      upcomingRuns: items.filter((run) => run.status === 'draft' && run.id !== current?.id).reverse(),
+      complianceWarnings: [],
     }
   },
 
   getEmployeeSalaries: getEmployeeSalaryRows,
 
   async getSalaryBands(): Promise<SalaryBand[]> {
-    const [rows, departments] = await Promise.all([getEmployeeSalaryRows(), peopleApi.getDepartments()])
-    return departments.flatMap((department) => {
-      const salaries = rows.filter((row) => row.departmentId === department.id).map((row) => row.annualSalary)
-      if (salaries.length === 0) return []
-      return [
-        {
-          departmentId: department.id,
-          departmentName: department.name,
-          employeeCount: salaries.length,
-          minSalary: Math.min(...salaries),
-          maxSalary: Math.max(...salaries),
-          avgSalary: salaries.reduce((sum, salary) => sum + salary, 0) / salaries.length,
-        },
-      ]
+    const byDepartment = new Map<string, EmployeeSalaryRow[]>()
+    for (const row of await getEmployeeSalaryRows()) {
+      if (row.departmentId) byDepartment.set(row.departmentId, [...(byDepartment.get(row.departmentId) ?? []), row])
+    }
+    return [...byDepartment].map(([department, members]) => {
+      const salaries = members.map((row) => row.annualSalary)
+      return {
+        departmentId: department,
+        departmentName: department,
+        employeeCount: salaries.length,
+        minSalary: Math.min(...salaries),
+        maxSalary: Math.max(...salaries),
+        avgSalary: salaries.reduce((sum, salary) => sum + salary, 0) / salaries.length,
+      }
     })
   },
 
   // No configured structure exists, so each component's share comes from
   // employees' current compensation.
   async getEarningComponents(): Promise<EarningComponent[]> {
-    const current = (await fetchCompensation()).flatMap((entry) => (entry.current ? [entry.current] : []))
+    const compensation = await fetchCompensation()
+    const total = (pick: (record: ApiCompensation) => number) => compensation.reduce((sum, record) => sum + pick(record), 0)
     const totals: Record<EarningComponent['id'], number> = {
-      basic: current.reduce((sum, record) => sum + record.basicSalary, 0),
-      housing: current.reduce((sum, record) => sum + record.housingAllowance, 0),
-      transport: current.reduce((sum, record) => sum + record.transportAllowance, 0),
-      other: current.reduce((sum, record) => sum + record.otherAllowances, 0),
+      basic: total((record) => record.basicSalary),
+      housing: total((record) => record.housingAllowance),
+      transport: total((record) => record.transportAllowance),
+      other: total((record) => record.otherAllowances),
     }
     const gross = totals.basic + totals.housing + totals.transport + totals.other
     return EARNING_COMPONENTS.map((component) => ({
@@ -298,53 +296,80 @@ export const payrollApi = {
     }))
   },
 
-  // Each compensation record after an employee's first is a change. Records carry no reason.
+  // History is per employee; amounts are kobo per year.
   async getSalaryChanges(): Promise<SalaryChangeEntry[]> {
     const compensation = await fetchCompensation()
-    return compensation
-      .flatMap(({ employee, records }) =>
-        records.slice(1).map((record, index) => ({
-          id: record.id,
-          employeeId: employee.id,
-          employeeName: employee.fullName,
-          avatarInitials: employee.avatarInitials || initials(employee.fullName),
-          previousSalary: monthlyGross(records[index]) * 12,
-          newSalary: monthlyGross(record) * 12,
-          currency: record.currency,
-          effectiveDate: record.effectiveFrom,
-          reason: '',
-        })),
-      )
-      .sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate))
+    const histories = await Promise.all(
+      compensation.map(async (employee) => {
+        const { data } = await http.get<ApiCompensationChange[]>(
+          `/people/employees/${employee.employeeId}/compensation-history`,
+        )
+        return data
+          .filter((change) => change.previousSalary > 0)
+          .map((change) => ({
+            id: change.id,
+            employeeId: employee.employeeId,
+            employeeName: employee.fullName,
+            avatarInitials: initials(employee.fullName),
+            previousSalary: change.previousSalary / 100,
+            newSalary: change.newSalary / 100,
+            currency: change.currency ?? employee.currency,
+            effectiveDate: change.effectiveDate,
+            reason: change.reason ?? '',
+          }))
+      }),
+    )
+    return histories.flat().sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate))
   },
 
-  // Generated payslips come from approved runs. A run awaiting approval lists
-  // its employees as pending, since approval is what generates their payslips.
+  // Generated payslips come from GET /payroll/payslips. A run awaiting approval
+  // lists its employees as pending, since approval is what generates payslips.
   async getPayslips(): Promise<PayslipRecord[]> {
-    const runs = await fetchFullRuns()
-    return runs.flatMap((run) => {
-      const meta = toRunMeta(run)
-      const nameById = new Map(run.items.map((item) => [item.employeeId, item.employee?.fullName]))
-      const toRecord = (id: string, employeeId: string, netPay: number, status: PayslipRecord['status']) => {
-        const name = nameById.get(employeeId) ?? 'Unknown employee'
-        return {
-          id,
-          runId: run.id,
-          employeeId,
-          employeeName: name,
-          avatarInitials: initials(name),
-          periodLabel: meta.periodLabel,
-          payDate: run.payDate,
-          netPay,
-          currency: CURRENCY,
-          status,
-        }
-      }
-      if (run.payslips.length > 0) {
-        return run.payslips.map((payslip) => toRecord(payslip.id, payslip.employeeId, payslip.netSalary, 'generated'))
-      }
-      if (meta.status !== 'pending_approval') return []
-      return run.items.map((item) => toRecord(`${run.id}-${item.employeeId}`, item.employeeId, item.netSalary, 'pending'))
+    const [{ data }, runs] = await Promise.all([
+      http.get<{ payslips: ApiPayslip[] }>('/payroll/payslips'),
+      fetchRuns(),
+    ])
+    const runById = new Map(runs.map((run) => [run.id, run]))
+    const toRecord = (
+      run: ApiPayrollRun,
+      record: { id: string; employeeId: string; name: string; netPay: number },
+      status: PayslipRecord['status'],
+    ): PayslipRecord => ({
+      id: record.id,
+      runId: run.id,
+      employeeId: record.employeeId,
+      employeeName: record.name,
+      avatarInitials: initials(record.name),
+      periodLabel: toRunMeta(run).periodLabel,
+      payDate: run.payDate,
+      netPay: record.netPay,
+      currency: run.currency,
+      status,
     })
+
+    const generated = data.payslips.flatMap((payslip) => {
+      const run = runById.get(payslip.payrollRunId)
+      if (!run) return []
+      const name = payslip.employee?.fullName ?? 'Unknown employee'
+      return [toRecord(run, { id: payslip.id, employeeId: payslip.employeeId, name, netPay: payslip.netSalary }, 'generated')]
+    })
+
+    const awaitingApproval = runs.filter((run) => toApiEnum(run.status) === 'PENDING_APPROVAL')
+    const pending = (await Promise.all(awaitingApproval.map((run) => fetchRun(run.id)))).flatMap((run) =>
+      run.items.map((item) =>
+        toRecord(
+          run,
+          {
+            id: `${run.id}-${item.employeeId}`,
+            employeeId: item.employeeId,
+            name: item.employee?.fullName ?? 'Unknown employee',
+            netPay: item.netSalary,
+          },
+          'pending',
+        ),
+      ),
+    )
+
+    return [...generated, ...pending].sort((a, b) => b.payDate.localeCompare(a.payDate))
   },
 }

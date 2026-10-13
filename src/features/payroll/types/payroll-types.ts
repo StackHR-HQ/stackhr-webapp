@@ -65,9 +65,10 @@ export interface PayrollRunMeta {
   payPeriodEnd: string
   payDate: string
   status: PayrollRunStatus
-  // Not returned by the backend's payroll runs yet.
-  taxRuleSetId?: TaxRuleSetId
+  // The backend's IDs (e.g. "ng-nta-2026-v1") differ from the mock's TaxRuleSetId values.
+  taxRuleSetId?: string
   payrollEngineVersion?: string
+  // Not returned by the backend yet.
   generatedBy?: string
   generatedAt: string
   approvedBy?: string
@@ -113,7 +114,7 @@ export interface PayrollOverview {
 // The Compliance pages need the tax rule set and statutory rules, which the
 // backend doesn't serve yet, so they read a mock-filled overview.
 export interface ComplianceOverview extends PayrollOverview {
-  currentRun: PayrollRunDetail & Required<Pick<PayrollRunDetail, 'taxRuleSet' | 'taxRuleSetId'>>
+  currentRun: PayrollRunDetail & { taxRuleSet: TaxRuleSet; taxRuleSetId: TaxRuleSetId }
 }
 
 export interface EmployeeRef {
