@@ -2,6 +2,7 @@ import { getApiErrorMessage, http } from '../../../lib/http'
 import {
   AuthError,
   type AcceptInvitationPayload,
+  type AcceptWorkspaceInvitationPayload,
   type AuthSession,
   type AuthUser,
   type ChangePasswordPayload,
@@ -12,6 +13,7 @@ import {
   type ResetTokenStatus,
   type SignupPayload,
   type VerifyEmailOtpPayload,
+  type WorkspaceInvitationPreview,
 } from '../types/auth-types'
 
 interface ApiUser {
@@ -26,7 +28,7 @@ interface ApiUser {
   orgName?: string | null
 }
 
-function toUiRole(apiRole: string): AuthUser['role'] {
+export function toUiRole(apiRole: string): AuthUser['role'] {
   if (/owner|admin/i.test(apiRole)) return 'admin'
   if (/manager/i.test(apiRole)) return 'manager'
   return 'employee'
@@ -106,6 +108,27 @@ export const authApi = {
   async acceptInvitation({ token, password }: AcceptInvitationPayload): Promise<AuthSession | null> {
     const data = await request(() => http.post<{ user?: ApiUser } | null>('/auth/invitations/accept', { token, password }))
     return data?.user ? { user: toAuthUser(data.user) } : null
+  },
+
+  async previewWorkspaceInvitation(invitationId: string): Promise<WorkspaceInvitationPreview> {
+    const data = await request(() =>
+      http.get<{
+        invitation: { email: string; role: string; status: string; expiresAt: string; organization: { name: string } }
+      }>(`/invitations/${encodeURIComponent(invitationId)}`),
+    )
+    const { invitation } = data
+    return {
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt,
+      organizationName: invitation.organization.name,
+    }
+  },
+
+  // Accepting creates the account but doesn't sign the person in.
+  async acceptWorkspaceInvitation({ invitationId, fullName, password }: AcceptWorkspaceInvitationPayload): Promise<void> {
+    await request(() => http.post(`/invitations/${encodeURIComponent(invitationId)}/accept`, { fullName, password }))
   },
 
   async verifyResetToken(token: string): Promise<ResetTokenStatus> {

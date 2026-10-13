@@ -55,7 +55,7 @@ export function TeamAccessPage() {
           {activeTab === 'members' ? <TeamMembersView initialMembers={members ?? []} /> : null}
           {activeTab === 'roles' ? <RolesView roles={roles ?? []} members={members ?? []} /> : null}
           {activeTab === 'permissions' ? <PermissionsView matrix={matrix ?? []} /> : null}
-          {activeTab === 'invitations' ? <InvitationsView initialInvitations={invitations ?? []} /> : null}
+          {activeTab === 'invitations' ? <InvitationsView invitations={invitations ?? []} /> : null}
           {activeTab === 'managers' ? <ManagersView managers={managers ?? []} /> : null}
         </>
       )}

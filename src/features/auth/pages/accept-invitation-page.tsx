@@ -6,6 +6,7 @@ import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { PasswordField } from '../../../components/ui/password-field'
 import { notify } from '../../../lib/toast'
 import { AuthShell } from '../components/auth-shell'
+import { WorkspaceInvitation } from '../components/workspace-invitation'
 import { useAcceptInvitation } from '../hooks/use-accept-invitation'
 import { useInvitationPreview } from '../hooks/use-invitation-preview'
 import {
@@ -85,6 +86,13 @@ function AcceptInvitationForm({ token, invitation }: { token: string; invitation
 }
 
 export function AcceptInvitationPage() {
+  const [searchParams] = useSearchParams()
+  const invitationId = searchParams.get('invitationId')
+  return invitationId ? <WorkspaceInvitation invitationId={invitationId} /> : <EmployeeInvitation />
+}
+
+// Opened from an employee invitation email: /accept-invitation?token=<token>.
+function EmployeeInvitation() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? undefined
   const invitation = useInvitationPreview(token)

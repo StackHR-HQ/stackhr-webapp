@@ -3,6 +3,9 @@ import { Badge } from '../../../../components/ui/badge'
 import { Card, CardHeader } from '../../../../components/ui/card'
 import { SelectField } from '../../../../components/ui/select-field'
 import { TextField } from '../../../../components/ui/text-field'
+import { getApiErrorMessage } from '../../../../lib/http'
+import { notify } from '../../../../lib/toast'
+import { useInviteMember, useResendInvitation, useRevokeInvitation } from '../../hooks/use-invitations'
 import { formatDate } from '../../lib/format'
 import { INVITATION_STATUS_META, ROLE_META } from '../../lib/status-meta'
 import type { Invitation, Role } from '../../types/team-access-types'
@@ -13,50 +16,51 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'admin', label: 'Admin' },
 ]
 
-export function InvitationsView({ initialInvitations }: { initialInvitations: Invitation[] }) {
-  const [invitations, setInvitations] = useState(initialInvitations)
-  const [fullName, setFullName] = useState('')
+export function InvitationsView({ invitations }: { invitations: Invitation[] }) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('employee')
+  const inviteMember = useInviteMember()
+  const resendInvitation = useResendInvitation()
+  const revokeInvitation = useRevokeInvitation()
 
-  function handleInvite() {
-    if (!fullName.trim() || !email.trim()) return
-
-    setInvitations((prev) => [
-      {
-        id: `inv-${Date.now()}`,
-        email: email.trim(),
-        fullName: fullName.trim(),
-        role,
-        invitedBy: 'You',
-        invitedAt: new Date().toISOString(),
-        status: 'pending',
-      },
-      ...prev,
-    ])
-    setFullName('')
-    setEmail('')
-    setRole('employee')
+  async function handleInvite() {
+    const trimmed = email.trim()
+    if (!trimmed) return
+    try {
+      await inviteMember.mutateAsync({ email: trimmed, role })
+      notify.success('Invitation sent', `We've emailed ${trimmed} a link to join.`)
+      setEmail('')
+      setRole('employee')
+    } catch (err) {
+      notify.error("Couldn't send the invitation", getApiErrorMessage(err))
+    }
   }
 
-  function resend(id: string) {
-    setInvitations((prev) =>
-      prev.map((invitation) =>
-        invitation.id === id ? { ...invitation, status: 'pending', invitedAt: new Date().toISOString() } : invitation,
-      ),
-    )
+  async function resend(id: string) {
+    try {
+      await resendInvitation.mutateAsync(id)
+      notify.success('Invitation resent')
+    } catch (err) {
+      notify.error("Couldn't resend the invitation", getApiErrorMessage(err))
+    }
   }
 
-  function revoke(id: string) {
-    setInvitations((prev) => prev.filter((invitation) => invitation.id !== id))
+  async function revoke(id: string) {
+    try {
+      await revokeInvitation.mutateAsync(id)
+      notify.success('Invitation revoked')
+    } catch (err) {
+      notify.error("Couldn't revoke the invitation", getApiErrorMessage(err))
+    }
   }
+
+  const busy = resendInvitation.isPending || revokeInvitation.isPending
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
       <Card className="lg:col-span-1">
         <CardHeader title="Invite a team member" />
         <div className="space-y-4">
-          <TextField label="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
           <TextField
             label="Email"
             type="email"
@@ -73,10 +77,10 @@ export function InvitationsView({ initialInvitations }: { initialInvitations: In
           <button
             type="button"
             onClick={handleInvite}
-            disabled={!fullName.trim() || !email.trim()}
+            disabled={!email.trim() || inviteMember.isPending}
             className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            Send invitation
+            {inviteMember.isPending ? 'Sending…' : 'Send invitation'}
           </button>
         </div>
       </Card>
@@ -100,8 +104,8 @@ export function InvitationsView({ initialInvitations }: { initialInvitations: In
                   return (
                     <tr key={invitation.id} className="bg-canvas">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-ink">{invitation.fullName}</p>
-                        <p className="text-xs text-muted">{invitation.email}</p>
+                        <p className="font-medium text-ink">{invitation.fullName ?? invitation.email}</p>
+                        {invitation.fullName ? <p className="text-xs text-muted">{invitation.email}</p> : null}
                       </td>
                       <td className="px-4 py-3">
                         <Badge tone={ROLE_META[invitation.role].tone}>{ROLE_META[invitation.role].label}</Badge>
@@ -114,19 +118,19 @@ export function InvitationsView({ initialInvitations }: { initialInvitations: In
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-3">
-                          {invitation.status === 'expired' ? (
-                            <button
-                              type="button"
-                              onClick={() => resend(invitation.id)}
-                              className="text-xs font-medium text-accent hover:underline"
-                            >
-                              Resend
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => resend(invitation.id)}
+                            disabled={busy}
+                            className="text-xs font-medium text-accent hover:underline disabled:opacity-50"
+                          >
+                            Resend
+                          </button>
                           <button
                             type="button"
                             onClick={() => revoke(invitation.id)}
-                            className="text-xs font-medium text-critical hover:underline"
+                            disabled={busy}
+                            className="text-xs font-medium text-critical hover:underline disabled:opacity-50"
                           >
                             Revoke
                           </button>
