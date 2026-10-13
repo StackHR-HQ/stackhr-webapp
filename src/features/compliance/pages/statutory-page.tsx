@@ -17,7 +17,7 @@ const STATUTORY_TABS: { key: StatutoryTabKey; label: string }[] = [
 export function StatutoryPage() {
   const [activeTab, setActiveTab] = useState<StatutoryTabKey>('pension')
   const { data, isPending, isError, refetch } = useComplianceOverview()
-  const activeRule = data?.currentRun.statutoryContributions.find((candidate) => candidate.id === activeTab)
+  const activeRule = data?.statutoryContributions.find((candidate) => candidate.id === activeTab)
 
   return (
     <div className="max-w-[1400px] space-y-5">

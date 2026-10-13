@@ -3,7 +3,8 @@ export type PayrollRunStatus = 'draft' | 'processing' | 'pending_approval' | 'ap
 export type TaxRuleSetId = 'NG-2025' | 'NG-2026-v1'
 
 export interface TaxRuleSet {
-  id: TaxRuleSetId
+  // The backend's active rule set uses its own IDs (e.g. "TRS-NTA-2026").
+  id: string
   version: string
   effectiveFrom: string
   label: string
@@ -111,10 +112,14 @@ export interface PayrollOverview {
   complianceWarnings: ComplianceWarning[]
 }
 
-// The Compliance pages need the tax rule set and statutory rules, which the
-// backend doesn't serve yet, so they read a mock-filled overview.
-export interface ComplianceOverview extends PayrollOverview {
-  currentRun: PayrollRunDetail & { taxRuleSet: TaxRuleSet; taxRuleSetId: TaxRuleSetId }
+// What the Compliance pages show: the active tax rule set and statutory
+// rules, plus the current run's per-employee figures.
+export interface ComplianceOverview {
+  taxRuleSet: TaxRuleSet
+  statutoryContributions: StatutoryContributionRule[]
+  // Null until the organization has a payroll run.
+  currentRun: PayrollRunDetail | null
+  complianceWarnings: ComplianceWarning[]
 }
 
 export interface EmployeeRef {

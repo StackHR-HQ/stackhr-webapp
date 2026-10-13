@@ -54,16 +54,16 @@ export function TaxPage() {
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
       ) : (
         <>
-          {activeTab === 'configuration' ? <TaxConfigurationTab taxRuleSet={overview.data.currentRun.taxRuleSet} /> : null}
+          {activeTab === 'configuration' ? <TaxConfigurationTab taxRuleSet={overview.data.taxRuleSet} /> : null}
           {activeTab === 'paye' ? (
             <PayePayrollTab
-              taxRuleSet={overview.data.currentRun.taxRuleSet}
-              lines={overview.data.currentRun.lines}
-              currency={overview.data.currentRun.summary.currency}
+              taxRuleSet={overview.data.taxRuleSet}
+              lines={overview.data.currentRun?.lines ?? []}
+              currency={overview.data.currentRun?.summary.currency ?? 'NGN'}
             />
           ) : null}
           {activeTab === 'rules' ? (
-            <TaxRulesTab ruleSets={ruleSets.data} activeRuleSetId={overview.data.currentRun.taxRuleSetId} />
+            <TaxRulesTab ruleSets={ruleSets.data} activeRuleSetId={overview.data.taxRuleSet.id} />
           ) : null}
           {activeTab === 'history' ? <TaxHistoryTab runs={runs.data} ruleSets={ruleSets.data} /> : null}
         </>

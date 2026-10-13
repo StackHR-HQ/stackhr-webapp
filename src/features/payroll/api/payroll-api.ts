@@ -2,9 +2,12 @@ import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
 import type { ApprovalRequest } from '../../approvals/types/approval-request-types'
 import { humanizeEnum, initials } from '../../employee/lib/profile-format'
+import { peopleApi } from '../../people/api/people-api'
 import { EARNING_COMPONENTS } from '../lib/earning-structure'
 import { summarizeRun } from '../lib/payroll-calculation'
+import { getStatutoryContributions } from '../lib/statutory-contributions'
 import type {
+  ComplianceOverview,
   EarningComponent,
   EmployeeSalaryRow,
   PayrollOverview,
@@ -17,6 +20,7 @@ import type {
   RunEmployeeLine,
   SalaryBand,
   SalaryChangeEntry,
+  TaxRuleSet,
 } from '../types/payroll-types'
 
 // Shapes confirmed against staging. Run, item, payslip and compensation
@@ -104,6 +108,20 @@ interface ApiCompensationChange {
   newSalary: number
   reason: string | null
   currency: string | null
+}
+
+// GET /compliance/active-rule-set. Rates are fractions (0.08 = 8%); limits are naira per year.
+interface ApiActiveRuleSet {
+  id: string
+  name: string
+  effectiveFrom: string
+  taxFreeThreshold: number
+  rentReliefPercentage: number
+  rentReliefCap: number
+  pensionEmployeeRate: number
+  pensionEmployerRate: number
+  nhfRate: number
+  taxRules: { bandOrder: number; lowerLimit: number; upperLimit: number | null; taxRate: number }[]
 }
 
 // Backend lifecycle: DRAFT → CALCULATED → PENDING_APPROVAL → APPROVED | REJECTED
@@ -209,6 +227,29 @@ async function fetchRun(id: string): Promise<ApiPayrollRunDetail> {
   return data.payrollRun
 }
 
+async function fetchActiveRuleSet(): Promise<ApiActiveRuleSet> {
+  const { data } = await http.get<ApiActiveRuleSet>('/compliance/active-rule-set')
+  return data
+}
+
+const naira = (amount: number) => `₦${amount.toLocaleString('en-NG')}`
+const percent = (rate: number) => `${Math.round(rate * 1000) / 10}%`
+
+function toTaxRuleSet(ruleSet: ApiActiveRuleSet): TaxRuleSet {
+  const rates = ruleSet.taxRules.map((band) => band.taxRate)
+  return {
+    id: ruleSet.id,
+    // The backend has no separate version; the rule set ID identifies it.
+    version: ruleSet.id,
+    effectiveFrom: ruleSet.effectiveFrom,
+    label: ruleSet.name,
+    description:
+      `The first ${naira(ruleSet.taxFreeThreshold)} of yearly income is tax-free. ` +
+      `${ruleSet.taxRules.length} progressive bands run from ${percent(Math.min(...rates))} to ${percent(Math.max(...rates))}, ` +
+      `with rent relief of ${percent(ruleSet.rentReliefPercentage)} of rent paid, up to ${naira(ruleSet.rentReliefCap)} a year.`,
+  }
+}
+
 async function fetchCompensation(): Promise<ApiCompensation[]> {
   const { data } = await http.get<{ compensations: ApiCompensation[] }>('/payroll/compensation')
   return data.compensations
@@ -256,6 +297,35 @@ export const payrollApi = {
       upcomingRuns: items.filter((run) => run.status === 'draft' && run.id !== current?.id).reverse(),
       complianceWarnings: [],
     }
+  },
+
+  // Rates for pension and NHF come from the active rule set. Which
+  // contributions apply, and the explanations, depend on headcount.
+  async getComplianceOverview(): Promise<ComplianceOverview> {
+    const [ruleSet, employees, runs] = await Promise.all([fetchActiveRuleSet(), peopleApi.getEmployees(), fetchRuns()])
+    const current = runs.find((run) => RUN_STATUS[toApiEnum(run.status)] !== 'completed') ?? runs[0]
+    const statutoryContributions = getStatutoryContributions(employees.length).map((rule) => {
+      if (rule.id === 'pension') {
+        return {
+          ...rule,
+          employeeRatePercent: ruleSet.pensionEmployeeRate * 100,
+          employerRatePercent: ruleSet.pensionEmployerRate * 100,
+        }
+      }
+      if (rule.id === 'nhf') return { ...rule, employeeRatePercent: ruleSet.nhfRate * 100 }
+      return rule
+    })
+    return {
+      taxRuleSet: toTaxRuleSet(ruleSet),
+      statutoryContributions,
+      currentRun: current ? toRunDetail(await fetchRun(current.id)) : null,
+      complianceWarnings: [],
+    }
+  },
+
+  // Org admins can only read the active rule set.
+  async getTaxRuleSets(): Promise<TaxRuleSet[]> {
+    return [toTaxRuleSet(await fetchActiveRuleSet())]
   },
 
   getEmployeeSalaries: getEmployeeSalaryRows,

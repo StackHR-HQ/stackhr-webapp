@@ -17,6 +17,7 @@ import type {
   DeductionType,
   EarningComponent,
   EmployeeSalaryRow,
+  PayrollOverview,
   PayrollRunDetail,
   PayrollRunListItem,
   PayslipRecord,
@@ -68,7 +69,7 @@ export const mockPayrollApi = {
     return meta ? buildRunDetail(meta) : null
   },
 
-  async getOverview(): Promise<ComplianceOverview> {
+  async getOverview(): Promise<PayrollOverview> {
     await delay(400)
     const currentMeta = getRunMeta(CURRENT_RUN_ID)!
     const currentRun = buildRunDetail(currentMeta)
@@ -85,6 +86,17 @@ export const mockPayrollApi = {
       currentRun,
       previousRuns,
       upcomingRuns,
+      complianceWarnings: currentRun.complianceWarnings,
+    }
+  },
+
+  async getComplianceOverview(): Promise<ComplianceOverview> {
+    await delay(400)
+    const currentRun = buildRunDetail(getRunMeta(CURRENT_RUN_ID)!)
+    return {
+      taxRuleSet: currentRun.taxRuleSet,
+      statutoryContributions: currentRun.statutoryContributions,
+      currentRun,
       complianceWarnings: currentRun.complianceWarnings,
     }
   },

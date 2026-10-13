@@ -24,7 +24,7 @@ export function RemittancesPage() {
       <div>
         <h1 className="text-xl font-medium text-ink">Remittances</h1>
         <p className="mt-1 text-sm text-muted">
-          Employee and employer statutory contributions for {data ? data.currentRun.periodLabel : 'the current run'}.
+          Employee and employer statutory contributions for {data?.currentRun?.periodLabel ?? 'the current run'}.
         </p>
       </div>
 
@@ -46,13 +46,16 @@ export function RemittancesPage() {
       ) : (
         <>
           {activeTab === 'employee' ? (
-            <EmployeeContributionsTab lines={data.currentRun.lines} currency={data.currentRun.summary.currency} />
+            <EmployeeContributionsTab
+              lines={data.currentRun?.lines ?? []}
+              currency={data.currentRun?.summary.currency ?? 'NGN'}
+            />
           ) : null}
           {activeTab === 'employer' ? (
             <EmployerContributionsTab
-              lines={data.currentRun.lines}
-              currency={data.currentRun.summary.currency}
-              statutoryContributions={data.currentRun.statutoryContributions}
+              lines={data.currentRun?.lines ?? []}
+              currency={data.currentRun?.summary.currency ?? 'NGN'}
+              statutoryContributions={data.statutoryContributions}
             />
           ) : null}
           {activeTab === 'history' ? (
