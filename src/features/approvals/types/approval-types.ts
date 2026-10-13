@@ -16,4 +16,6 @@ export interface GlobalApprovalItem {
   decidedAt?: string
   detailPath: string
   actionable: boolean
+  // Approval request to decide via /approvals/:id/decide, when it differs from id.
+  approvalId?: string
 }

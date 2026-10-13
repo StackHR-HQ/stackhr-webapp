@@ -1,11 +1,30 @@
 import { Link } from 'react-router'
 import { formatAmount } from '../../dashboard/lib/format'
+import { useMyCompensationHistory } from '../hooks/use-my-compensation-history'
 import { latestPayslip, payslipPeriod, useMyPayslips } from '../hooks/use-my-payslips'
 import { useMyProfile } from '../hooks/use-my-profile'
+import { formatLongDate } from '../lib/profile-format'
+import { formatSalaryChange } from '../lib/salary-change'
+import type { MyCompensationHistory } from '../types/employee-types'
+
+function SalaryChangeSummary({ history }: { history: MyCompensationHistory }) {
+  const latest = history.history.toSorted((a, b) => b.effectiveDate.localeCompare(a.effectiveDate))[0]
+  if (!latest) return <p className="mt-1 text-sm font-medium text-muted">No changes yet</p>
+
+  const change = formatSalaryChange(latest.previousSalary, latest.newSalary)
+  return (
+    <p className="mt-1 text-sm font-medium text-ink">
+      {change ? <span className={change.startsWith('-') ? 'text-critical' : 'text-positive'}>{change} </span> : null}
+      <span className="text-xs font-normal text-muted">from {formatLongDate(latest.effectiveDate)}</span>
+    </p>
+  )
+}
 
 export function PayrollSummaryCard() {
   const profile = useMyProfile()
   const payslips = useMyPayslips()
+  // Optional: the card still renders if salary history fails to load.
+  const compensationHistory = useMyCompensationHistory()
 
   const isPending = profile.isPending || payslips.isPending
   const isError = profile.isError || payslips.isError
@@ -58,8 +77,11 @@ export function PayrollSummaryCard() {
           </div>
           <div>
             <p className="text-xs text-muted">Salary changes</p>
-            {/* No salary history is available to employees yet. */}
-            <p className="mt-1 text-sm font-medium text-muted">—</p>
+            {compensationHistory.isSuccess ? (
+              <SalaryChangeSummary history={compensationHistory.data} />
+            ) : (
+              <p className="mt-1 text-sm font-medium text-muted">—</p>
+            )}
           </div>
         </div>
       )}

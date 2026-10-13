@@ -52,6 +52,21 @@ export interface AcceptInvitationPayload {
   password: string
 }
 
+// Workspace invitations (sent from Team & Access) are looked up by ID and carry an access role.
+export interface WorkspaceInvitationPreview {
+  email: string
+  role: string
+  status: string
+  expiresAt: string
+  organizationName: string
+}
+
+export interface AcceptWorkspaceInvitationPayload {
+  invitationId: string
+  fullName: string
+  password: string
+}
+
 export interface ResetTokenStatus {
   valid: boolean
   email?: string

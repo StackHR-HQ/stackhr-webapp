@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
-import { usePayrollOverview } from '../../payroll/hooks/use-payroll-overview'
+import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
 import { StatutoryRuleDetail } from '../components/statutory/statutory-rule-detail'
 import type { StatutoryContributionRule } from '../../payroll/types/payroll-types'
 
@@ -16,8 +16,8 @@ const STATUTORY_TABS: { key: StatutoryTabKey; label: string }[] = [
 
 export function StatutoryPage() {
   const [activeTab, setActiveTab] = useState<StatutoryTabKey>('pension')
-  const { data, isPending, isError, refetch } = usePayrollOverview()
-  const activeRule = data?.currentRun.statutoryContributions.find((candidate) => candidate.id === activeTab)
+  const { data, isPending, isError, refetch } = useComplianceOverview()
+  const activeRule = data?.statutoryContributions.find((candidate) => candidate.id === activeTab)
 
   return (
     <div className="max-w-[1400px] space-y-5">

@@ -1,12 +1,15 @@
+import { Button } from '../../../../components/ui/button'
 import { Card, CardHeader } from '../../../../components/ui/card'
 import { SelectField } from '../../../../components/ui/select-field'
 import { getApiErrorMessage } from '../../../../lib/api-error'
 import { notify } from '../../../../lib/toast'
+import { useCompleteOnboarding } from '../../hooks/use-complete-onboarding'
 import { useUpdateOnboardingChecklist } from '../../hooks/use-update-onboarding-checklist'
 import type { EmployeeOnboardingRow, OnboardingTemplate } from '../../types/people-types'
 
 function ChecklistCard({ row, template }: { row: EmployeeOnboardingRow; template?: OnboardingTemplate }) {
   const updateChecklist = useUpdateOnboardingChecklist()
+  const completeOnboarding = useCompleteOnboarding()
 
   if (!template) {
     return (
@@ -30,12 +33,27 @@ function ChecklistCard({ row, template }: { row: EmployeeOnboardingRow; template
     )
   }
 
+  function complete() {
+    completeOnboarding.mutate(row.employeeId, {
+      onSuccess: () => notify.success('Onboarding complete', `${row.employeeName} is now active.`),
+      onError: (error) => notify.error('Could not complete onboarding', getApiErrorMessage(error, 'Please try again.')),
+    })
+  }
+
   return (
     <Card>
       <CardHeader
         title={`${row.employeeName}'s checklist`}
         description={template.name}
-        action={<span className="text-sm font-medium text-ink">{percent}% complete</span>}
+        action={
+          percent === 100 ? (
+            <Button type="button" width="fit" className="px-4" loading={completeOnboarding.isPending} onClick={complete}>
+              Complete onboarding
+            </Button>
+          ) : (
+            <span className="text-sm font-medium text-ink">{percent}% complete</span>
+          )
+        }
       />
 
       <div className="mb-5 h-1.5 w-full overflow-hidden rounded-pill bg-surface-2">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
 import { TaxTab as PayePayrollTab } from '../../payroll/components/run-detail/tax-tab'
-import { usePayrollOverview } from '../../payroll/hooks/use-payroll-overview'
+import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
 import { usePayrollRuns } from '../../payroll/hooks/use-payroll-runs'
 import { useTaxRuleSets } from '../../payroll/hooks/use-tax-rule-sets'
 import { TaxConfigurationTab } from '../components/tax/tax-configuration-tab'
@@ -19,7 +19,7 @@ const TAX_TABS: { key: TaxTabKey; label: string }[] = [
 
 export function TaxPage() {
   const [activeTab, setActiveTab] = useState<TaxTabKey>('configuration')
-  const overview = usePayrollOverview()
+  const overview = useComplianceOverview()
   const ruleSets = useTaxRuleSets()
   const runs = usePayrollRuns()
 
@@ -54,16 +54,16 @@ export function TaxPage() {
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
       ) : (
         <>
-          {activeTab === 'configuration' ? <TaxConfigurationTab taxRuleSet={overview.data.currentRun.taxRuleSet} /> : null}
+          {activeTab === 'configuration' ? <TaxConfigurationTab taxRuleSet={overview.data.taxRuleSet} /> : null}
           {activeTab === 'paye' ? (
             <PayePayrollTab
-              taxRuleSet={overview.data.currentRun.taxRuleSet}
-              lines={overview.data.currentRun.lines}
-              currency={overview.data.currentRun.summary.currency}
+              taxRuleSet={overview.data.taxRuleSet}
+              lines={overview.data.currentRun?.lines ?? []}
+              currency={overview.data.currentRun?.summary.currency ?? 'NGN'}
             />
           ) : null}
           {activeTab === 'rules' ? (
-            <TaxRulesTab ruleSets={ruleSets.data} activeRuleSetId={overview.data.currentRun.taxRuleSetId} />
+            <TaxRulesTab ruleSets={ruleSets.data} activeRuleSetId={overview.data.taxRuleSet.id} />
           ) : null}
           {activeTab === 'history' ? <TaxHistoryTab runs={runs.data} ruleSets={ruleSets.data} /> : null}
         </>

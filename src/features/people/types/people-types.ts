@@ -60,8 +60,8 @@ export interface CompensationInfo {
   salary: number
   currency: string
   payFrequency: string
-  bankName: string
-  bankAccountLast4: string
+  bankName: string | null
+  bankAccountLast4: string | null
 }
 
 export interface LeaveBalanceEntry {
@@ -220,9 +220,16 @@ export interface CreateEmployeePayload {
   sendInvitation: boolean
 }
 
+// Department, employment type, start date and status can't be changed through this endpoint.
+// Enum fields (employmentType, status) go over the wire in API casing, e.g. FULL_TIME.
 export interface UpdateEmployeePayload {
   jobTitle?: string
-  employmentStatus?: EmploymentStatus
+  departmentId?: string | null
+  managerId?: string | null
+  employmentType?: string
+  startDate?: string
+  status?: string
+  workLocation?: string | null
 }
 
 // Departments and teams own their membership atomically: this list replaces

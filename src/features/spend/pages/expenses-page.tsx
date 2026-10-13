@@ -18,6 +18,7 @@ export function ExpensesPage() {
       approved: 0,
       rejected: 0,
       reimbursed: 0,
+      cancelled: 0,
     }
     for (const expense of expenses ?? []) {
       base[expense.status] += 1

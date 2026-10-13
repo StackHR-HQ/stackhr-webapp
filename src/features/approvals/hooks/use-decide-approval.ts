@@ -7,6 +7,12 @@ export function useDecideApproval() {
 
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: ApprovalDecision }) => approvalsApi.decide(id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['spend'] }),
+        // Salary advances and payroll runs both live under ['payroll'].
+        queryClient.invalidateQueries({ queryKey: ['payroll'] }),
+      ]),
   })
 }

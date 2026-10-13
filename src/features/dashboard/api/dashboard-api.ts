@@ -12,8 +12,12 @@ import type {
   ApprovalCategory,
   ApprovalCategoryKey,
   ApprovalItem,
+  ComplianceAlert,
+  ComplianceAlertSeverity,
   DashboardSummary,
   PayrollStatusSummary,
+  SubscriptionPlanStatus,
+  SubscriptionStatus,
   UpcomingPayrollRun,
 } from '../types/dashboard-types'
 
@@ -63,6 +67,7 @@ interface ApiPayrollRun {
   title: string | null
   periodMonth: number
   periodYear: number
+  payDate: string | null
   status: string
   totalGross: number
   totalNet: number
@@ -94,6 +99,7 @@ function toUpcomingRuns(runs: ApiPayrollRun[]): UpcomingPayrollRun[] {
       id: run.id,
       title: run.title ?? periodLabel(run),
       periodLabel: periodLabel(run),
+      payDate: run.payDate ?? undefined,
       status: run.status,
     }))
 }
@@ -153,7 +159,7 @@ function toApprovalItem(request: ApprovalRequest, title: string): ApprovalItem {
   const summary = request.subjectSummary
   const reason = summary?.reason ?? readReason(request.metadata)
   const days = summary?.totalDays ?? request.amountSnapshot
-  const leaveDetail = [summary?.leaveType ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
+  const leaveDetail = [summary?.leaveType ?? summary?.label ?? title, reason, days ? `${days} day${days === 1 ? '' : 's'}` : undefined]
     .filter(Boolean)
     .join(' · ')
 
@@ -221,16 +227,94 @@ function toRecentActivity(requests: ApprovalRequest[], currentUserId?: string): 
   return events.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, RECENT_ACTIVITY_LIMIT)
 }
 
+interface ApiComplianceAlert {
+  type: string
+  title?: string
+  severity: string
+  message: string
+  count?: number
+  dueDate?: string
+}
+
+interface ApiBillingStatus {
+  status: string
+  planName: string
+  trialStartedAt: string | null
+  trialEndsAt: string | null
+  trialLengthDays: number | null
+  activeEmployeeCount: number
+  seatLimit: number
+}
+
+const COMPLIANCE_TITLES: Record<string, string> = {
+  MISSING_TAX_ID: 'Missing tax ID',
+  MISSING_PENSION_RSA: 'Missing pension RSA number',
+  PAYE_REMITTANCE_DUE: 'PAYE remittance due',
+  UPCOMING_STATUTORY_DEADLINE: 'Statutory remittance due',
+}
+
+function toSeverity(severity: string): ComplianceAlertSeverity {
+  if (severity === 'HIGH' || severity === 'CRITICAL') return 'critical'
+  if (severity === 'MEDIUM') return 'warning'
+  return 'info'
+}
+
+function humanize(value: string): string {
+  return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, ' ')
+}
+
+// The backend already leaves out alerts with a count of 0.
+function toComplianceAlerts(alerts: ApiComplianceAlert[]): ComplianceAlert[] {
+  return alerts.map((alert) => ({
+    id: alert.type,
+    title: alert.title ?? COMPLIANCE_TITLES[alert.type] ?? humanize(alert.type),
+    description: alert.message,
+    severity: toSeverity(alert.severity),
+    dueDate: alert.dueDate,
+  }))
+}
+
+function toPlanStatus(status: string): SubscriptionPlanStatus {
+  if (status === 'TRIALING') return 'trial'
+  if (status === 'PAST_DUE' || status === 'UNPAID') return 'past_due'
+  return 'active'
+}
+
+function toSubscription(billing: ApiBillingStatus): SubscriptionStatus {
+  const status = toPlanStatus(billing.status)
+  const plan = humanize(billing.planName.replace(/_TIER$/, ''))
+  return {
+    planName: status === 'trial' ? `${plan} (Trial)` : plan,
+    status,
+    trialEndsAt: status === 'trial' ? (billing.trialEndsAt ?? undefined) : undefined,
+    trialLengthDays: billing.trialLengthDays ?? undefined,
+    seatsUsed: billing.activeEmployeeCount,
+    seatsLimit: billing.seatLimit,
+  }
+}
+
+// Optional cards shouldn't take the whole dashboard down if their endpoint fails.
+async function optional<T>(request: Promise<T>): Promise<T | null> {
+  try {
+    return await request
+  } catch {
+    return null
+  }
+}
+
 export const dashboardApi = {
   async getSummary(): Promise<DashboardSummary> {
-    const [employees, approvals, recentApprovals, leaveRequests, payroll, organizations] = await Promise.all([
-      http.get<EmployeeSummary[]>('/people/employees'),
-      approvalsApi.listPending(),
-      approvalsApi.listRecent(),
-      peopleApi.getLeaveRequests(),
-      http.get<{ payrollRuns: ApiPayrollRun[] }>('/payroll/runs'),
-      organizationsApi.getOrganizations(),
-    ])
+    const [employees, approvals, recentApprovals, leaveRequests, payroll, organizations, compliance, billing] =
+      await Promise.all([
+        http.get<EmployeeSummary[]>('/people/employees'),
+        approvalsApi.listPending(),
+        approvalsApi.listRecent(),
+        peopleApi.getLeaveRequests(),
+        http.get<{ payrollRuns: ApiPayrollRun[] }>('/payroll/runs'),
+        organizationsApi.getOrganizations(),
+        optional(http.get<{ alerts: ApiComplianceAlert[] }>('/compliance/alerts')),
+        optional(http.get<ApiBillingStatus>('/billing/status')),
+      ])
 
     const currentUser = useAuthStore.getState().user
     const orgId = currentUser?.organizationId
@@ -252,6 +336,8 @@ export const dashboardApi = {
       currentPayroll: currentRun ? await getPayrollStatus(currentRun, currency, employees.data.length) : null,
       upcomingPayroll: toUpcomingRuns(payroll.data.payrollRuns),
       recentActivity: toRecentActivity(recentApprovals, currentUser?.id),
+      complianceAlerts: compliance ? toComplianceAlerts(compliance.data.alerts) : null,
+      subscription: billing ? toSubscription(billing.data) : null,
     }
   },
 }

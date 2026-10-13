@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useAuthStore } from '../../auth/store/auth-store'
+import { getApiErrorMessage } from '../../../lib/http'
+import { notify } from '../../../lib/toast'
+import { useDecideApproval } from '../../approvals/hooks/use-decide-approval'
 import { ApprovalStatusTabs, type ApprovalFilter } from '../components/approvals/approval-status-tabs'
 import { ApprovalsTable } from '../components/approvals/approvals-table'
 import { useSpendApprovals } from '../hooks/use-spend-approvals'
@@ -10,19 +12,16 @@ import type { SpendApprovalStatus } from '../types/spend-types'
 export function SpendApprovalsPage() {
   const { data: approvals, isPending, isError, refetch } = useSpendApprovals()
   const [filter, setFilter] = useState<ApprovalFilter>('pending')
-  const [decisions, setDecisions] = useState<Partial<Record<string, Exclude<SpendApprovalStatus, 'pending'>>>>({})
-  const approverName = useAuthStore((state) => state.user?.name) ?? 'You'
+  const decideApproval = useDecideApproval()
+  const requests = useMemo(() => approvals ?? [], [approvals])
 
-  const requests = useMemo(() => {
-    return (approvals ?? []).map((request) => {
-      const decision = decisions[request.id]
-      if (!decision) return request
-      return { ...request, status: decision, decidedBy: approverName, decidedAt: new Date().toISOString() }
-    })
-  }, [approvals, decisions, approverName])
-
-  function decide(id: string, status: Exclude<SpendApprovalStatus, 'pending'>) {
-    setDecisions((prev) => ({ ...prev, [id]: status }))
+  async function decide(id: string, status: Exclude<SpendApprovalStatus, 'pending'>) {
+    try {
+      await decideApproval.mutateAsync({ id, status: status === 'approved' ? 'APPROVED' : 'REJECTED' })
+      notify.success(status === 'approved' ? 'Expense claim approved' : 'Expense claim rejected')
+    } catch (err) {
+      notify.error("Couldn't record the decision", getApiErrorMessage(err))
+    }
   }
 
   const counts = useMemo(() => {
@@ -76,6 +75,7 @@ export function SpendApprovalsPage() {
               requests={filteredRequests}
               onApprove={filter === 'pending' ? (id) => decide(id, 'approved') : undefined}
               onReject={filter === 'pending' ? (id) => decide(id, 'rejected') : undefined}
+              deciding={decideApproval.isPending}
             />
           )}
         </div>

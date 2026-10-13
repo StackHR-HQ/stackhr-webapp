@@ -1,13 +1,13 @@
 import { Card, CardHeader } from '../../../components/ui/card'
 import { ComplianceWarningsList } from '../../payroll/components/compliance-warnings-list'
-import { usePayrollOverview } from '../../payroll/hooks/use-payroll-overview'
+import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
 import { ActiveTaxRuleCard } from '../components/overview/active-tax-rule-card'
 import { ComplianceStatTiles } from '../components/overview/compliance-stat-tiles'
 import { OutstandingActionsCard } from '../components/overview/outstanding-actions-card'
 import { StatutoryContributionsCard } from '../components/overview/statutory-contributions-card'
 
 export function ComplianceOverviewPage() {
-  const { data, isPending, isError, refetch } = usePayrollOverview()
+  const { data, isPending, isError, refetch } = useComplianceOverview()
 
   if (isPending) {
     return (
@@ -47,7 +47,7 @@ export function ComplianceOverviewPage() {
     )
   }
 
-  const { currentRun, complianceWarnings } = data
+  const { taxRuleSet, statutoryContributions, currentRun, complianceWarnings } = data
 
   return (
     <div className="max-w-[1400px] space-y-6">
@@ -59,23 +59,23 @@ export function ComplianceOverviewPage() {
       </div>
 
       <ComplianceStatTiles
-        taxRuleSet={currentRun.taxRuleSet}
-        statutoryContributions={currentRun.statutoryContributions}
+        taxRuleSet={taxRuleSet}
+        statutoryContributions={statutoryContributions}
         warnings={complianceWarnings}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <ActiveTaxRuleCard taxRuleSet={currentRun.taxRuleSet} />
-          <StatutoryContributionsCard rules={currentRun.statutoryContributions} />
+          <ActiveTaxRuleCard taxRuleSet={taxRuleSet} />
+          <StatutoryContributionsCard rules={statutoryContributions} />
         </div>
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Warnings" description={`For ${currentRun.periodLabel}`} />
+            <CardHeader title="Warnings" description={currentRun ? `For ${currentRun.periodLabel}` : 'No payroll run yet'} />
             <ComplianceWarningsList warnings={complianceWarnings} />
           </Card>
-          <OutstandingActionsCard warnings={complianceWarnings} resolvePath={`/payroll/runs/${currentRun.id}`} />
+          <OutstandingActionsCard warnings={complianceWarnings} resolvePath={currentRun ? `/payroll/runs/${currentRun.id}` : '/payroll/runs'} />
         </div>
       </div>
     </div>

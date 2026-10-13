@@ -3,7 +3,8 @@ export type PayrollRunStatus = 'draft' | 'processing' | 'pending_approval' | 'ap
 export type TaxRuleSetId = 'NG-2025' | 'NG-2026-v1'
 
 export interface TaxRuleSet {
-  id: TaxRuleSetId
+  // The backend's active rule set uses its own IDs (e.g. "TRS-NTA-2026").
+  id: string
   version: string
   effectiveFrom: string
   label: string
@@ -65,13 +66,19 @@ export interface PayrollRunMeta {
   payPeriodEnd: string
   payDate: string
   status: PayrollRunStatus
-  taxRuleSetId: TaxRuleSetId
-  payrollEngineVersion: string
-  generatedBy: string
+  // The backend's IDs (e.g. "ng-nta-2026-v1") differ from the mock's TaxRuleSetId values.
+  taxRuleSetId?: string
+  payrollEngineVersion?: string
+  // Not returned by the backend yet.
+  generatedBy?: string
   generatedAt: string
   approvedBy?: string
   approvedAt?: string
   failureReason?: string
+  // Set on runs awaiting approval that were loaded from the backend; decisions go through /approvals/:id/decide.
+  approvalId?: string
+  // The user who submitted the run, who can't decide on it.
+  approvalRequesterId?: string
 }
 
 export interface PayrollRunSummary {
@@ -89,7 +96,7 @@ export interface PayrollRunListItem extends PayrollRunMeta {
 }
 
 export interface PayrollRunDetail extends PayrollRunMeta {
-  taxRuleSet: TaxRuleSet
+  taxRuleSet?: TaxRuleSet
   summary: PayrollRunSummary
   statutoryContributions: StatutoryContributionRule[]
   lines: RunEmployeeLine[]
@@ -98,9 +105,20 @@ export interface PayrollRunDetail extends PayrollRunMeta {
 }
 
 export interface PayrollOverview {
-  currentRun: PayrollRunDetail
+  // Null until the organization has a payroll run.
+  currentRun: PayrollRunDetail | null
   previousRuns: PayrollRunMeta[]
   upcomingRuns: PayrollRunMeta[]
+  complianceWarnings: ComplianceWarning[]
+}
+
+// What the Compliance pages show: the active tax rule set and statutory
+// rules, plus the current run's per-employee figures.
+export interface ComplianceOverview {
+  taxRuleSet: TaxRuleSet
+  statutoryContributions: StatutoryContributionRule[]
+  // Null until the organization has a payroll run.
+  currentRun: PayrollRunDetail | null
   complianceWarnings: ComplianceWarning[]
 }
 
@@ -166,7 +184,9 @@ export interface SalaryAdvanceStatusEntry extends EmployeeRef {
   amount: number
   currency: string
   repaymentMonths: number
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid'
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'cancelled'
+  // Set for advances loaded from the backend; decisions go through /approvals/:id/decide.
+  approvalId?: string
 }
 
 export interface PayslipRecord extends EmployeeRef {

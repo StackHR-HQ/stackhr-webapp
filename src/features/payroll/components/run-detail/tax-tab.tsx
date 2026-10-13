@@ -8,16 +8,18 @@ export function TaxTab({
   lines,
   currency,
 }: {
-  taxRuleSet: TaxRuleSet
+  taxRuleSet?: TaxRuleSet
   lines: RunEmployeeLine[]
   currency: string
 }) {
   return (
     <div className="space-y-5">
-      <Card>
-        <CardHeader title={taxRuleSet.label} description={`Effective from ${formatDate(taxRuleSet.effectiveFrom)}`} />
-        <p className="text-sm text-muted">{taxRuleSet.description}</p>
-      </Card>
+      {taxRuleSet ? (
+        <Card>
+          <CardHeader title={taxRuleSet.label} description={`Effective from ${formatDate(taxRuleSet.effectiveFrom)}`} />
+          <p className="text-sm text-muted">{taxRuleSet.description}</p>
+        </Card>
+      ) : null}
 
       <div className="overflow-x-auto rounded-panel border border-line">
         <table className="w-full text-left text-sm">

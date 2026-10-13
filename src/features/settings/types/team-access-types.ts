@@ -22,7 +22,8 @@ export type InvitationStatus = 'pending' | 'expired'
 export interface Invitation {
   id: string
   email: string
-  fullName: string
+  // Backend invitations have no name; the invitee enters it when accepting.
+  fullName?: string
   role: Role
   invitedBy: string
   invitedAt: string

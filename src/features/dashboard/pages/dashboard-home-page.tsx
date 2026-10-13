@@ -1,9 +1,11 @@
 import { useAuthStore } from '../../auth/store/auth-store'
+import { ComplianceAlertsCard } from '../components/home/compliance-alerts-card'
 import { DashboardSkeleton } from '../components/home/dashboard-skeleton'
 import { OverviewStats } from '../components/home/overview-stats'
 import { PayrollStatusCard } from '../components/home/payroll-status-card'
 import { PendingApprovalsCard } from '../components/home/pending-approvals-card'
 import { RecentActivityCard } from '../components/home/recent-activity-card'
+import { SubscriptionStatusCard } from '../components/home/subscription-status-card'
 import { UpcomingPayrollCard } from '../components/home/upcoming-payroll-card'
 import { useDashboardSummary } from '../hooks/use-dashboard-summary'
 import { greeting } from '../lib/format'
@@ -56,6 +58,8 @@ export function DashboardHomePage() {
 
         <div className="space-y-6">
           <UpcomingPayrollCard runs={data.upcomingPayroll} />
+          {data.complianceAlerts ? <ComplianceAlertsCard alerts={data.complianceAlerts} /> : null}
+          {data.subscription ? <SubscriptionStatusCard subscription={data.subscription} /> : null}
         </div>
       </div>
     </div>

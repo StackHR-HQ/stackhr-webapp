@@ -1,10 +1,14 @@
-import type { PayrollRunMeta } from '../types/payroll-types'
+import type { PayrollRunMeta, TaxRuleSetId } from '../types/payroll-types'
+
+// Mock runs always carry the settings snapshot the backend doesn't return yet.
+export type MockPayrollRunMeta = PayrollRunMeta &
+  Required<Pick<PayrollRunMeta, 'payrollEngineVersion' | 'generatedBy'>> & { taxRuleSetId: TaxRuleSetId }
 
 function d(year: number, monthIndex: number, day: number): string {
   return new Date(year, monthIndex, day).toISOString()
 }
 
-export const PAYROLL_RUNS: PayrollRunMeta[] = [
+export const PAYROLL_RUNS: MockPayrollRunMeta[] = [
   {
     id: 'run-2026-09',
     periodLabel: 'September 2026',
@@ -182,6 +186,6 @@ export const PAYROLL_RUNS: PayrollRunMeta[] = [
   },
 ]
 
-export function getRunMeta(id: string): PayrollRunMeta | undefined {
+export function getRunMeta(id: string): MockPayrollRunMeta | undefined {
   return PAYROLL_RUNS.find((run) => run.id === id)
 }

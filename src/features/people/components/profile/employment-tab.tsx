@@ -1,11 +1,16 @@
+import { PencilSimpleIcon } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar } from '../../../../components/ui/avatar'
 import { Badge } from '../../../../components/ui/badge'
+import { Button } from '../../../../components/ui/button'
 import { Card, CardHeader } from '../../../../components/ui/card'
+import { Modal } from '../../../../components/ui/modal'
 import { tenureLabel } from '../../lib/dates'
 import { formatDate } from '../../lib/format'
 import { EMPLOYMENT_STATUS_META } from '../../lib/status-meta'
 import type { Department, EmployeeDetail, EmployeeSummary } from '../../types/people-types'
+import { EditEmploymentForm } from './edit-employment-form'
 import { FieldGrid } from './field-grid'
 
 export function EmploymentTab({
@@ -13,18 +18,29 @@ export function EmploymentTab({
   department,
   manager,
   directReports,
+  employees,
 }: {
   employee: EmployeeDetail
   department?: Department
   manager?: EmployeeSummary
   directReports: EmployeeSummary[]
+  employees: EmployeeSummary[]
 }) {
   const statusMeta = EMPLOYMENT_STATUS_META[employee.employmentStatus]
+  const [editing, setEditing] = useState(false)
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <Card>
-        <CardHeader title="Employment details" />
+        <CardHeader
+          title="Employment details"
+          action={
+            <Button variant="secondary" width="fit" className="gap-1.5 px-3 py-1.5" onClick={() => setEditing(true)}>
+              <PencilSimpleIcon className="h-3.5 w-3.5" />
+              Edit
+            </Button>
+          }
+        />
         <FieldGrid
           fields={[
             { label: 'Job title', value: employee.jobTitle },
@@ -43,10 +59,14 @@ export function EmploymentTab({
             { label: 'Status', value: <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge> },
             { label: 'Start date', value: formatDate(employee.startDate) },
             { label: 'Tenure', value: tenureLabel(employee.startDate) },
-            { label: 'Work location', value: employee.workLocation },
+            { label: 'Work location', value: employee.workLocation || '—' },
           ]}
         />
       </Card>
+
+      <Modal open={editing} onClose={() => setEditing(false)} title="Edit employment">
+        <EditEmploymentForm employee={employee} employees={employees} onDone={() => setEditing(false)} />
+      </Modal>
 
       <Card>
         <CardHeader title="Direct reports" description={`${directReports.length} people report to ${employee.fullName}`} />

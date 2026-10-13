@@ -22,4 +22,5 @@ export const ADVANCE_STATUS_META: Record<SalaryAdvanceStatusEntry['status'], { l
   rejected: { label: 'Rejected', tone: 'critical' },
   disbursed: { label: 'Disbursed', tone: 'positive' },
   repaid: { label: 'Repaid', tone: 'neutral' },
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
 }

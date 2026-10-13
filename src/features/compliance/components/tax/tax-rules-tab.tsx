@@ -1,8 +1,8 @@
 import { Badge } from '../../../../components/ui/badge'
 import { formatDate } from '../../lib/format'
-import type { TaxRuleSet, TaxRuleSetId } from '../../../payroll/types/payroll-types'
+import type { TaxRuleSet } from '../../../payroll/types/payroll-types'
 
-export function TaxRulesTab({ ruleSets, activeRuleSetId }: { ruleSets: TaxRuleSet[]; activeRuleSetId: TaxRuleSetId }) {
+export function TaxRulesTab({ ruleSets, activeRuleSetId }: { ruleSets: TaxRuleSet[]; activeRuleSetId: string }) {
   return (
     <ul className="space-y-3">
       {ruleSets.map((ruleSet) => {

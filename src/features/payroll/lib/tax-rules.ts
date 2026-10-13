@@ -1,6 +1,6 @@
 import type { TaxRuleSet, TaxRuleSetId } from '../types/payroll-types'
 
-export const TAX_RULE_SETS: Record<TaxRuleSetId, TaxRuleSet> = {
+export const TAX_RULE_SETS: Record<TaxRuleSetId, TaxRuleSet & { id: TaxRuleSetId }> = {
   'NG-2026-v1': {
     id: 'NG-2026-v1',
     version: 'v1.0',

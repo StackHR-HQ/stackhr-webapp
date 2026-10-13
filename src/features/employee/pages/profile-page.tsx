@@ -1,7 +1,12 @@
 import { LockKey, PencilSimple, ShieldCheck } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { Avatar } from '../../../components/ui/avatar'
 import { Button } from '../../../components/ui/button'
+import { Modal } from '../../../components/ui/modal'
+import { maskedAccountNumber } from '../../../lib/bank-account'
 import { formatAmount } from '../../dashboard/lib/format'
+import { CompensationHistory } from '../components/compensation-history'
+import { EditProfileForm } from '../components/edit-profile-form'
 import { useMyProfile } from '../hooks/use-my-profile'
 import { formatLongDate, humanizeEnum, initials, statusLabel } from '../lib/profile-format'
 import type { MyProfile } from '../types/employee-types'
@@ -20,6 +25,8 @@ function personalDetails(profile: MyProfile): Detail[] {
     ['Full name', profile.fullName],
     ['Date of birth', profile.dateOfBirth && formatLongDate(profile.dateOfBirth)],
     ['Gender', profile.gender && humanizeEnum(profile.gender).replace(/-/g, ' ')],
+    ['Marital status', profile.maritalStatus && humanizeEnum(profile.maritalStatus).replace(/-/g, ' ')],
+    ['Nationality', profile.nationality],
     ['Phone', profile.phone],
     ['Email', profile.personalEmail ?? profile.email],
     ['Address', profile.address],
@@ -27,7 +34,7 @@ function personalDetails(profile: MyProfile): Detail[] {
       'Emergency contact',
       joined(profile.emergencyContactName, profile.emergencyContactRelationship, profile.emergencyContactPhone),
     ],
-    ['Bank account', joined(profile.bankName, profile.bankAccountLast4 && `•••• ${profile.bankAccountLast4}`)],
+    ['Bank account', joined(profile.bankName, maskedAccountNumber(profile.bankAccountLast4))],
     ['Tax ID (TIN)', profile.tin],
     ['Pension', joined(profile.pensionProvider, profile.pensionRsaNumber)],
   ]
@@ -35,8 +42,7 @@ function personalDetails(profile: MyProfile): Detail[] {
 
 function employmentDetails(profile: MyProfile): Detail[] {
   return [
-    // There's no employee number on the profile yet.
-    ['Employee ID', null],
+    ['Employee ID', profile.employeeNumber],
     ['Job title', profile.jobTitle],
     ['Department', profile.department],
     ['Employment type', profile.employmentType && humanizeEnum(profile.employmentType)],
@@ -45,6 +51,22 @@ function employmentDetails(profile: MyProfile): Detail[] {
     ['Work location', profile.workLocation],
     ['Employment status', statusLabel(profile.employmentStatus)],
   ]
+}
+
+function allowancesSummary(profile: MyProfile): string | null {
+  const { compensation } = profile
+  if (!compensation) return null
+  const currency = profile.currency ?? 'NGN'
+  const parts = (
+    [
+      ['Housing', compensation.housingAllowance],
+      ['Transport', compensation.transportAllowance],
+      ['Other', compensation.otherAllowances],
+    ] as const
+  )
+    .filter(([, amount]) => amount > 0)
+    .map(([label, amount]) => `${label} ${formatAmount(amount, currency)}`)
+  return parts.length ? `${parts.join(' · ')} / month` : null
 }
 
 function compensationDetails(profile: MyProfile): Detail[] {
@@ -56,9 +78,8 @@ function compensationDetails(profile: MyProfile): Detail[] {
         : null,
     ],
     ['Pay frequency', profile.payFrequency && humanizeEnum(profile.payFrequency)],
-    // Allowances and the salary effective date aren't returned by the backend yet.
-    ['Allowances', null],
-    ['Effective date', null],
+    ['Allowances', allowancesSummary(profile)],
+    ['Effective date', profile.compensation?.effectiveFrom ? formatLongDate(profile.compensation.effectiveFrom) : null],
   ]
 }
 
@@ -87,6 +108,8 @@ function DetailList({ items, positiveStatus }: { items: Detail[]; positiveStatus
 
 export function MyProfilePage() {
   const { data: profile, isPending, isError, refetch } = useMyProfile()
+  const [editing, setEditing] = useState(false)
+  const [viewingHistory, setViewingHistory] = useState(false)
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 pb-8">
@@ -98,10 +121,15 @@ export function MyProfilePage() {
             Keep your personal details current. Employment and pay information is managed by HR.
           </p>
         </div>
-        {/* There's no endpoint for employees to update their own details yet. */}
-        <Button variant="secondary" width="fit" className="gap-2" disabled title="Editing isn't available yet">
+        <Button
+          variant="secondary"
+          width="fit"
+          className="gap-2"
+          disabled={!profile}
+          onClick={() => setEditing(true)}
+        >
           <PencilSimple size={16} />
-          Edit personal details
+          Edit
         </Button>
       </header>
 
@@ -146,7 +174,9 @@ export function MyProfilePage() {
                   <h2 className="text-lg font-medium text-ink">Personal information</h2>
                   <p className="mt-1 text-xs text-muted">Details you can update yourself.</p>
                 </div>
-                <PencilSimple size={19} className="text-accent" />
+                <button type="button" onClick={() => setEditing(true)} aria-label="Edit personal details">
+                  <PencilSimple size={19} className="text-accent" />
+                </button>
               </div>
               <DetailList items={personalDetails(profile)} />
             </section>
@@ -183,13 +213,25 @@ export function MyProfilePage() {
             <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
               <div>
                 <p className="text-sm font-medium text-ink">Compensation history</p>
-                <p className="mt-1 text-xs text-muted">Your salary history isn't available yet.</p>
+                <p className="mt-1 text-xs text-muted">Every change to your salary, with its effective date.</p>
               </div>
-              <button type="button" disabled className="text-sm font-medium text-accent disabled:opacity-50">
+              <button
+                type="button"
+                onClick={() => setViewingHistory(true)}
+                className="text-sm font-medium text-accent hover:underline"
+              >
                 View history
               </button>
             </div>
           </section>
+
+          <Modal open={editing} onClose={() => setEditing(false)} title="Edit personal details">
+            <EditProfileForm profile={profile} onDone={() => setEditing(false)} />
+          </Modal>
+
+          <Modal open={viewingHistory} onClose={() => setViewingHistory(false)} title="Compensation history">
+            {viewingHistory ? <CompensationHistory currency={profile.currency ?? 'NGN'} /> : null}
+          </Modal>
         </>
       )}
     </div>

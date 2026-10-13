@@ -34,7 +34,8 @@ export function Button({ variant, width, loading = false, className, disabled, c
       className={cn(buttonVariants({ variant, width }), className)}
       {...props}
     >
-      <span className={loading ? 'invisible' : undefined}>{children}</span>
+      {/* Inherits the button's gap so an icon and label sit side by side. */}
+      <span className={cn('inline-flex items-center gap-[inherit]', loading && 'invisible')}>{children}</span>
       {loading ? (
         <span className="absolute inset-0 flex items-center justify-center">
           <TrailingDots size="sm" tone={variant === 'secondary' ? 'default' : 'inverted'} />
