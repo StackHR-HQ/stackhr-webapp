@@ -17,6 +17,12 @@ const STATUS_META: Record<string, { label: string; tone: BadgeTone }> = {
   CANCELLED: { label: 'Cancelled', tone: 'neutral' },
 }
 
+// Pending requests can be cancelled, and so can approved leave that hasn't started yet.
+function isCancellable(request: MyLeaveRequest): boolean {
+  if (request.status === 'PENDING') return true
+  return request.status === 'APPROVED' && request.startDate.slice(0, 10) > new Date().toLocaleDateString('en-CA')
+}
+
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
 export function MyLeavePage() {
@@ -77,7 +83,8 @@ export function MyLeavePage() {
           <div className="space-y-5">
             <p className="text-sm text-muted">
               Cancel your {cancelling.leaveType?.name ?? 'leave'} request for {formatDate(cancelling.startDate)} –{' '}
-              {formatDate(cancelling.endDate)}? You can submit a new request later.
+              {formatDate(cancelling.endDate)}?{' '}
+              {cancelling.status === 'APPROVED' ? 'The days go back to your balance.' : 'You can submit a new request later.'}
             </p>
             <div className="flex gap-3">
               <Button type="button" variant="secondary" width="fit" className="px-6" onClick={() => setCancelling(null)}>
@@ -145,7 +152,7 @@ export function MyLeavePage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
-                      {request.status === 'PENDING' ? (
+                      {isCancellable(request) ? (
                         <button
                           type="button"
                           onClick={() => setCancelling(request)}
