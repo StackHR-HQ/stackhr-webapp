@@ -201,6 +201,11 @@ export const peopleApi = {
     await http.post('/people/onboarding/employees', payload)
   },
 
+  // Checks every checklist task is done, then sets the employee to ACTIVE.
+  async completeOnboarding(employeeId: string): Promise<void> {
+    await http.post(`/people/onboarding/employees/${employeeId}/complete`)
+  },
+
   async updateOnboardingChecklist(employeeId: string, itemId: string, completed: boolean): Promise<EmployeeOnboardingRow> {
     const { data } = await http.patch<EmployeeOnboardingRow>(
       `/people/onboarding/employees/${employeeId}/checklist/${itemId}`,
