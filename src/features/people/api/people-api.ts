@@ -27,6 +27,13 @@ import type {
   UploadDocumentResult,
 } from '../types/people-types'
 
+// Departments without a head come back with headEmployeeId "", which the
+// backend rejects if sent back on update; only a UUID or null is accepted.
+const toDepartment = (department: Department): Department => ({
+  ...department,
+  headEmployeeId: department.headEmployeeId || null,
+})
+
 export const peopleApi = {
   async getEmployees(): Promise<EmployeeSummary[]> {
     const { data } = await http.get<EmployeeSummary[]>('/people/employees')
@@ -54,7 +61,7 @@ export const peopleApi = {
 
   async getDepartments(): Promise<Department[]> {
     const { data } = await http.get<Department[]>('/people/departments')
-    return data
+    return data.map(toDepartment)
   },
 
   async getTeams(): Promise<Team[]> {
@@ -160,12 +167,12 @@ export const peopleApi = {
   // full member set and head.
   async createDepartment(payload: DepartmentInput): Promise<Department> {
     const { data } = await http.post<Department>('/people/departments', payload)
-    return data
+    return toDepartment(data)
   },
 
   async updateDepartment(id: string, payload: DepartmentInput): Promise<Department> {
     const { data } = await http.patch<Department>(`/people/departments/${id}`, payload)
-    return data
+    return toDepartment(data)
   },
 
   async deleteDepartment(id: string): Promise<void> {
