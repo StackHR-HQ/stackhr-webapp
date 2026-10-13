@@ -33,6 +33,16 @@ interface ApiExpense {
   status: string
   createdAt: string
   updatedAt: string
+  // Accepted on create; not returned on staging yet.
+  expenseDate?: string | null
+  paymentMethod?: string | null
+}
+
+// GET /spend/expenses/:id adds the linked reimbursement. The service includes a
+// `reimbursements` array, while the Postman example shows a single `reimbursement`.
+interface ApiExpenseDetail extends ApiExpense {
+  reimbursements?: ApiReimbursement[]
+  reimbursement?: ApiReimbursement | null
 }
 
 interface ApiSalaryAdvance {
@@ -46,6 +56,8 @@ interface ApiSalaryAdvance {
   status: string
   disbursedAt: string | null
   createdAt: string
+  // Accepted on create; not returned on staging yet.
+  currency?: string | null
 }
 
 // Only seen empty on staging so far; fields beyond the documented ones are optional.
@@ -70,6 +82,7 @@ const EXPENSE_STATUS: Record<string, ExpenseStatus> = {
   REJECTED: 'rejected',
   REIMBURSED: 'reimbursed',
   PAID: 'reimbursed',
+  CANCELLED: 'cancelled',
 }
 
 const REIMBURSEMENT_STATUS: Record<string, ReimbursementStatus> = {
@@ -94,6 +107,13 @@ const ADVANCE_STATUS: Record<string, SalaryAdvanceStatusEntry['status']> = {
   DISBURSED: 'disbursed',
   REPAYING: 'disbursed',
   REPAID: 'repaid',
+  CANCELLED: 'cancelled',
+}
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  BANK_TRANSFER: 'Bank transfer',
+  CARD: 'Card',
+  CASH: 'Cash',
 }
 
 const employeeName = (employee: ApiEmployeeRef | null) => employee?.fullName ?? 'Unknown employee'
@@ -146,12 +166,12 @@ function toExpenseClaim(
     avatarInitials: initials(name),
     category: expense.category,
     description: expense.description ?? '',
-    // There's no separate expense date yet, so the submission date stands in.
-    date: expense.createdAt,
+    // Claims made before expenseDate existed fall back to the submission date.
+    date: expense.expenseDate ?? expense.createdAt,
     submittedAt: expense.createdAt,
     amount: expense.amount,
     currency: expense.currency,
-    paymentMethod: '—',
+    paymentMethod: (expense.paymentMethod && PAYMENT_METHOD_LABEL[toApiEnum(expense.paymentMethod)]) ?? '—',
     receiptFileName: receiptFileName(expense.receiptUrl),
     status: EXPENSE_STATUS[toApiEnum(expense.status)] ?? 'pending',
     decidedBy: approval?.approver?.fullName,
@@ -179,10 +199,14 @@ async function getExpenseClaims(): Promise<ExpenseClaim[]> {
 export const spendApi = {
   getExpenses: getExpenseClaims,
 
-  // No GET /spend/expenses/:id yet, so look the claim up in the list.
   async getExpense(id: string): Promise<ExpenseClaim | null> {
-    const claims = await getExpenseClaims()
-    return claims.find((claim) => claim.id === id) ?? null
+    const [{ data }, approvals] = await Promise.all([
+      http.get<{ expense: ApiExpenseDetail }>(`/spend/expenses/${id}`),
+      fetchApprovals('EXPENSE'),
+    ])
+    const { expense } = data
+    const reimbursement = expense.reimbursements?.[0] ?? expense.reimbursement ?? undefined
+    return toExpenseClaim(expense, approvals.find((approval) => approval.subjectId === id), reimbursement)
   },
 
   async getReimbursements(): Promise<Reimbursement[]> {
@@ -211,6 +235,8 @@ export const spendApi = {
   async getApprovalRequests(): Promise<SpendApprovalRequest[]> {
     const approvals = await fetchApprovals('EXPENSE')
     return approvals
+      // Approvals are cancelled along with their expense, or when the expense is deleted.
+      .filter((approval) => approval.status in APPROVAL_STATUS)
       .map((approval) => {
         const summary = approval.subjectSummary
         const name = approval.requester?.fullName ?? 'Unknown employee'
@@ -225,7 +251,7 @@ export const spendApi = {
           amount: approval.amountSnapshot ?? 0,
           currency: approval.currency ?? summary?.currency ?? 'NGN',
           submittedAt: approval.submittedAt,
-          status: APPROVAL_STATUS[approval.status] ?? 'pending',
+          status: APPROVAL_STATUS[approval.status],
           decidedBy: approval.approver?.fullName,
           decidedAt: approval.decidedAt ?? undefined,
           rejectionReason: approval.rejectionReason ?? undefined,
@@ -250,13 +276,17 @@ export const spendApi = {
           avatarInitials: initials(name),
           requestedAt: advance.createdAt,
           amount: advance.amount,
-          // Advances don't carry a currency; they're paid in the org's payroll currency.
-          currency: 'NGN',
+          // Older advances have no currency; they're paid in the org's payroll currency.
+          currency: advance.currency ?? 'NGN',
           repaymentMonths: advance.repaymentMonths,
           status: ADVANCE_STATUS[toApiEnum(advance.status)] ?? 'pending',
           approvalId: approvalByAdvance.get(advance.id),
         }
       })
       .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt))
+  },
+
+  async disburseSalaryAdvance(id: string): Promise<void> {
+    await http.post(`/spend/advances/${id}/disburse`)
   },
 }

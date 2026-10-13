@@ -40,6 +40,11 @@ export const employeeApi = {
     await http.post('/spend/expenses', { ...payload, description: payload.description || undefined })
   },
 
+  // Only pending claims can be cancelled.
+  async cancelExpense(id: string): Promise<void> {
+    await http.patch(`/spend/expenses/${id}/cancel`)
+  },
+
   async getSalaryAdvances(): Promise<MySalaryAdvance[]> {
     const { data } = await http.get<{ salaryAdvances: MySalaryAdvance[] }>('/me/advances')
     return data.salaryAdvances
@@ -47,6 +52,11 @@ export const employeeApi = {
 
   async submitSalaryAdvance(payload: SalaryAdvancePayload): Promise<void> {
     await http.post('/spend/advances', { ...payload, reason: payload.reason || undefined })
+  },
+
+  // Only pending requests can be cancelled.
+  async cancelSalaryAdvance(id: string): Promise<void> {
+    await http.patch(`/spend/advances/${id}/cancel`)
   },
 
   async getActivity(): Promise<MyAuditEvent[]> {

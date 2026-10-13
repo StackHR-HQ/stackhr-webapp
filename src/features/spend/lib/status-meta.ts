@@ -6,6 +6,7 @@ export const EXPENSE_STATUS_META: Record<ExpenseStatus, { label: string; tone: B
   approved: { label: 'Approved', tone: 'accent' },
   rejected: { label: 'Rejected', tone: 'critical' },
   reimbursed: { label: 'Reimbursed', tone: 'positive' },
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
 }
 
 export const REIMBURSEMENT_STATUS_META: Record<ReimbursementStatus, { label: string; tone: BadgeTone }> = {

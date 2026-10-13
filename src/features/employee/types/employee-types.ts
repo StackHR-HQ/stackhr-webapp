@@ -156,6 +156,8 @@ export interface ExpensePayload {
   amount: number
   currency: string
   description?: string
+  expenseDate: string
+  paymentMethod: 'BANK_TRANSFER' | 'CARD' | 'CASH'
 }
 
 export interface SalaryAdvancePayload {

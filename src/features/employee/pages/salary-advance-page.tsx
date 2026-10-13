@@ -5,20 +5,35 @@ import { Button } from '../../../components/ui/button'
 import { Card } from '../../../components/ui/card'
 import { Modal } from '../../../components/ui/modal'
 import { toApiEnum } from '../../../lib/api-enum'
+import { getApiErrorMessage } from '../../../lib/http'
 import { notify } from '../../../lib/toast'
 import { formatAmount, formatDate } from '../../dashboard/lib/format'
 import { SalaryAdvanceForm } from '../components/salary-advance-form'
 import { useMyProfile } from '../hooks/use-my-profile'
-import { useMySalaryAdvances } from '../hooks/use-my-spend'
+import { useCancelSalaryAdvance, useMySalaryAdvances } from '../hooks/use-my-spend'
 import { requestStatusMeta } from '../lib/request-status'
+import type { MySalaryAdvance } from '../types/employee-types'
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
 export function MySalaryAdvancePage() {
   const [requesting, setRequesting] = useState(false)
+  const [cancelling, setCancelling] = useState<MySalaryAdvance | null>(null)
+  const cancelAdvance = useCancelSalaryAdvance()
   const advances = useMySalaryAdvances()
   const profile = useMyProfile()
   const currency = profile.data?.currency ?? 'NGN'
+
+  const confirmCancel = async () => {
+    if (!cancelling) return
+    try {
+      await cancelAdvance.mutateAsync(cancelling.id)
+      notify.success('Salary advance request cancelled')
+      setCancelling(null)
+    } catch (err) {
+      notify.error("Couldn't cancel the request", getApiErrorMessage(err))
+    }
+  }
 
   const sorted = advances.data ? advances.data.toSorted((a, b) => b.createdAt.localeCompare(a.createdAt)) : []
   const hasPending = sorted.some((advance) => ['PENDING', 'SUBMITTED'].includes(toApiEnum(advance.status)))
@@ -58,6 +73,24 @@ export function MySalaryAdvancePage() {
             }}
             onCancel={() => setRequesting(false)}
           />
+        ) : null}
+      </Modal>
+
+      <Modal open={cancelling !== null} onClose={() => setCancelling(null)} title="Cancel salary advance request">
+        {cancelling ? (
+          <div className="space-y-5">
+            <p className="text-sm text-muted">
+              Cancel your request for {formatAmount(cancelling.amount, currency)}? You can make a new request later.
+            </p>
+            <div className="flex gap-3">
+              <Button type="button" variant="secondary" width="fit" className="px-6" onClick={() => setCancelling(null)}>
+                Keep request
+              </Button>
+              <Button type="button" width="fit" className="px-6" loading={cancelAdvance.isPending} onClick={confirmCancel}>
+                Cancel request
+              </Button>
+            </div>
+          </div>
         ) : null}
       </Modal>
 
@@ -102,7 +135,18 @@ export function MySalaryAdvancePage() {
                       {formatDate(advance.createdAt)} · {repayment}
                     </p>
                   </div>
-                  <Badge tone={status.tone}>{status.label}</Badge>
+                  <div className="flex shrink-0 items-center gap-3">
+                    {toApiEnum(advance.status) === 'PENDING' ? (
+                      <button
+                        type="button"
+                        onClick={() => setCancelling(advance)}
+                        className="text-xs font-medium text-muted hover:text-critical"
+                      >
+                        Cancel
+                      </button>
+                    ) : null}
+                    <Badge tone={status.tone}>{status.label}</Badge>
+                  </div>
                 </li>
               )
             })}

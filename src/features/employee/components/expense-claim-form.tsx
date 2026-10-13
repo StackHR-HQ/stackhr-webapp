@@ -8,7 +8,9 @@ import { getApiErrorMessage } from '../../../lib/http'
 import { useSubmitExpense } from '../hooks/use-my-spend'
 import {
   EXPENSE_CATEGORIES,
+  PAYMENT_METHODS,
   expenseSchema,
+  todayInputValue,
   type ExpenseFormInput,
   type ExpenseFormValues,
 } from '../schemas/spend-request-schemas'
@@ -32,7 +34,13 @@ export function ExpenseClaimForm({
     formState: { errors, isSubmitting },
   } = useForm<ExpenseFormInput, unknown, ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { category: '', amount: '', description: '' },
+    defaultValues: {
+      category: '',
+      amount: '',
+      description: '',
+      expenseDate: todayInputValue(),
+      paymentMethod: undefined,
+    },
   })
 
   const onSubmit = handleSubmit(async (values) => {
@@ -72,6 +80,22 @@ export function ExpenseClaimForm({
           placeholder="25000"
           error={errors.amount?.message}
           {...register('amount')}
+        />
+        <TextField
+          id="expenseDate"
+          label="Date paid"
+          type="date"
+          max={todayInputValue()}
+          error={errors.expenseDate?.message}
+          {...register('expenseDate')}
+        />
+        <SelectField
+          id="paymentMethod"
+          label="Paid with"
+          placeholder="Choose a payment method"
+          options={PAYMENT_METHODS.map((method) => ({ value: method.value, label: method.label }))}
+          error={errors.paymentMethod?.message}
+          {...register('paymentMethod')}
         />
         <div className="sm:col-span-2">
           <TextField

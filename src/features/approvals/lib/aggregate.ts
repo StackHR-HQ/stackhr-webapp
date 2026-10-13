@@ -63,7 +63,8 @@ export function reimbursementsToApprovals(reimbursements: Reimbursement[]): Glob
   }))
 }
 
-const ADVANCE_STATUS_MAP: Record<SalaryAdvanceStatusEntry['status'], GlobalApprovalStatus> = {
+// Cancelled advances never reach an approver, so they're left out.
+const ADVANCE_STATUS_MAP: Partial<Record<SalaryAdvanceStatusEntry['status'], GlobalApprovalStatus>> = {
   pending: 'pending',
   approved: 'approved',
   rejected: 'rejected',
@@ -72,20 +73,22 @@ const ADVANCE_STATUS_MAP: Record<SalaryAdvanceStatusEntry['status'], GlobalAppro
 }
 
 export function salaryAdvancesToApprovals(advances: SalaryAdvanceStatusEntry[]): GlobalApprovalItem[] {
-  return advances.map((advance) => ({
-    id: advance.id,
-    domain: 'salary-advances',
-    title: advance.employeeName,
-    subtitle: `Salary advance · ${advance.repaymentMonths} month repayment`,
-    avatarInitials: advance.avatarInitials,
-    amount: advance.amount,
-    currency: advance.currency,
-    submittedAt: advance.requestedAt,
-    status: ADVANCE_STATUS_MAP[advance.status],
-    detailPath: `/payroll/salary-advances`,
-    actionable: advance.status === 'pending',
-    approvalId: advance.approvalId,
-  }))
+  return advances
+    .filter((advance) => advance.status in ADVANCE_STATUS_MAP)
+    .map((advance) => ({
+      id: advance.id,
+      domain: 'salary-advances',
+      title: advance.employeeName,
+      subtitle: `Salary advance · ${advance.repaymentMonths} month repayment`,
+      avatarInitials: advance.avatarInitials,
+      amount: advance.amount,
+      currency: advance.currency,
+      submittedAt: advance.requestedAt,
+      status: ADVANCE_STATUS_MAP[advance.status]!,
+      detailPath: `/payroll/salary-advances`,
+      actionable: advance.status === 'pending',
+      approvalId: advance.approvalId,
+    }))
 }
 
 const PAYROLL_RUN_STATUS_MAP: Partial<Record<PayrollRunListItem['status'], GlobalApprovalStatus>> = {

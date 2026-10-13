@@ -88,7 +88,8 @@ export function AdvancesTable({
                     <button
                       type="button"
                       onClick={() => onDisburse(advance.id)}
-                      className="ml-auto block rounded-lg bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-ink hover:opacity-90"
+                      disabled={deciding}
+                      className="ml-auto block rounded-lg bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-ink hover:opacity-90 disabled:opacity-50"
                     >
                       Mark disbursed
                     </button>

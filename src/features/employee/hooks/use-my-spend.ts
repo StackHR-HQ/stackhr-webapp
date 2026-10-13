@@ -31,3 +31,25 @@ export function useSubmitSalaryAdvance() {
     },
   })
 }
+
+export function useCancelExpense() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => employeeApi.cancelExpense(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}
+
+export function useCancelSalaryAdvance() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => employeeApi.cancelSalaryAdvance(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}

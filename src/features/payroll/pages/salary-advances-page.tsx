@@ -5,7 +5,7 @@ import { notify } from '../../../lib/toast'
 import { useDecideApproval } from '../../approvals/hooks/use-decide-approval'
 import { AdvanceStatusTabs, type AdvanceStatusFilter } from '../components/advances/advance-status-tabs'
 import { AdvancesTable } from '../components/advances/advances-table'
-import { useSalaryAdvances } from '../hooks/use-salary-advances'
+import { useDisburseSalaryAdvance, useSalaryAdvances } from '../hooks/use-salary-advances'
 import type { SalaryAdvanceStatusEntry } from '../types/payroll-types'
 
 export function SalaryAdvancesPage() {
@@ -14,6 +14,7 @@ export function SalaryAdvancesPage() {
   // Mock data has no approval records, so decisions there only change local state.
   const [overrides, setOverrides] = useState<Partial<Record<string, SalaryAdvanceStatusEntry['status']>>>({})
   const decideApproval = useDecideApproval()
+  const disburseAdvance = useDisburseSalaryAdvance()
 
   const advances = useMemo(
     () => (data ?? []).map((advance) => ({ ...advance, status: overrides[advance.id] ?? advance.status })),
@@ -50,6 +51,18 @@ export function SalaryAdvancesPage() {
     }
   }
 
+  async function disburse(id: string) {
+    try {
+      await disburseAdvance.mutateAsync(id)
+      notify.success('Salary advance marked as disbursed')
+    } catch (err) {
+      notify.error("Couldn't mark the advance as disbursed", getApiErrorMessage(err))
+    }
+  }
+
+  // Mock data has no backend record, so disbursing it only changes local state.
+  const onDisburse = USE_MOCK_SPEND ? (id: string) => setStatus(id, 'disbursed') : disburse
+
   return (
     <div className="max-w-[1400px] space-y-5">
       <div>
@@ -79,9 +92,8 @@ export function SalaryAdvancesPage() {
               advances={filteredAdvances}
               onApprove={(id) => decide(id, 'approved')}
               onReject={(id) => decide(id, 'rejected')}
-              // The backend has no disbursement endpoint yet.
-              onDisburse={USE_MOCK_SPEND ? (id) => setStatus(id, 'disbursed') : undefined}
-              deciding={decideApproval.isPending}
+              onDisburse={onDisburse}
+              deciding={decideApproval.isPending || disburseAdvance.isPending}
             />
           )}
         </div>

@@ -1,5 +1,6 @@
 import { ArrowSquareOut, FileText, FolderOpen } from '@phosphor-icons/react'
 import { Card } from '../../../components/ui/card'
+import { resolveApiUrl } from '../../../lib/env'
 import { useMyDocuments } from '../hooks/use-my-documents'
 import { formatLongDate } from '../lib/profile-format'
 
@@ -39,7 +40,7 @@ export function EmployeeDocumentsPage() {
               return (
                 <li key={document.id} className="py-3 first:pt-0 last:pb-0">
                   <a
-                    href={document.fileUrl}
+                    href={resolveApiUrl(document.fileUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-center justify-between gap-4"

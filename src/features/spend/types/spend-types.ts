@@ -1,4 +1,4 @@
-export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'reimbursed'
+export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'reimbursed' | 'cancelled'
 
 export type ReimbursementStatus = 'pending' | 'approved' | 'processing' | 'completed' | 'failed'
 

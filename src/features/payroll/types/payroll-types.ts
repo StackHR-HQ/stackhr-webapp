@@ -179,7 +179,7 @@ export interface SalaryAdvanceStatusEntry extends EmployeeRef {
   amount: number
   currency: string
   repaymentMonths: number
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid'
+  status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'cancelled'
   // Set for advances loaded from the backend; decisions go through /approvals/:id/decide.
   approvalId?: string
 }
