@@ -1,5 +1,8 @@
+import { KeyIcon, ShieldIcon, UserListIcon, UsersThreeIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { ComingSoon } from '../../../components/ui/coming-soon'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
+import { USE_MOCK_SETTINGS } from '../../../lib/env'
 import { InvitationsView } from '../components/team-access/invitations-view'
 import { ManagersView } from '../components/team-access/managers-view'
 import { PermissionsView } from '../components/team-access/permissions-view'
@@ -22,19 +25,20 @@ const TEAM_ACCESS_TABS: { key: TeamAccessTabKey; label: string }[] = [
 ]
 
 export function TeamAccessPage() {
-  const [activeTab, setActiveTab] = useState<TeamAccessTabKey>('members')
-  const { data: members, isPending: membersPending } = useTeamMembers()
-  const { data: roles, isPending: rolesPending } = useRoleDefinitions()
-  const { data: matrix, isPending: matrixPending } = usePermissionMatrix()
+  // Only invitations have a backend; with real data the other tabs show Coming soon.
+  const [activeTab, setActiveTab] = useState<TeamAccessTabKey>(USE_MOCK_SETTINGS ? 'members' : 'invitations')
+  const { data: members, isPending: membersPending } = useTeamMembers(USE_MOCK_SETTINGS)
+  const { data: roles, isPending: rolesPending } = useRoleDefinitions(USE_MOCK_SETTINGS)
+  const { data: matrix, isPending: matrixPending } = usePermissionMatrix(USE_MOCK_SETTINGS)
   const { data: invitations, isPending: invitationsPending } = useInvitations()
-  const { data: managers, isPending: managersPending } = useManagers()
+  const { data: managers, isPending: managersPending } = useManagers(USE_MOCK_SETTINGS)
 
   const pendingByTab: Record<TeamAccessTabKey, boolean> = {
-    members: membersPending,
-    roles: rolesPending || membersPending,
-    permissions: matrixPending,
+    members: USE_MOCK_SETTINGS && membersPending,
+    roles: USE_MOCK_SETTINGS && (rolesPending || membersPending),
+    permissions: USE_MOCK_SETTINGS && matrixPending,
     invitations: invitationsPending,
-    managers: managersPending,
+    managers: USE_MOCK_SETTINGS && managersPending,
   }
 
   return (
@@ -50,6 +54,37 @@ export function TeamAccessPage() {
 
       {pendingByTab[activeTab] ? (
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
+      ) : !USE_MOCK_SETTINGS && activeTab !== 'invitations' ? (
+        <>
+          {activeTab === 'members' ? (
+            <ComingSoon
+              icon={UsersThreeIcon}
+              title="Team members"
+              description="Soon you'll see everyone who can sign in to StackHR, change their roles and remove access. Invite people from the Invitations tab."
+            />
+          ) : null}
+          {activeTab === 'roles' ? (
+            <ComingSoon
+              icon={ShieldIcon}
+              title="Roles"
+              description="Soon you'll see what each role can do and who holds it."
+            />
+          ) : null}
+          {activeTab === 'permissions' ? (
+            <ComingSoon
+              icon={KeyIcon}
+              title="Permissions"
+              description="Soon you'll see exactly which modules each role can view and change."
+            />
+          ) : null}
+          {activeTab === 'managers' ? (
+            <ComingSoon
+              icon={UserListIcon}
+              title="Managers"
+              description="Soon you'll see every manager and the people who report to them."
+            />
+          ) : null}
+        </>
       ) : (
         <>
           {activeTab === 'members' ? <TeamMembersView initialMembers={members ?? []} /> : null}

@@ -136,6 +136,17 @@ export interface Invoice {
   status: InvoiceStatus
 }
 
+// What GET /billing/status reports.
+export interface BillingStatus {
+  planName: string
+  billingCycle: CurrentPlan['billingCycle']
+  status: SubscriptionPlanStatus
+  trialEndsAt?: string
+  trialLengthDays?: number
+  seatsUsed: number
+  seatsLimit: number
+}
+
 export interface BillingSettings {
   currentPlan: CurrentPlan
   subscription: Subscription

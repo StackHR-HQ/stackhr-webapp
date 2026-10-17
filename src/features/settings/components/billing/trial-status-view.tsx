@@ -5,9 +5,18 @@ import { daysUntil } from '../../../dashboard/lib/format'
 import { useUpdateSubscription } from '../../hooks/use-update-subscription'
 import type { Subscription } from '../../types/settings-types'
 
-const TRIAL_LENGTH_DAYS = 14
+const DEFAULT_TRIAL_LENGTH_DAYS = 14
 
-export function TrialStatusView({ subscription }: { subscription: Subscription }) {
+// Upgrading has no backend yet, so the button is hidden unless canUpgrade.
+export function TrialStatusView({
+  subscription,
+  trialLengthDays = DEFAULT_TRIAL_LENGTH_DAYS,
+  canUpgrade = true,
+}: {
+  subscription: Pick<Subscription, 'status' | 'trialEndsAt'>
+  trialLengthDays?: number
+  canUpgrade?: boolean
+}) {
   const updateSubscription = useUpdateSubscription()
 
   if (subscription.status !== 'trial' || !subscription.trialEndsAt) {
@@ -20,7 +29,7 @@ export function TrialStatusView({ subscription }: { subscription: Subscription }
   }
 
   const daysRemaining = Math.max(0, daysUntil(subscription.trialEndsAt))
-  const progress = Math.round(((TRIAL_LENGTH_DAYS - daysRemaining) / TRIAL_LENGTH_DAYS) * 100)
+  const progress = Math.round(((trialLengthDays - daysRemaining) / trialLengthDays) * 100)
 
   return (
     <Card>
@@ -38,15 +47,17 @@ export function TrialStatusView({ subscription }: { subscription: Subscription }
         <p className="mt-3 text-xs text-muted">
           Upgrade to a paid plan any time to keep full access after your trial ends, with no interruption to payroll or approvals.
         </p>
-        <Button
-          type="button"
-          width="fit"
-          className="mt-4 px-6"
-          loading={updateSubscription.isPending}
-          onClick={() => updateSubscription.mutate({ status: 'active', trialEndsAt: undefined })}
-        >
-          Upgrade now
-        </Button>
+        {canUpgrade ? (
+          <Button
+            type="button"
+            width="fit"
+            className="mt-4 px-6"
+            loading={updateSubscription.isPending}
+            onClick={() => updateSubscription.mutate({ status: 'active', trialEndsAt: undefined })}
+          >
+            Upgrade now
+          </Button>
+        ) : null}
       </div>
     </Card>
   )
