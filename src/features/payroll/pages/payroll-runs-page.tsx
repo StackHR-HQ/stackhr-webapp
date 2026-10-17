@@ -1,4 +1,8 @@
+import { PlusIcon } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
+import { Button } from '../../../components/ui/button'
+import { USE_MOCK_PAYROLL } from '../../../lib/env'
+import { NewRunModal } from '../components/runs/new-run-modal'
 import { RunStatusTabs, type RunStatusFilter } from '../components/runs/run-status-tabs'
 import { RunsTable } from '../components/runs/runs-table'
 import { usePayrollRuns } from '../hooks/use-payroll-runs'
@@ -6,6 +10,7 @@ import { usePayrollRuns } from '../hooks/use-payroll-runs'
 export function PayrollRunsPage() {
   const { data: runs, isPending, isError, refetch } = usePayrollRuns()
   const [statusFilter, setStatusFilter] = useState<RunStatusFilter>('all')
+  const [creating, setCreating] = useState(false)
 
   const counts = useMemo(() => {
     const base: Record<RunStatusFilter, number> = {
@@ -31,10 +36,21 @@ export function PayrollRunsPage() {
 
   return (
     <div className="max-w-[1400px] space-y-5">
-      <div>
-        <h1 className="text-xl font-medium text-ink">Payroll Runs</h1>
-        <p className="mt-1 text-sm text-muted">Every payroll run, from draft through disbursement.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-medium text-ink">Payroll Runs</h1>
+          <p className="mt-1 text-sm text-muted">Every payroll run, from draft through disbursement.</p>
+        </div>
+        {/* Mock runs have no backend record to move through the lifecycle. */}
+        {USE_MOCK_PAYROLL ? null : (
+          <Button type="button" width="fit" className="gap-1.5 px-4" onClick={() => setCreating(true)}>
+            <PlusIcon className="h-4 w-4" />
+            New payroll run
+          </Button>
+        )}
       </div>
+
+      <NewRunModal open={creating} onClose={() => setCreating(false)} />
 
       {isError ? (
         <div className="rounded-panel border border-line bg-surface p-6 text-center shadow-panel">

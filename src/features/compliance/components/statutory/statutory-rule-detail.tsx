@@ -5,6 +5,8 @@ import type { StatutoryContributionRule } from '../../../payroll/types/payroll-t
 
 export function StatutoryRuleDetail({ rule }: { rule: StatutoryContributionRule }) {
   const meta = APPLICABILITY_META[rule.applicability]
+  // NHIA has no rate in the rule set, so there's no base to show either.
+  const hasRate = rule.employeeRatePercent > 0 || rule.employerRatePercent > 0
 
   return (
     <Card>
@@ -21,7 +23,7 @@ export function StatutoryRuleDetail({ rule }: { rule: StatutoryContributionRule 
         </div>
         <div className="rounded-lg border border-line bg-canvas p-3">
           <p className="text-xs text-muted">Contribution base</p>
-          <p className="mt-1 text-sm font-medium text-ink">{rule.base.toUpperCase()}</p>
+          <p className="mt-1 text-sm font-medium text-ink">{hasRate ? rule.base.toUpperCase() : '—'}</p>
         </div>
       </div>
 

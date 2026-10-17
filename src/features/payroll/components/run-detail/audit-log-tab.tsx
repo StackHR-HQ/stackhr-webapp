@@ -4,6 +4,17 @@ import { formatDateTime } from '../../lib/format'
 import type { AuditLogEntry } from '../../types/payroll-types'
 
 export function AuditLogTab({ entries }: { entries: AuditLogEntry[] }) {
+  if (entries.length === 0) {
+    return (
+      <Card>
+        <div className="flex flex-col items-center gap-2 py-6 text-center">
+          <ClockCounterClockwiseIcon className="h-5 w-5 text-muted" />
+          <p className="text-sm text-muted">No activity recorded for this run yet.</p>
+        </div>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <ul className="space-y-4">

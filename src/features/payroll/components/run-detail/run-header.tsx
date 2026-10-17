@@ -3,6 +3,7 @@ import { formatDate } from '../../lib/format'
 import { PAYROLL_RUN_STATUS_META } from '../../lib/status-meta'
 import type { PayrollRunDetail } from '../../types/payroll-types'
 import { RunApprovalActions } from './run-approval-actions'
+import { RunLifecycleActions } from './run-lifecycle-actions'
 
 export function RunHeader({ run }: { run: PayrollRunDetail }) {
   const statusMeta = PAYROLL_RUN_STATUS_META[run.status]
@@ -29,6 +30,7 @@ export function RunHeader({ run }: { run: PayrollRunDetail }) {
           {run.status === 'pending_approval' && run.approvalId ? (
             <RunApprovalActions approvalId={run.approvalId} requesterId={run.approvalRequesterId} />
           ) : null}
+          <RunLifecycleActions run={run} />
         </div>
       </div>
 

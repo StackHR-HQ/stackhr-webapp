@@ -1,5 +1,17 @@
 export type PayrollRunStatus = 'draft' | 'processing' | 'pending_approval' | 'approved' | 'completed' | 'failed'
 
+// The backend's lifecycle, which PayrollRunStatus groups into fewer states.
+export type PayrollRunStage =
+  | 'DRAFT'
+  | 'CALCULATED'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'FUNDING_CHECK_PASSED'
+  | 'FUNDING_SHORTFALL'
+  | 'EXECUTED'
+  | 'RECONCILED'
+
 export type TaxRuleSetId = 'NG-2025' | 'NG-2026-v1'
 
 export interface TaxRuleSet {
@@ -66,10 +78,11 @@ export interface PayrollRunMeta {
   payPeriodEnd: string
   payDate: string
   status: PayrollRunStatus
-  // The backend's IDs (e.g. "ng-nta-2026-v1") differ from the mock's TaxRuleSetId values.
+  // Set on runs loaded from the backend; decides which lifecycle action comes next.
+  stage?: PayrollRunStage
+  // The backend's IDs (e.g. "TRS-NTA-2026") differ from the mock's TaxRuleSetId values.
   taxRuleSetId?: string
   payrollEngineVersion?: string
-  // Not returned by the backend yet.
   generatedBy?: string
   generatedAt: string
   approvedBy?: string
