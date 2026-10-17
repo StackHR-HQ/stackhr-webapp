@@ -1,4 +1,7 @@
+import { BuildingsIcon, MapPinIcon, PaletteIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { ComingSoon } from '../../../components/ui/coming-soon'
+import { USE_MOCK_SETTINGS } from '../../../lib/env'
 import { AddressView } from '../components/organization/address-view'
 import { BrandingView } from '../components/organization/branding-view'
 import { BusinessInformationView } from '../components/organization/business-information-view'
@@ -20,7 +23,26 @@ export function SettingsOrganizationPage() {
 
       <OrganizationSettingsTabs active={activeTab} onChange={setActiveTab} />
 
-      {isPending || !settings ? (
+      {/* The backend only stores company information; the other tabs show Coming soon with real data. */}
+      {!USE_MOCK_SETTINGS && activeTab === 'branding' ? (
+        <ComingSoon
+          icon={PaletteIcon}
+          title="Branding"
+          description="Soon you'll be able to add your logo and brand colours to payslips and emails."
+        />
+      ) : !USE_MOCK_SETTINGS && activeTab === 'address' ? (
+        <ComingSoon
+          icon={MapPinIcon}
+          title="Company address"
+          description="Soon you'll be able to record your registered address for payslips and statutory filings."
+        />
+      ) : !USE_MOCK_SETTINGS && activeTab === 'business-information' ? (
+        <ComingSoon
+          icon={BuildingsIcon}
+          title="Business information"
+          description="Soon you'll be able to record your RC number, TIN, business type and website."
+        />
+      ) : isPending || !settings ? (
         <div className="h-64 animate-pulse rounded-panel border border-line bg-surface" />
       ) : (
         <>

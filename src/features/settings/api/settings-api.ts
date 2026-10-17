@@ -1,8 +1,10 @@
 import { http } from '../../../lib/http'
+import { humanizeEnum } from '../../employee/lib/profile-format'
 import type { StatutoryContributionRule } from '../../payroll/types/payroll-types'
 import type {
   AuthenticationSettings,
   BillingSettings,
+  BillingStatus,
   Integration,
   IntegrationStatus,
   NotificationSettings,
@@ -100,9 +102,44 @@ function organizationUpdatePayload(patch: Partial<OrganizationSettings>) {
   }
 }
 
-// Real backend calls. Not wired up yet — the endpoints don't exist. Kept
-// behind the same shape as settings-mock-api.ts so settings-service.ts can
-// swap to this by flipping VITE_USE_MOCK_SETTINGS once the backend is live.
+interface ApiBillingStatus {
+  status: string
+  planName: string
+  trialStartedAt: string | null
+  trialEndsAt: string | null
+  trialLengthDays: number | null
+  activeEmployeeCount: number
+  seatLimit: number
+  billingCycle: string
+  nextBillingDate: string | null
+}
+
+const PLAN_STATUS: Record<string, BillingStatus['status']> = {
+  TRIALING: 'trial',
+  ACTIVE: 'active',
+  PAST_DUE: 'past_due',
+  UNPAID: 'past_due',
+  CANCELED: 'canceled',
+  CANCELLED: 'canceled',
+}
+
+// GET /billing/status is the only billing endpoint. The rest of the Billing
+// page (subscription changes, payment method, history, invoices) has none yet.
+export async function getBillingStatus(): Promise<BillingStatus> {
+  const { data } = await http.get<ApiBillingStatus>('/billing/status')
+  return {
+    planName: humanizeEnum(data.planName.replace(/_TIER$/, '')),
+    billingCycle: data.billingCycle.toUpperCase() === 'ANNUAL' ? 'annual' : 'monthly',
+    status: PLAN_STATUS[data.status.toUpperCase()] ?? 'active',
+    trialEndsAt: data.trialEndsAt ?? undefined,
+    trialLengthDays: data.trialLengthDays ?? undefined,
+    seatsUsed: data.activeEmployeeCount,
+    seatsLimit: data.seatLimit,
+  }
+}
+
+// Of these, only the organization calls exist on the backend. The settings
+// pages show Coming soon for the rest when VITE_USE_MOCK_SETTINGS is off.
 export const settingsApi = {
   async getOrganizationSettings(): Promise<OrganizationSettings> {
     const { data } = await http.get<OrganizationResponse>('/organization/current')

@@ -5,21 +5,25 @@ import { humanizeEnum, initials } from '../../employee/lib/profile-format'
 import { peopleApi } from '../../people/api/people-api'
 import { EARNING_COMPONENTS } from '../lib/earning-structure'
 import { summarizeRun } from '../lib/payroll-calculation'
-import { getStatutoryContributions } from '../lib/statutory-contributions'
 import type {
+  AuditLogEntry,
   ComplianceOverview,
+  ComplianceWarning,
   EarningComponent,
   EmployeeSalaryRow,
   PayrollOverview,
   PayrollRunDetail,
   PayrollRunListItem,
   PayrollRunMeta,
+  PayrollRunStage,
   PayrollRunStatus,
   PayrollRunSummary,
   PayslipRecord,
   RunEmployeeLine,
   SalaryBand,
   SalaryChangeEntry,
+  StatutoryApplicability,
+  StatutoryContributionRule,
   TaxRuleSet,
 } from '../types/payroll-types'
 
@@ -47,6 +51,8 @@ interface ApiPayrollRun {
   executedAt: string | null
   reconciledAt: string | null
   payDate: string
+  // The admin's display name or email.
+  createdBy?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -68,9 +74,29 @@ interface ApiPayrollRunItem {
   netSalary: number
 }
 
+// Same shape as an organization compliance alert. Only returned while a run is DRAFT or CALCULATED.
+interface ApiComplianceAlert {
+  type: string
+  title?: string
+  severity: string
+  message: string
+  count?: number
+  dueDate?: string
+}
+
+interface ApiAuditEvent {
+  id: string
+  action: string
+  description: string
+  createdAt: string
+  actor: { id: string; name: string | null; email: string } | null
+}
+
 interface ApiPayrollRunDetail extends ApiPayrollRun {
   items: ApiPayrollRunItem[]
   rejectionReason?: string | null
+  complianceWarnings?: ApiComplianceAlert[]
+  auditTrail?: ApiAuditEvent[]
 }
 
 // Created for every item when a run is approved.
@@ -110,6 +136,23 @@ interface ApiCompensationChange {
   currency: string | null
 }
 
+// Which statutory contributions apply. `basis` lists the pay components a rate applies to.
+interface ApiStatutoryRule {
+  rate?: number
+  employeeRate?: number
+  employerRate?: number
+  basis?: string
+  mandatory?: boolean
+  voluntary?: boolean
+  mandatoryThreshold?: number
+  voluntaryBelowThreshold?: boolean
+  // ITF also applies from this annual turnover, in kobo.
+  turnoverThresholdMinor?: number
+  legalBasis: string
+  // Written for developers (it names API fields), so explanations are built here instead.
+  note: string
+}
+
 // GET /compliance/active-rule-set. Rates are fractions (0.08 = 8%); limits are naira per year.
 interface ApiActiveRuleSet {
   id: string
@@ -122,6 +165,7 @@ interface ApiActiveRuleSet {
   pensionEmployerRate: number
   nhfRate: number
   taxRules: { bandOrder: number; lowerLimit: number; upperLimit: number | null; taxRate: number }[]
+  applicability?: Partial<Record<StatutoryContributionRule['id'], ApiStatutoryRule>>
 }
 
 // Backend lifecycle: DRAFT → CALCULATED → PENDING_APPROVAL → APPROVED | REJECTED
@@ -151,8 +195,10 @@ function toRunMeta(run: ApiPayrollRun & { rejectionReason?: string | null }): Pa
     payPeriodEnd: periodEnd.toISOString(),
     payDate: run.payDate,
     status: RUN_STATUS[status] ?? 'draft',
+    stage: status as PayrollRunStage,
     taxRuleSetId: run.taxRuleSetId ?? undefined,
     payrollEngineVersion: run.payrollEngineVersion ?? undefined,
+    generatedBy: run.createdBy ?? undefined,
     generatedAt: run.createdAt,
     approvedAt: run.approvedAt ?? undefined,
     failureReason:
@@ -202,15 +248,126 @@ function toRunLine(item: ApiPayrollRunItem): RunEmployeeLine {
   }
 }
 
-function toRunDetail(run: ApiPayrollRunDetail): PayrollRunDetail {
+const SEVERITY: Record<string, ComplianceWarning['severity']> = {
+  CRITICAL: 'critical',
+  HIGH: 'critical',
+  MEDIUM: 'warning',
+  LOW: 'info',
+  INFO: 'info',
+}
+
+function toComplianceWarnings(alerts: ApiComplianceAlert[], idPrefix: string): ComplianceWarning[] {
+  return alerts.map((alert) => ({
+    id: `${idPrefix}-${alert.type}`,
+    severity: SEVERITY[toApiEnum(alert.severity)] ?? 'warning',
+    message: alert.message,
+  }))
+}
+
+function toAuditLogEntry(event: ApiAuditEvent): AuditLogEntry {
+  return {
+    id: event.id,
+    actor: event.actor?.name ?? event.actor?.email ?? 'System',
+    action: event.description,
+    timestamp: event.createdAt,
+  }
+}
+
+const STATUTORY_NAMES: Record<StatutoryContributionRule['id'], string> = {
+  pension: 'Pension (RSA)',
+  nhf: 'National Housing Fund',
+  nhia: 'Health Insurance (NHIA)',
+  nsitf: 'Employee Compensation (NSITF)',
+  itf: 'Industrial Training Fund',
+}
+
+const STATUTORY_ORDER: StatutoryContributionRule['id'][] = ['pension', 'nhf', 'nhia', 'nsitf', 'itf']
+
+// A single `rate` is paid by the employee for NHF and by the employer for the rest.
+const EMPLOYEE_FUNDED: StatutoryContributionRule['id'][] = ['nhf']
+
+function toContributionBase(basis: string | undefined): StatutoryContributionRule['base'] {
+  if (basis === 'BASIC') return 'basic'
+  if (basis === 'GROSS' || !basis) return 'gross'
+  return 'bht'
+}
+
+// The backend doesn't know turnover, so a headcount threshold alone decides.
+function toApplicability(rule: ApiStatutoryRule, employeeCount: number): StatutoryApplicability {
+  if (rule.mandatoryThreshold !== undefined) {
+    if (employeeCount >= rule.mandatoryThreshold) return 'mandatory'
+    return rule.voluntaryBelowThreshold ? 'voluntary' : 'not_applicable'
+  }
+  if (rule.voluntary) return 'voluntary'
+  return rule.mandatory ? 'mandatory' : 'not_applicable'
+}
+
+const toPercent = (rate: number) => Math.round(rate * 1000) / 10
+
+const employeesLabel = (count: number) => `${count} ${count === 1 ? 'employee' : 'employees'}`
+
+function explainContribution(
+  id: StatutoryContributionRule['id'],
+  rule: ApiStatutoryRule,
+  applicability: StatutoryApplicability,
+  employeeCount: number,
+): string {
+  const threshold = rule.mandatoryThreshold ?? 0
+  const yours = `Your organization has ${employeesLabel(employeeCount)}`
+  switch (id) {
+    case 'pension':
+      return applicability === 'mandatory'
+        ? `Mandatory for employers with ${threshold} or more employees. ${yours}, so contributions are required for every employee who isn't exempt.`
+        : `Mandatory from ${threshold} employees and voluntary below that. ${yours}.`
+    case 'nhf':
+      return applicability === 'mandatory'
+        ? 'Mandatory for eligible employees, deducted from basic salary.'
+        : 'Voluntary. Employees who opt in contribute from their basic salary.'
+    case 'nsitf':
+      return 'Employer-funded cover for workplace injury and compensation, required once you have any employees.'
+    case 'itf': {
+      const turnover = rule.turnoverThresholdMinor ? ` or annual turnover of ${naira(rule.turnoverThresholdMinor / 100)}` : ''
+      return applicability === 'mandatory'
+        ? `Required for employers with ${threshold} or more employees${turnover}. ${yours}.`
+        : `Required from ${threshold} employees${turnover}. ${yours}, so it applies only if your turnover meets the threshold.`
+    }
+    case 'nhia':
+      return 'Mandatory health insurance under the National Health Insurance Authority. Contribution rates are agreed with your health plan.'
+  }
+}
+
+function toStatutoryContributions(ruleSet: ApiActiveRuleSet, employeeCount: number): StatutoryContributionRule[] {
+  return STATUTORY_ORDER.flatMap((id) => {
+    const rule = ruleSet.applicability?.[id]
+    if (!rule) return []
+    const employeeFunded = EMPLOYEE_FUNDED.includes(id)
+    const applicability = toApplicability(rule, employeeCount)
+    return [
+      {
+        id,
+        name: STATUTORY_NAMES[id],
+        applicability,
+        employeeRatePercent: toPercent(rule.employeeRate ?? (employeeFunded ? (rule.rate ?? 0) : 0)),
+        employerRatePercent: toPercent(rule.employerRate ?? (employeeFunded ? 0 : (rule.rate ?? 0))),
+        base: toContributionBase(rule.basis),
+        explanation: explainContribution(id, rule, applicability, employeeCount),
+        legalReference: rule.legalBasis,
+      },
+    ]
+  })
+}
+
+// The active rule set only describes a run calculated with it.
+function toRunDetail(run: ApiPayrollRunDetail, ruleSet?: ApiActiveRuleSet): PayrollRunDetail {
   const lines = run.items.map(toRunLine)
+  const runRuleSet = ruleSet && ruleSet.id === run.taxRuleSetId ? ruleSet : undefined
   return {
     ...toRunMeta(run),
+    taxRuleSet: runRuleSet ? toTaxRuleSet(runRuleSet) : undefined,
     summary: summarizeRun(lines, run.currency),
-    // Not returned by the backend yet.
-    statutoryContributions: [],
-    complianceWarnings: [],
-    auditLog: [],
+    statutoryContributions: runRuleSet ? toStatutoryContributions(runRuleSet, lines.length) : [],
+    complianceWarnings: toComplianceWarnings(run.complianceWarnings ?? [], run.id),
+    auditLog: (run.auditTrail ?? []).map(toAuditLogEntry),
     lines,
   }
 }
@@ -230,6 +387,17 @@ async function fetchRun(id: string): Promise<ApiPayrollRunDetail> {
 async function fetchActiveRuleSet(): Promise<ApiActiveRuleSet> {
   const { data } = await http.get<ApiActiveRuleSet>('/compliance/active-rule-set')
   return data
+}
+
+async function fetchComplianceAlerts(): Promise<ComplianceWarning[]> {
+  const { data } = await http.get<{ alerts: ApiComplianceAlert[] }>('/compliance/alerts')
+  return toComplianceWarnings(data.alerts, 'org')
+}
+
+// The run's own warnings come first; organization alerts that repeat one are dropped.
+function mergeWarnings(runWarnings: ComplianceWarning[], orgWarnings: ComplianceWarning[]): ComplianceWarning[] {
+  const messages = new Set(runWarnings.map((warning) => warning.message))
+  return [...runWarnings, ...orgWarnings.filter((warning) => !messages.has(warning.message))]
 }
 
 const naira = (amount: number) => `₦${amount.toLocaleString('en-NG')}`
@@ -276,7 +444,8 @@ export const payrollApi = {
   },
 
   async getRun(id: string): Promise<PayrollRunDetail | null> {
-    const run = toRunDetail(await fetchRun(id))
+    const [apiRun, ruleSet] = await Promise.all([fetchRun(id), fetchActiveRuleSet()])
+    const run = toRunDetail(apiRun, ruleSet)
     if (run.status !== 'pending_approval') return run
     const { data } = await http.get<{ items: ApprovalRequest[] }>('/approvals', {
       params: { type: 'PAYROLL', status: 'PENDING', page: 1, limit: 100 },
@@ -288,38 +457,33 @@ export const payrollApi = {
   // No overview endpoint: the current run is the latest one not yet completed,
   // falling back to the latest run.
   async getOverview(): Promise<PayrollOverview> {
-    const runs = await fetchRuns()
+    const [runs, ruleSet, alerts] = await Promise.all([fetchRuns(), fetchActiveRuleSet(), fetchComplianceAlerts()])
     const current = runs.find((run) => RUN_STATUS[toApiEnum(run.status)] !== 'completed') ?? runs[0]
     const items = runs.map(toListItem)
+    const currentRun = current ? toRunDetail(await fetchRun(current.id), ruleSet) : null
     return {
-      currentRun: current ? toRunDetail(await fetchRun(current.id)) : null,
+      currentRun,
       previousRuns: items.filter((run) => run.status === 'completed').slice(0, 6),
       upcomingRuns: items.filter((run) => run.status === 'draft' && run.id !== current?.id).reverse(),
-      complianceWarnings: [],
+      complianceWarnings: mergeWarnings(currentRun?.complianceWarnings ?? [], alerts),
     }
   },
 
-  // Rates for pension and NHF come from the active rule set. Which
-  // contributions apply, and the explanations, depend on headcount.
+  // Which contributions apply depends on the organization's current headcount.
   async getComplianceOverview(): Promise<ComplianceOverview> {
-    const [ruleSet, employees, runs] = await Promise.all([fetchActiveRuleSet(), peopleApi.getEmployees(), fetchRuns()])
+    const [ruleSet, employees, runs, alerts] = await Promise.all([
+      fetchActiveRuleSet(),
+      peopleApi.getEmployees(),
+      fetchRuns(),
+      fetchComplianceAlerts(),
+    ])
     const current = runs.find((run) => RUN_STATUS[toApiEnum(run.status)] !== 'completed') ?? runs[0]
-    const statutoryContributions = getStatutoryContributions(employees.length).map((rule) => {
-      if (rule.id === 'pension') {
-        return {
-          ...rule,
-          employeeRatePercent: ruleSet.pensionEmployeeRate * 100,
-          employerRatePercent: ruleSet.pensionEmployerRate * 100,
-        }
-      }
-      if (rule.id === 'nhf') return { ...rule, employeeRatePercent: ruleSet.nhfRate * 100 }
-      return rule
-    })
+    const currentRun = current ? toRunDetail(await fetchRun(current.id), ruleSet) : null
     return {
       taxRuleSet: toTaxRuleSet(ruleSet),
-      statutoryContributions,
-      currentRun: current ? toRunDetail(await fetchRun(current.id)) : null,
-      complianceWarnings: [],
+      statutoryContributions: toStatutoryContributions(ruleSet, employees.length),
+      currentRun,
+      complianceWarnings: mergeWarnings(currentRun?.complianceWarnings ?? [], alerts),
     }
   },
 
@@ -390,6 +554,35 @@ export const payrollApi = {
       }),
     )
     return histories.flat().sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate))
+  },
+
+  // Lifecycle: create → calculate → submit (approval happens via /approvals)
+  // → funding check → execute → reconcile.
+  async createRun(input: { periodMonth: number; periodYear: number; title: string }): Promise<string> {
+    const { data } = await http.post<{ payrollRun: { id: string } }>('/payroll/runs', input)
+    return data.payrollRun.id
+  },
+
+  async calculateRun(id: string): Promise<void> {
+    await http.post(`/payroll/runs/${id}/calculate`)
+  },
+
+  async submitRun(id: string): Promise<void> {
+    await http.post(`/payroll/runs/${id}/submit`)
+  },
+
+  // confirmed: false records a shortfall.
+  async attestFunding(id: string, input: { confirmed: boolean; notes?: string }): Promise<void> {
+    await http.post(`/payroll/runs/${id}/funding-check`, input)
+  },
+
+  // Reusing the key on a retry replays the original response instead of paying twice.
+  async executeRun(id: string, idempotencyKey: string): Promise<void> {
+    await http.post(`/payroll/runs/${id}/execute`, {}, { headers: { 'Idempotency-Key': idempotencyKey } })
+  },
+
+  async reconcileRun(id: string): Promise<void> {
+    await http.post(`/payroll/runs/${id}/reconcile`)
   },
 
   // Generated payslips come from GET /payroll/payslips. A run awaiting approval

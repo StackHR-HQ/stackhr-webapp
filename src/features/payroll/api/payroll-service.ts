@@ -4,7 +4,7 @@ import { mockPayrollApi } from './payroll-mock-api'
 import { payrollApi } from './payroll-api'
 
 export const payrollService = {
-  // Bonuses and deduction types have no backend data yet, so they stay on mock data.
+  // Bonuses and deduction types have no backend yet; with real data their tabs show Coming soon.
   ...mockPayrollApi,
   ...(USE_MOCK_PAYROLL ? {} : payrollApi),
   // Salary advances live under /spend on the backend, so they follow the spend mock flag.

@@ -33,7 +33,8 @@ export function ComplianceTab({
                 <p className="mt-2 text-xs text-muted">
                   {rule.employeeRatePercent > 0 ? `Employee ${rule.employeeRatePercent}% · ` : ''}
                   {rule.employerRatePercent > 0 ? `Employer ${rule.employerRatePercent}% · ` : ''}
-                  Base: {rule.base.toUpperCase()} · {rule.legalReference}
+                  {rule.employeeRatePercent > 0 || rule.employerRatePercent > 0 ? `Base: ${rule.base.toUpperCase()} · ` : ''}
+                  {rule.legalReference}
                 </p>
               </li>
             )

@@ -1,5 +1,10 @@
 import type { BadgeTone } from '../../../components/ui/badge'
-import type { PayrollRunStatus, SalaryAdvanceStatusEntry, StatutoryApplicability } from '../types/payroll-types'
+import type {
+  PayrollRunStage,
+  PayrollRunStatus,
+  SalaryAdvanceStatusEntry,
+  StatutoryApplicability,
+} from '../types/payroll-types'
 
 export const PAYROLL_RUN_STATUS_META: Record<PayrollRunStatus, { label: string; tone: BadgeTone }> = {
   draft: { label: 'Draft', tone: 'neutral' },
@@ -8,6 +13,15 @@ export const PAYROLL_RUN_STATUS_META: Record<PayrollRunStatus, { label: string; 
   approved: { label: 'Approved', tone: 'accent' },
   completed: { label: 'Completed', tone: 'positive' },
   failed: { label: 'Failed', tone: 'critical' },
+}
+
+// Stages that PAYROLL_RUN_STATUS_META's grouping would mislabel on a run's own page.
+export const PAYROLL_RUN_STAGE_META: Partial<Record<PayrollRunStage, { label: string; tone: BadgeTone }>> = {
+  CALCULATED: { label: 'Calculated', tone: 'neutral' },
+  REJECTED: { label: 'Rejected', tone: 'critical' },
+  FUNDING_CHECK_PASSED: { label: 'Funding confirmed', tone: 'accent' },
+  FUNDING_SHORTFALL: { label: 'Funding shortfall', tone: 'critical' },
+  EXECUTED: { label: 'Paid', tone: 'accent' },
 }
 
 export const APPLICABILITY_META: Record<StatutoryApplicability, { label: string; tone: BadgeTone }> = {

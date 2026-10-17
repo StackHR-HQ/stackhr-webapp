@@ -33,7 +33,7 @@ interface ApiExpense {
   status: string
   createdAt: string
   updatedAt: string
-  // Accepted on create; not returned on staging yet.
+  // Null on claims made before these fields existed.
   expenseDate?: string | null
   paymentMethod?: string | null
 }
@@ -56,7 +56,7 @@ interface ApiSalaryAdvance {
   status: string
   disbursedAt: string | null
   createdAt: string
-  // Accepted on create; not returned on staging yet.
+  // Null on advances made before currency was recorded.
   currency?: string | null
 }
 

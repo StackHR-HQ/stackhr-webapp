@@ -1,5 +1,8 @@
+import { GiftIcon, ReceiptXIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { ComingSoon } from '../../../components/ui/coming-soon'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
+import { USE_MOCK_PAYROLL } from '../../../lib/env'
 import { AllowancesView } from '../components/salaries/allowances-view'
 import { BonusesView } from '../components/salaries/bonuses-view'
 import { DeductionsView } from '../components/salaries/deductions-view'
@@ -29,16 +32,17 @@ export function SalariesPage() {
   const { data: bands, isPending: bandsPending } = useSalaryBands()
   const { data: components, isPending: componentsPending } = useEarningComponents()
   const { data: employeeSalaries, isPending: employeesPending } = useEmployeeSalaries()
-  const { data: bonuses, isPending: bonusesPending } = useBonusPayouts()
-  const { data: deductions, isPending: deductionsPending } = useDeductionTypes()
+  // Bonuses and deduction types have no backend yet, so only mock data has them.
+  const { data: bonuses, isPending: bonusesPending } = useBonusPayouts(USE_MOCK_PAYROLL)
+  const { data: deductions, isPending: deductionsPending } = useDeductionTypes(USE_MOCK_PAYROLL)
   const { data: changes, isPending: changesPending } = useSalaryChanges()
 
   const pendingByTab: Record<SalariesTabKey, boolean> = {
     structures: bandsPending || componentsPending,
     employees: employeesPending,
     allowances: componentsPending,
-    bonuses: bonusesPending,
-    deductions: deductionsPending,
+    bonuses: USE_MOCK_PAYROLL && bonusesPending,
+    deductions: USE_MOCK_PAYROLL && deductionsPending,
     changes: changesPending,
   }
 
@@ -60,8 +64,28 @@ export function SalariesPage() {
           ) : null}
           {activeTab === 'employees' ? <EmployeeSalariesView rows={employeeSalaries ?? []} /> : null}
           {activeTab === 'allowances' ? <AllowancesView components={components ?? []} /> : null}
-          {activeTab === 'bonuses' ? <BonusesView payouts={bonuses ?? []} /> : null}
-          {activeTab === 'deductions' ? <DeductionsView deductions={deductions ?? []} /> : null}
+          {activeTab === 'bonuses' ? (
+            USE_MOCK_PAYROLL ? (
+              <BonusesView payouts={bonuses ?? []} />
+            ) : (
+              <ComingSoon
+                icon={GiftIcon}
+                title="Bonuses"
+                description="Soon you'll be able to pay one-off and performance bonuses alongside a payroll run, taxed correctly."
+              />
+            )
+          ) : null}
+          {activeTab === 'deductions' ? (
+            USE_MOCK_PAYROLL ? (
+              <DeductionsView deductions={deductions ?? []} />
+            ) : (
+              <ComingSoon
+                icon={ReceiptXIcon}
+                title="Deduction types"
+                description="Soon you'll be able to set up loan repayments, union dues and other recurring deductions from here."
+              />
+            )
+          ) : null}
           {activeTab === 'changes' ? <SalaryChangesView changes={changes ?? []} /> : null}
         </>
       )}

@@ -1,11 +1,12 @@
 import { Badge } from '../../../../components/ui/badge'
 import { formatDate } from '../../lib/format'
-import { PAYROLL_RUN_STATUS_META } from '../../lib/status-meta'
+import { PAYROLL_RUN_STAGE_META, PAYROLL_RUN_STATUS_META } from '../../lib/status-meta'
 import type { PayrollRunDetail } from '../../types/payroll-types'
 import { RunApprovalActions } from './run-approval-actions'
+import { RunLifecycleActions } from './run-lifecycle-actions'
 
 export function RunHeader({ run }: { run: PayrollRunDetail }) {
-  const statusMeta = PAYROLL_RUN_STATUS_META[run.status]
+  const statusMeta = (run.stage && PAYROLL_RUN_STAGE_META[run.stage]) ?? PAYROLL_RUN_STATUS_META[run.status]
 
   return (
     <div className="rounded-panel border border-line bg-surface p-5 shadow-panel">
@@ -29,6 +30,7 @@ export function RunHeader({ run }: { run: PayrollRunDetail }) {
           {run.status === 'pending_approval' && run.approvalId ? (
             <RunApprovalActions approvalId={run.approvalId} requesterId={run.approvalRequesterId} />
           ) : null}
+          <RunLifecycleActions run={run} />
         </div>
       </div>
 
