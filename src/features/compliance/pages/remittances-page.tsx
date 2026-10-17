@@ -1,9 +1,9 @@
 import { ClockCounterClockwiseIcon, DownloadSimpleIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { ComingSoon } from '../../../components/ui/coming-soon'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
 import { EmployerContributionsTab } from '../../payroll/components/run-detail/employer-contributions-tab'
 import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
-import { ComingSoonPanel } from '../components/remittances/coming-soon-panel'
 import { EmployeeContributionsTab } from '../components/remittances/employee-contributions-tab'
 
 type RemittancesTabKey = 'employee' | 'employer' | 'history' | 'exports'
@@ -59,17 +59,17 @@ export function RemittancesPage() {
             />
           ) : null}
           {activeTab === 'history' ? (
-            <ComingSoonPanel
+            <ComingSoon
               icon={ClockCounterClockwiseIcon}
               title="Remittance history"
-              description="A chronological record of every remittance filed with pension, tax, and other statutory bodies."
+              description="Soon you'll see every remittance filed with pension, tax and other statutory bodies, tracked through to confirmation."
             />
           ) : null}
           {activeTab === 'exports' ? (
-            <ComingSoonPanel
+            <ComingSoon
               icon={DownloadSimpleIcon}
               title="Remittance exports"
-              description="Download remittance schedules in the formats each statutory body expects, ready to file."
+              description="Soon you'll be able to download remittance schedules in the format each statutory body expects, ready to file."
             />
           ) : null}
         </>
