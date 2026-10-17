@@ -13,6 +13,7 @@ export function useDecideApproval() {
         queryClient.invalidateQueries({ queryKey: ['spend'] }),
         // Salary advances and payroll runs both live under ['payroll'].
         queryClient.invalidateQueries({ queryKey: ['payroll'] }),
+        queryClient.invalidateQueries({ queryKey: ['approvals'] }),
       ]),
   })
 }

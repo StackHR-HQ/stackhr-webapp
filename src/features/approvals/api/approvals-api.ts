@@ -12,6 +12,12 @@ export const approvalsApi = {
     return { items: data.items, total: data.meta.total }
   },
 
+  // Every pending request the signed-in user can see, of the given types.
+  async listPendingOfTypes(types: string[]): Promise<ApprovalRequest[]> {
+    const { data } = await http.get<ApprovalsPage>('/approvals', { params: { status: 'PENDING', page: 1, limit: 100 } })
+    return data.items.filter((item) => types.includes(item.type))
+  },
+
   async listRecent(): Promise<ApprovalRequest[]> {
     const { data } = await http.get<ApprovalsPage>('/approvals', { params: { page: 1, limit: 20 } })
     return data.items

@@ -1,7 +1,9 @@
+import { initials } from '../../employee/lib/profile-format'
 import type { PayrollRunListItem, SalaryAdvanceStatusEntry } from '../../payroll/types/payroll-types'
 import type { LeaveRequestWithEmployee } from '../../people/types/people-types'
 import type { Reimbursement, SpendApprovalRequest } from '../../spend/types/spend-types'
 import { formatAmount, formatDate } from './format'
+import type { ApprovalRequest } from '../types/approval-request-types'
 import type { GlobalApprovalItem, GlobalApprovalStatus } from '../types/approval-types'
 
 export function leaveRequestsToApprovals(requests: LeaveRequestWithEmployee[]): GlobalApprovalItem[] {
@@ -115,4 +117,59 @@ export function payrollRunsToApprovals(runs: PayrollRunListItem[]): GlobalApprov
       // run detail page itself, not a single approve/reject action here.
       actionable: false,
     }))
+}
+
+interface PayrollSubjectSummary {
+  title?: string
+  totalNet?: number
+}
+
+// For roles that can decide on leave and payroll but can't read those areas
+// (a manager gets 403 on leave requests and payroll runs). Built from the
+// approval record alone and decided via /approvals/:id/decide.
+export function approvalRequestsToApprovals(requests: ApprovalRequest[], currentUserId?: string): GlobalApprovalItem[] {
+  return requests.flatMap((request): GlobalApprovalItem[] => {
+    const requester = request.requester?.fullName ?? 'Unknown requester'
+    const base = {
+      approvalId: request.id,
+      submittedAt: request.submittedAt,
+      status: 'pending' as const,
+      // The backend won't let the requester decide on their own request.
+      actionable: request.requesterId !== currentUserId,
+      detailPath: '/approvals',
+    }
+    if (request.type === 'LEAVE') {
+      const summary = request.subjectSummary
+      const dates =
+        summary?.startDate && summary.endDate
+          ? ` · ${formatDate(summary.startDate)} – ${formatDate(summary.endDate)}${summary.totalDays ? ` (${summary.totalDays}d)` : ''}`
+          : ''
+      return [
+        {
+          ...base,
+          id: request.subjectId,
+          domain: 'leave',
+          title: requester,
+          subtitle: summary?.label ?? `${summary?.leaveType ?? 'Leave'}${dates}`,
+          avatarInitials: initials(requester),
+        },
+      ]
+    }
+    if (request.type === 'PAYROLL') {
+      const summary = request.subjectSummary as PayrollSubjectSummary | null
+      const net = summary?.totalNet ?? request.amountSnapshot
+      return [
+        {
+          ...base,
+          id: request.subjectId,
+          domain: 'payroll',
+          title: summary?.title ?? 'Payroll run',
+          subtitle: `Payroll run · submitted by ${requester}${net != null ? ` · ${formatAmount(net, request.currency ?? 'NGN')} net` : ''}`,
+          amount: net ?? undefined,
+          currency: request.currency ?? 'NGN',
+        },
+      ]
+    }
+    return []
+  })
 }

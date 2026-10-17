@@ -41,7 +41,7 @@ export function GlobalApprovalsPage() {
     // Spend approvals are listed by their approval request id already.
     const approvalId = item.domain === 'expenses' ? item.id : item.approvalId
     try {
-      if (item.domain === 'leave') {
+      if (item.domain === 'leave' && !item.approvalId) {
         await decideLeave.mutateAsync({ id: item.id, status })
       } else if (approvalId) {
         await decideApproval.mutateAsync({ id: approvalId, status: apiStatus })
