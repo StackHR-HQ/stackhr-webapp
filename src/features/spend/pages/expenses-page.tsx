@@ -1,5 +1,7 @@
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
+import { USE_MOCK_SPEND } from '../../../lib/env'
+import { useMyProfile } from '../../employee/hooks/use-my-profile'
 import { CURRENT_EMPLOYEE_ID } from '../data/expenses'
 import { ExpenseStatusTabs, type ExpenseFilter } from '../components/expenses/expense-status-tabs'
 import { ExpensesTable } from '../components/expenses/expenses-table'
@@ -9,6 +11,9 @@ export function ExpensesPage() {
   const { data: expenses, isPending, isError, refetch } = useExpenses()
   const [filter, setFilter] = useState<ExpenseFilter>('all')
   const [search, setSearch] = useState('')
+  // An admin without an employee record has no claims of their own.
+  const { data: profile } = useMyProfile()
+  const myEmployeeId = USE_MOCK_SPEND ? CURRENT_EMPLOYEE_ID : profile?.id
 
   const counts = useMemo(() => {
     const base: Record<ExpenseFilter, number> = {
@@ -22,17 +27,17 @@ export function ExpensesPage() {
     }
     for (const expense of expenses ?? []) {
       base[expense.status] += 1
-      if (expense.employeeId === CURRENT_EMPLOYEE_ID) base.mine += 1
+      if (expense.employeeId === myEmployeeId) base.mine += 1
     }
     return base
-  }, [expenses])
+  }, [expenses, myEmployeeId])
 
   const filteredExpenses = useMemo(() => {
     const query = search.trim().toLowerCase()
     return (expenses ?? []).filter((expense) => {
       const matchesFilter =
         filter === 'all' ||
-        (filter === 'mine' ? expense.employeeId === CURRENT_EMPLOYEE_ID : expense.status === filter)
+        (filter === 'mine' ? expense.employeeId === myEmployeeId : expense.status === filter)
       const matchesSearch =
         !query ||
         expense.employeeName.toLowerCase().includes(query) ||
@@ -40,7 +45,7 @@ export function ExpensesPage() {
         expense.description.toLowerCase().includes(query)
       return matchesFilter && matchesSearch
     })
-  }, [expenses, filter, search])
+  }, [expenses, filter, search, myEmployeeId])
 
   return (
     <div className="max-w-[1400px] space-y-5">
