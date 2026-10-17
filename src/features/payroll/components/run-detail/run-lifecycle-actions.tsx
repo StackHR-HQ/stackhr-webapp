@@ -173,8 +173,12 @@ function ExecuteRunModal({ run, open, onClose }: { run: PayrollRunDetail; open: 
   // One key per payment attempt, kept across retries so a resent request
   // replays the first one instead of paying twice.
   const idempotencyKey = useRef<string | null>(null)
+  // A double-click lands before the button re-renders as disabled.
+  const inFlight = useRef(false)
 
   async function pay() {
+    if (inFlight.current) return
+    inFlight.current = true
     idempotencyKey.current ??= crypto.randomUUID()
     try {
       await execute.mutateAsync({ id: run.id, idempotencyKey: idempotencyKey.current })
@@ -185,6 +189,8 @@ function ExecuteRunModal({ run, open, onClose }: { run: PayrollRunDetail; open: 
       // A definite answer other than "still in progress" ends this attempt.
       if (isAxiosError(err) && err.response && err.response.status !== 409) idempotencyKey.current = null
       notify.error("Couldn't pay employees", getApiErrorMessage(err))
+    } finally {
+      inFlight.current = false
     }
   }
 
