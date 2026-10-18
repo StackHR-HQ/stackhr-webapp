@@ -49,6 +49,7 @@ import { ReimbursementsPage } from './features/spend/pages/reimbursements-page'
 import { SpendApprovalsPage } from './features/spend/pages/approvals-page'
 import { DashboardHomeRoute } from './routing/dashboard-home-route'
 import { ProtectedRoute } from './routing/protected-route'
+import { RoleRoute } from './routing/role-route'
 
 function App() {
   return (
@@ -80,51 +81,56 @@ function App() {
       >
         <Route index element={<DashboardHomeRoute />} />
 
-        <Route path="people">
-          <Route path="employees" element={<EmployeesPage />} />
-          <Route path="employees/:employeeId" element={<EmployeeProfilePage />} />
-          <Route path="leave" element={<LeavePage />} />
-          <Route path="documents" element={<DocumentsPage />} />
-          <Route path="organization" element={<PeopleOrganizationPage />} />
-          <Route path="onboarding" element={<PeopleOnboardingPage />} />
+        <Route element={<RoleRoute allow={['admin']} />}>
+          <Route path="people">
+            <Route path="employees" element={<EmployeesPage />} />
+            <Route path="employees/:employeeId" element={<EmployeeProfilePage />} />
+            <Route path="leave" element={<LeavePage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="organization" element={<PeopleOrganizationPage />} />
+            <Route path="onboarding" element={<PeopleOnboardingPage />} />
+          </Route>
+
+          <Route path="payroll">
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<PayrollOverviewPage />} />
+            <Route path="runs" element={<PayrollRunsPage />} />
+            <Route path="runs/:runId" element={<PayrollRunDetailPage />} />
+            <Route path="salaries" element={<SalariesPage />} />
+            <Route path="payslips" element={<PayslipsPage />} />
+            <Route path="salary-advances" element={<SalaryAdvancesPage />} />
+          </Route>
+
+          <Route path="compliance">
+            <Route index element={<ComplianceOverviewPage />} />
+            <Route path="tax" element={<TaxPage />} />
+            <Route path="statutory" element={<StatutoryPage />} />
+            <Route path="remittances" element={<RemittancesPage />} />
+          </Route>
+
+          <Route path="reports" element={<ReportsPage />} />
+
+          <Route path="settings">
+            <Route path="organization" element={<SettingsOrganizationPage />} />
+            <Route path="payroll" element={<SettingsPayrollPage />} />
+            <Route path="team-access" element={<TeamAccessPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="billing" element={<BillingPage />} />
+            <Route path="security" element={<SecurityPage />} />
+            <Route path="integrations" element={<IntegrationsPage />} />
+          </Route>
         </Route>
 
-        <Route path="payroll">
-          <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<PayrollOverviewPage />} />
-          <Route path="runs" element={<PayrollRunsPage />} />
-          <Route path="runs/:runId" element={<PayrollRunDetailPage />} />
-          <Route path="salaries" element={<SalariesPage />} />
-          <Route path="payslips" element={<PayslipsPage />} />
-          <Route path="salary-advances" element={<SalaryAdvancesPage />} />
-        </Route>
-
-        <Route path="spend">
-          <Route path="expenses" element={<ExpensesPage />} />
-          <Route path="expenses/:expenseId" element={<ExpenseDetailPage />} />
-          <Route path="reimbursements" element={<ReimbursementsPage />} />
-          <Route path="approvals" element={<SpendApprovalsPage />} />
-        </Route>
-
-        <Route path="compliance">
-          <Route index element={<ComplianceOverviewPage />} />
-          <Route path="tax" element={<TaxPage />} />
-          <Route path="statutory" element={<StatutoryPage />} />
-          <Route path="remittances" element={<RemittancesPage />} />
+        <Route element={<RoleRoute allow={['admin', 'manager']} />}>
+          <Route path="spend">
+            <Route path="expenses" element={<ExpensesPage />} />
+            <Route path="expenses/:expenseId" element={<ExpenseDetailPage />} />
+            <Route path="reimbursements" element={<ReimbursementsPage />} />
+            <Route path="approvals" element={<SpendApprovalsPage />} />
+          </Route>
         </Route>
 
         <Route path="approvals" element={<GlobalApprovalsPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-
-        <Route path="settings">
-          <Route path="organization" element={<SettingsOrganizationPage />} />
-          <Route path="payroll" element={<SettingsPayrollPage />} />
-          <Route path="team-access" element={<TeamAccessPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="billing" element={<BillingPage />} />
-          <Route path="security" element={<SecurityPage />} />
-          <Route path="integrations" element={<IntegrationsPage />} />
-        </Route>
 
         <Route path="me">
           <Route path="profile" element={<MyProfilePage />} />
