@@ -6,10 +6,15 @@ import { useLogout } from '../../auth/hooks/use-logout'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { useSidebar } from './use-sidebar'
 
-const MENU_ITEMS = [
+const ADMIN_MENU_ITEMS = [
   { label: 'Account', to: '/settings/organization', icon: UserCircleIcon },
   { label: 'Billing', to: '/settings/billing', icon: CreditCardIcon },
   { label: 'Notifications', to: '/settings/notifications', icon: BellIcon },
+]
+
+const SELF_SERVICE_MENU_ITEMS = [
+  { label: 'Account', to: '/me/profile', icon: UserCircleIcon },
+  { label: 'Notifications', to: '/me/notifications', icon: BellIcon },
 ]
 
 export function SidebarFooter() {
@@ -20,6 +25,8 @@ export function SidebarFooter() {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   useClickOutside(containerRef, () => setOpen(false))
+
+  const menuItems = user?.role === 'admin' ? ADMIN_MENU_ITEMS : SELF_SERVICE_MENU_ITEMS
 
   const userInitial = user?.name?.trim().charAt(0).toUpperCase() || '?'
 
@@ -73,7 +80,7 @@ export function SidebarFooter() {
           <div className="h-px bg-line" />
 
           <div className="p-1">
-            {MENU_ITEMS.map((item) => (
+            {menuItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
