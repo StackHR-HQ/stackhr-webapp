@@ -3,7 +3,7 @@ import type { Organization } from '../types/organization-types'
 
 export const organizationsApi = {
   async getOrganizations(): Promise<Organization[]> {
-    const { data } = await http.get<Organization | Organization[]>('/organizations')
+    const { data } = await http.get<Organization | Organization[]>('/organization/current')
     return Array.isArray(data) ? data : [data]
   },
 }
