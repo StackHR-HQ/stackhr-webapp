@@ -18,6 +18,7 @@ import { EmployeeDocumentsPage } from './features/employee/pages/documents-page'
 import { MyLeavePage } from './features/employee/pages/leave-page'
 import { EmployeeNotificationsPage } from './features/employee/pages/notifications-page'
 import { MyPayslipsPage } from './features/employee/pages/payslips-page'
+import { EmployeeRecordGate } from './features/employee/components/employee-record-gate'
 import { MyProfilePage } from './features/employee/pages/profile-page'
 import { MyReimbursementsPage } from './features/employee/pages/reimbursements-page'
 import { MySalaryAdvancePage } from './features/employee/pages/salary-advance-page'
@@ -133,14 +134,17 @@ function App() {
         <Route path="approvals" element={<GlobalApprovalsPage />} />
 
         <Route path="me">
-          <Route path="profile" element={<MyProfilePage />} />
-          <Route path="leave" element={<MyLeavePage />} />
-          <Route path="payslips" element={<MyPayslipsPage />} />
-          <Route path="expenses" element={<MyExpensesPage />} />
-          <Route path="reimbursements" element={<MyReimbursementsPage />} />
-          <Route path="salary-advance" element={<MySalaryAdvancePage />} />
-          <Route path="documents" element={<EmployeeDocumentsPage />} />
-          <Route path="notifications" element={<EmployeeNotificationsPage />} />
+          <Route element={<EmployeeRecordGate />}>
+            <Route path="profile" element={<MyProfilePage />} />
+            <Route path="leave" element={<MyLeavePage />} />
+            <Route path="payslips" element={<MyPayslipsPage />} />
+            <Route path="expenses" element={<MyExpensesPage />} />
+            <Route path="reimbursements" element={<MyReimbursementsPage />} />
+            <Route path="salary-advance" element={<MySalaryAdvancePage />} />
+            <Route path="documents" element={<EmployeeDocumentsPage />} />
+            <Route path="notifications" element={<EmployeeNotificationsPage />} />
+          </Route>
+          {/* Password changes don't need an employee record. */}
           <Route path="settings" element={<EmployeeSettingsPage />} />
         </Route>
       </Route>

@@ -41,7 +41,7 @@ export const onboardingApi = {
   // Lets the wizard resume with what was already saved, e.g. after a refresh.
   async getCompanyInfo(): Promise<CompanyInfo | null> {
     try {
-      const { data } = await http.get<OrganizationResponse>('/organizations/current')
+      const { data } = await http.get<OrganizationResponse>('/organization/current')
       return toCompanyInfo(data)
     } catch {
       return null

@@ -3,11 +3,13 @@ import { Link } from 'react-router'
 import { useAuthStore } from '../../auth/store/auth-store'
 import { greeting } from '../../dashboard/lib/format'
 import { AttentionCard } from '../components/attention-card'
+import { UnlinkedEmployeeNotice } from '../components/employee-record-gate'
 import { CurrentStatusCard } from '../components/current-status-card'
 import { LeaveSummaryCard } from '../components/leave-summary-card'
 import { PayrollSummaryCard } from '../components/payroll-summary-card'
 import { RecentActivityCard } from '../components/recent-activity-card'
 import { latestPayslip, payslipPeriod, useMyPayslips } from '../hooks/use-my-payslips'
+import { isEmployeeRecordMissing, useMyProfile } from '../hooks/use-my-profile'
 import { initials } from '../lib/profile-format'
 
 function todayLabel(): string {
@@ -20,6 +22,7 @@ export function EmployeeDashboardPage() {
   const user = useAuthStore((state) => state.user)
   const name = user?.name ?? ''
   const firstName = name.split(' ')[0]
+  const { error: profileError } = useMyProfile()
   const { data: payslips } = useMyPayslips()
   const latest = payslips ? latestPayslip(payslips) : undefined
 
@@ -58,36 +61,42 @@ export function EmployeeDashboardPage() {
         </Link>
       </header>
 
-      <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <CurrentStatusCard />
+      {isEmployeeRecordMissing(profileError) ? (
+        <UnlinkedEmployeeNotice />
+      ) : (
+        <>
+          <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+            <CurrentStatusCard />
 
-        <AttentionCard />
-      </section>
+            <AttentionCard />
+          </section>
 
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-ink">Quick actions</h2>
-          <span className="text-xs text-muted">Most used</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {actions.map(
-            ({ label, detail, href, Icon }) =>
-              <Link key={label} to={href} className="group rounded-panel border border-line bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-accent/40">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-canvas text-accent"><Icon size={19} weight="duotone" />
-                </span>
-                <span className="mt-4 block text-sm font-medium text-ink">{label}</span>
-                <span className="mt-1 block text-xs text-muted">{detail}</span>
-                <ArrowRight size={15} className="mt-4 text-muted transition-transform group-hover:translate-x-1" />
-              </Link>
-            )}
-        </div>
-      </section>
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-medium text-ink">Quick actions</h2>
+              <span className="text-xs text-muted">Most used</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {actions.map(
+                ({ label, detail, href, Icon }) =>
+                  <Link key={label} to={href} className="group rounded-panel border border-line bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-accent/40">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-canvas text-accent"><Icon size={19} weight="duotone" />
+                    </span>
+                    <span className="mt-4 block text-sm font-medium text-ink">{label}</span>
+                    <span className="mt-1 block text-xs text-muted">{detail}</span>
+                    <ArrowRight size={15} className="mt-4 text-muted transition-transform group-hover:translate-x-1" />
+                  </Link>
+                )}
+            </div>
+          </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <PayrollSummaryCard />
-        <LeaveSummaryCard />
-      </div>
-      <RecentActivityCard />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <PayrollSummaryCard />
+            <LeaveSummaryCard />
+          </div>
+          <RecentActivityCard />
+        </>
+      )}
     </div>
   )
 }
