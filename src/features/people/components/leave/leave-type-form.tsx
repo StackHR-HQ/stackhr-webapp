@@ -6,10 +6,13 @@ import { FormErrorBanner } from '../../../../components/ui/form-error-banner'
 import { TextField } from '../../../../components/ui/text-field'
 import { getApiErrorMessage } from '../../../../lib/http'
 import { useCreateLeaveType } from '../../hooks/use-create-leave-type'
+import { useUpdateLeaveType } from '../../hooks/use-update-leave-type'
 import { leaveTypeSchema, type LeaveTypeFormInput, type LeaveTypeFormValues } from '../../schemas/leave-type-schema'
+import type { LeaveType } from '../../types/people-types'
 
-export function AddLeaveTypeForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+export function LeaveTypeForm({ leaveType, onDone, onCancel }: { leaveType?: LeaveType; onDone: () => void; onCancel: () => void }) {
   const createLeaveType = useCreateLeaveType()
+  const updateLeaveType = useUpdateLeaveType()
 
   const {
     register,
@@ -19,13 +22,22 @@ export function AddLeaveTypeForm({ onDone, onCancel }: { onDone: () => void; onC
     formState: { errors, isSubmitting },
   } = useForm<LeaveTypeFormInput, unknown, LeaveTypeFormValues>({
     resolver: zodResolver(leaveTypeSchema),
-    defaultValues: { name: '', description: '', daysPerYear: '', paid: true, requiresApproval: true },
+    defaultValues: leaveType
+      ? {
+          name: leaveType.name,
+          description: leaveType.description ?? '',
+          daysPerYear: leaveType.defaultDays,
+          paid: leaveType.paid,
+          requiresApproval: leaveType.requiresApproval ?? true,
+        }
+      : { name: '', description: '', daysPerYear: '', paid: true, requiresApproval: true },
   })
 
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
     try {
-      await createLeaveType.mutateAsync(values)
+      if (leaveType) await updateLeaveType.mutateAsync({ id: leaveType.id, values })
+      else await createLeaveType.mutateAsync(values)
       onDone()
     } catch (err) {
       setError('root', { message: getApiErrorMessage(err) })
@@ -34,7 +46,11 @@ export function AddLeaveTypeForm({ onDone, onCancel }: { onDone: () => void; onC
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      <p className="text-sm text-muted">Active employees get this allowance as their starting balance.</p>
+      <p className="text-sm text-muted">
+        {leaveType
+          ? 'Update the name, yearly allowance or rules for this leave type.'
+          : 'Active employees get this allowance as their starting balance.'}
+      </p>
 
       <div className="mt-4">
         {errors.root ? <FormErrorBanner message={errors.root.message ?? ''} /> : null}
@@ -73,7 +89,7 @@ export function AddLeaveTypeForm({ onDone, onCancel }: { onDone: () => void; onC
           Cancel
         </Button>
         <Button type="submit" loading={isSubmitting} width="fit" className="px-6">
-          Add leave type
+          {leaveType ? 'Save changes' : 'Add leave type'}
         </Button>
       </div>
     </form>

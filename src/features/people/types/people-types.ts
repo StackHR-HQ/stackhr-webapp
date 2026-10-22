@@ -147,6 +147,7 @@ export interface LeaveType {
   name: string
   defaultDays: number
   paid: boolean
+  requiresApproval?: boolean
   tone: LeaveTypeTone
   description: string
 }
