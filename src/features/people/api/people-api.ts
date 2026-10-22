@@ -84,8 +84,16 @@ export const peopleApi = {
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {
-    const { data } = await http.get<LeaveType[]>('/people/leave/types')
-    return data
+    // The admin list leaves out requiresApproval, which the edit form needs, so
+    // it's taken from /leave/types. If that call fails the list still loads.
+    const [{ data }, approvals] = await Promise.all([
+      http.get<LeaveType[]>('/people/leave/types'),
+      http
+        .get<{ leaveTypes: { id: string; requiresApproval?: boolean }[] }>('/leave/types')
+        .then(({ data: body }) => new Map(body.leaveTypes.map((type) => [type.id, type.requiresApproval])))
+        .catch(() => new Map<string, boolean | undefined>()),
+    ])
+    return data.map((type) => ({ ...type, requiresApproval: type.requiresApproval ?? approvals.get(type.id) }))
   },
 
   async getLeavePolicies(): Promise<LeavePolicy[]> {
