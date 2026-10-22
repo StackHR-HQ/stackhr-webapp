@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Modal } from '../../../components/ui/modal'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
-import { AddLeaveTypeForm } from '../components/leave/add-leave-type-form'
 import { LeaveBalancesView } from '../components/leave/leave-balances-view'
 import { LeaveCalendarView } from '../components/leave/leave-calendar-view'
 import { LeavePoliciesView } from '../components/leave/leave-policies-view'
 import { LeaveRequestsView } from '../components/leave/leave-requests-view'
+import { LeaveTypeForm } from '../components/leave/leave-type-form'
 import { LeaveTypesView } from '../components/leave/leave-types-view'
 import { PeopleLoadError } from '../components/people-load-error'
 import { useLeaveBalances } from '../hooks/use-leave-balances'
 import { useLeavePolicies } from '../hooks/use-leave-policies'
 import { useLeaveRequests } from '../hooks/use-leave-requests'
 import { useLeaveTypes } from '../hooks/use-leave-types'
+import type { LeaveType } from '../types/people-types'
 
 type LeaveTabKey = 'requests' | 'calendar' | 'types' | 'policies' | 'balances'
 
@@ -27,6 +28,7 @@ const LEAVE_TABS: { key: LeaveTabKey; label: string }[] = [
 export function LeavePage() {
   const [activeTab, setActiveTab] = useState<LeaveTabKey>('requests')
   const [addingType, setAddingType] = useState(false)
+  const [editingType, setEditingType] = useState<LeaveType | null>(null)
   const requestsQuery = useLeaveRequests()
   const typesQuery = useLeaveTypes()
   const policiesQuery = useLeavePolicies()
@@ -74,7 +76,18 @@ export function LeavePage() {
       </div>
 
       <Modal open={addingType} onClose={() => setAddingType(false)} title="Add leave type">
-        <AddLeaveTypeForm onDone={() => setAddingType(false)} onCancel={() => setAddingType(false)} />
+        <LeaveTypeForm onDone={() => setAddingType(false)} onCancel={() => setAddingType(false)} />
+      </Modal>
+
+      <Modal open={editingType !== null} onClose={() => setEditingType(null)} title="Edit leave type">
+        {editingType ? (
+          <LeaveTypeForm
+            key={editingType.id}
+            leaveType={editingType}
+            onDone={() => setEditingType(null)}
+            onCancel={() => setEditingType(null)}
+          />
+        ) : null}
       </Modal>
 
       <UnderlineTabs tabs={LEAVE_TABS} active={activeTab} onChange={setActiveTab} />
@@ -87,7 +100,7 @@ export function LeavePage() {
         <>
           {activeTab === 'requests' ? <LeaveRequestsView requests={requests ?? []} /> : null}
           {activeTab === 'calendar' ? <LeaveCalendarView requests={requests ?? []} /> : null}
-          {activeTab === 'types' ? <LeaveTypesView leaveTypes={leaveTypes ?? []} /> : null}
+          {activeTab === 'types' ? <LeaveTypesView leaveTypes={leaveTypes ?? []} onEdit={setEditingType} /> : null}
           {activeTab === 'policies' ? <LeavePoliciesView policies={policies ?? []} /> : null}
           {activeTab === 'balances' ? <LeaveBalancesView rows={balances ?? []} /> : null}
         </>

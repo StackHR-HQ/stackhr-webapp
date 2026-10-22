@@ -97,6 +97,10 @@ export const peopleApi = {
     await http.post('/leave/types', { ...payload, description: payload.description || undefined })
   },
 
+  async updateLeaveType(id: string, payload: LeaveTypeFormValues): Promise<void> {
+    await http.patch(`/leave/types/${id}`, { ...payload, description: payload.description || undefined })
+  },
+
   async deleteLeaveType(id: string): Promise<void> {
     await http.delete(`/leave/types/${id}`)
   },

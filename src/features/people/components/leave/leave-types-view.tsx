@@ -1,4 +1,4 @@
-import { TrashIcon } from '@phosphor-icons/react'
+import { PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react'
 import { Badge } from '../../../../components/ui/badge'
 import { Card } from '../../../../components/ui/card'
 import { getApiErrorMessage } from '../../../../lib/api-error'
@@ -6,7 +6,7 @@ import { notify } from '../../../../lib/toast'
 import { useDeleteLeaveType } from '../../hooks/use-delete-leave-type'
 import type { LeaveType } from '../../types/people-types'
 
-function LeaveTypeCard({ leaveType }: { leaveType: LeaveType }) {
+function LeaveTypeCard({ leaveType, onEdit }: { leaveType: LeaveType; onEdit: () => void }) {
   const deleteLeaveType = useDeleteLeaveType()
 
   function removeLeaveType() {
@@ -24,6 +24,7 @@ function LeaveTypeCard({ leaveType }: { leaveType: LeaveType }) {
         <p className="text-sm font-medium text-ink">{leaveType.name}</p>
         <div className="flex shrink-0 items-center gap-1">
           <Badge tone={leaveType.tone}>{leaveType.paid ? 'Paid' : 'Unpaid'}</Badge>
+          <button type="button" onClick={onEdit} aria-label={`Edit ${leaveType.name}`} className="rounded-md p-1.5 text-muted hover:bg-canvas hover:text-ink"><PencilSimpleIcon className="h-4 w-4" /></button>
           <button type="button" onClick={removeLeaveType} disabled={deleteLeaveType.isPending} aria-label={`Delete ${leaveType.name}`} className="rounded-md p-1.5 text-muted hover:bg-critical/10 hover:text-critical disabled:opacity-50"><TrashIcon className="h-4 w-4" /></button>
         </div>
       </div>
@@ -36,7 +37,7 @@ function LeaveTypeCard({ leaveType }: { leaveType: LeaveType }) {
   )
 }
 
-export function LeaveTypesView({ leaveTypes }: { leaveTypes: LeaveType[] }) {
+export function LeaveTypesView({ leaveTypes, onEdit }: { leaveTypes: LeaveType[]; onEdit: (leaveType: LeaveType) => void }) {
   return (
     <>
       {leaveTypes.length === 0 ? (
@@ -47,7 +48,7 @@ export function LeaveTypesView({ leaveTypes }: { leaveTypes: LeaveType[] }) {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {leaveTypes.map((leaveType) => <LeaveTypeCard key={leaveType.id} leaveType={leaveType} />)}
+          {leaveTypes.map((leaveType) => <LeaveTypeCard key={leaveType.id} leaveType={leaveType} onEdit={() => onEdit(leaveType)} />)}
         </div>
       )}
     </>
