@@ -97,6 +97,10 @@ export const peopleApi = {
     await http.post('/leave/types', { ...payload, description: payload.description || undefined })
   },
 
+  async deleteLeaveType(id: string): Promise<void> {
+    await http.delete(`/leave/types/${id}`)
+  },
+
   async getLeaveRequests(): Promise<LeaveRequestWithEmployee[]> {
     const { data } = await http.get<LeaveRequestWithEmployee[]>('/people/leave/requests')
     return data
