@@ -33,6 +33,7 @@ export function EmployeesTable({
         <thead className="bg-surface text-xs uppercase tracking-wide text-muted">
           <tr>
             <th className="px-4 py-3 font-medium">Employee</th>
+            <th className="whitespace-nowrap px-4 py-3 font-medium">Employee ID</th>
             <th className="px-4 py-3 font-medium">Job title</th>
             <th className="px-4 py-3 font-medium">Department</th>
             <th className="px-4 py-3 font-medium">Type</th>
@@ -59,6 +60,7 @@ export function EmployeesTable({
                     </div>
                   </div>
                 </td>
+                <td className="whitespace-nowrap px-4 py-3 text-muted">{employee.employeeNumber ?? '—'}</td>
                 <td className="px-4 py-3 text-ink">{employee.jobTitle}</td>
                 <td className="px-4 py-3 text-ink">{departmentName(employee.departmentId)}</td>
                 <td className="px-4 py-3 text-muted">{employee.employmentType}</td>

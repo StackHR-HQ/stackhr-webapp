@@ -22,6 +22,7 @@ export function OverviewTab({
           <CardHeader title="Employment" />
           <FieldGrid
             fields={[
+              { label: 'Employee ID', value: employee.employeeNumber ?? '—' },
               { label: 'Department', value: department?.name ?? '—' },
               {
                 label: 'Manager',
