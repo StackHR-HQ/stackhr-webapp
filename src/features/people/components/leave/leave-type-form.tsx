@@ -28,7 +28,7 @@ export function LeaveTypeForm({ leaveType, onDone, onCancel }: { leaveType?: Lea
           description: leaveType.description ?? '',
           daysPerYear: leaveType.defaultDays,
           paid: leaveType.paid,
-          requiresApproval: leaveType.requiresApproval ?? true,
+          requiresApproval: leaveType.requiresApproval,
         }
       : { name: '', description: '', daysPerYear: '', paid: true, requiresApproval: true },
   })

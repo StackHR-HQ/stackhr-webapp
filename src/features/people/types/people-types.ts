@@ -17,6 +17,8 @@ export interface Team {
 
 export interface EmployeeSummary {
   id: string
+  // Auto-generated as EMP-0001, EMP-0002... unless an admin sets one.
+  employeeNumber: string | null
   fullName: string
   email: string
   avatarInitials: string
@@ -147,7 +149,7 @@ export interface LeaveType {
   name: string
   defaultDays: number
   paid: boolean
-  requiresApproval?: boolean
+  requiresApproval: boolean
   tone: LeaveTypeTone
   description: string
 }
