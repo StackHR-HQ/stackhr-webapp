@@ -37,7 +37,20 @@ function toCompanyInfo(organization: OrganizationResponse): CompanyInfo {
   }
 }
 
+// GET /onboarding/status, as seen on staging (Postman's example is outdated).
+export interface OnboardingStatus {
+  companyInfoComplete: boolean
+  employeeCount: number
+  employeesComplete: boolean
+  complete: boolean
+}
+
 export const onboardingApi = {
+  async getStatus(): Promise<OnboardingStatus> {
+    const { data } = await http.get<OnboardingStatus>('/onboarding/status')
+    return data
+  },
+
   // Lets the wizard resume with what was already saved, e.g. after a refresh.
   async getCompanyInfo(): Promise<CompanyInfo | null> {
     try {

@@ -1,4 +1,5 @@
 import { useAuthStore } from '../../auth/store/auth-store'
+import { FinishSetupBanner } from '../../onboarding/components/finish-setup-banner'
 import { ComplianceAlertsCard } from '../components/home/compliance-alerts-card'
 import { DashboardSkeleton } from '../components/home/dashboard-skeleton'
 import { OverviewStats } from '../components/home/overview-stats'
@@ -46,6 +47,8 @@ export function DashboardHomePage() {
           Here's what needs your attention today at {user?.orgName ?? 'your organization'}.
         </p>
       </div>
+
+      <FinishSetupBanner />
 
       <OverviewStats overview={data.overview} />
 
