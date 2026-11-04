@@ -59,7 +59,11 @@ export interface PersonalInfo {
 }
 
 export interface CompensationInfo {
+  // The API sends the monthly gross here and the yearly figure in
+  // annualSalaryMinor (kobo); mock data has no annualSalaryMinor and keeps the
+  // yearly figure in salary. Read it through annualSalary().
   salary: number
+  annualSalaryMinor?: number
   currency: string
   payFrequency: string
   bankName: string | null

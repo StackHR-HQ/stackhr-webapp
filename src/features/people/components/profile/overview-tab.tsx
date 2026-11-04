@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { Card, CardHeader } from '../../../../components/ui/card'
 import { maskedAccountNumber } from '../../../../lib/bank-account'
 import { tenureLabel } from '../../lib/dates'
-import { formatAmount, formatDate } from '../../lib/format'
+import { annualSalary, formatAmount, formatDate } from '../../lib/format'
 import type { Department, EmployeeDetail, EmployeeSummary } from '../../types/people-types'
 import { FieldGrid } from './field-grid'
 
@@ -69,7 +69,7 @@ export function OverviewTab({
           <CardHeader title="Compensation" />
           <FieldGrid
             fields={[
-              { label: 'Salary', value: `${formatAmount(employee.compensation.salary, employee.compensation.currency)}/yr` },
+              { label: 'Salary', value: `${formatAmount(annualSalary(employee.compensation), employee.compensation.currency)}/yr` },
               { label: 'Pay frequency', value: employee.compensation.payFrequency },
               {
                 label: 'Bank',
