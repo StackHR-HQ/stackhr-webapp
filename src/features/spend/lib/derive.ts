@@ -41,6 +41,7 @@ export function deriveReimbursements(claims: ExpenseClaim[]): Reimbursement[] {
       employeeName: claim.employeeName,
       avatarInitials: claim.avatarInitials,
       category: claim.category,
+      description: claim.description,
       amount: claim.amount,
       currency: claim.currency,
     }))

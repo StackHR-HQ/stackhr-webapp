@@ -15,6 +15,8 @@ export const REIMBURSEMENT_STATUS_META: Record<ReimbursementStatus, { label: str
   processing: { label: 'Processing', tone: 'accent' },
   completed: { label: 'Completed', tone: 'positive' },
   failed: { label: 'Failed', tone: 'critical' },
+  rejected: { label: 'Rejected', tone: 'critical' },
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
 }
 
 export const SPEND_APPROVAL_STATUS_META: Record<SpendApprovalStatus, { label: string; tone: BadgeTone }> = {

@@ -60,10 +60,14 @@ interface ApiSalaryAdvance {
   currency?: string | null
 }
 
-// Only seen empty on staging so far; fields beyond the documented ones are optional.
+// Fields beyond the documented ones are optional. A claim submitted on its own
+// (POST /reimbursements) has no expense.
 interface ApiReimbursement {
   id: string
-  expenseId: string
+  expenseId?: string | null
+  employeeId?: string
+  employee?: ApiEmployeeRef | null
+  description?: string | null
   amount: number
   currency: string
   status: string
@@ -92,6 +96,8 @@ const REIMBURSEMENT_STATUS: Record<string, ReimbursementStatus> = {
   PAID: 'completed',
   COMPLETED: 'completed',
   FAILED: 'failed',
+  REJECTED: 'rejected',
+  CANCELLED: 'cancelled',
 }
 
 const APPROVAL_STATUS: Record<string, SpendApprovalStatus> = {
@@ -115,6 +121,10 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   CARD: 'Card',
   CASH: 'Cash',
 }
+
+// A reimbursement claim submitted on its own is approved through an EXPENSE
+// approval request whose subject is the reimbursement rather than an expense.
+const isReimbursementApproval = (approval: ApprovalRequest) => approval.subjectTable === 'reimbursement'
 
 const employeeName = (employee: ApiEmployeeRef | null) => employee?.fullName ?? 'Unknown employee'
 
@@ -142,12 +152,24 @@ async function fetchApprovals(type: 'EXPENSE' | 'SALARY_ADVANCE'): Promise<Appro
   return data.items
 }
 
-function toReimbursementInfo(reimbursement: ApiReimbursement): ReimbursementInfo {
+// The backend leaves a reimbursement PENDING after it's been decided:
+// - one created from an approved expense was approved at the expense stage;
+// - a claim keeps PENDING after its approval request is approved or rejected.
+// So a pending one takes its status from that decision.
+function reimbursementStatus(reimbursement: ApiReimbursement, approval?: ApprovalRequest): ReimbursementStatus {
+  const status = REIMBURSEMENT_STATUS[toApiEnum(reimbursement.status)] ?? 'pending'
+  if (status !== 'pending') return status
+  if (reimbursement.expenseId || approval?.status === 'APPROVED') return 'approved'
+  if (approval?.status === 'REJECTED') return 'rejected'
+  return status
+}
+
+function toReimbursementInfo(reimbursement: ApiReimbursement, approval?: ApprovalRequest): ReimbursementInfo {
   return {
     id: reimbursement.id,
     method: reimbursement.method ?? reimbursement.paymentMethod ?? '—',
     requestedAt: reimbursement.createdAt ?? '',
-    status: REIMBURSEMENT_STATUS[toApiEnum(reimbursement.status)] ?? 'pending',
+    status: reimbursementStatus(reimbursement, approval),
     completedAt: reimbursement.completedAt ?? reimbursement.paidAt ?? undefined,
     failureReason: reimbursement.failureReason ?? undefined,
   }
@@ -188,7 +210,9 @@ async function getExpenseClaims(): Promise<ExpenseClaim[]> {
     fetchReimbursements(),
   ])
   const approvalByExpense = new Map(approvals.map((approval) => [approval.subjectId, approval]))
-  const reimbursementByExpense = new Map(reimbursements.map((reimbursement) => [reimbursement.expenseId, reimbursement]))
+  const reimbursementByExpense = new Map(
+    reimbursements.flatMap((reimbursement) => (reimbursement.expenseId ? [[reimbursement.expenseId, reimbursement]] : [])),
+  )
   return expenses
     .map((expense) =>
       toExpenseClaim(expense, approvalByExpense.get(expense.id), reimbursementByExpense.get(expense.id)),
@@ -210,24 +234,42 @@ export const spendApi = {
   },
 
   async getReimbursements(): Promise<Reimbursement[]> {
-    const [reimbursements, expenses] = await Promise.all([fetchReimbursements(), fetchExpenses()])
+    const [reimbursements, expenses, approvals] = await Promise.all([
+      fetchReimbursements(),
+      fetchExpenses(),
+      fetchApprovals('EXPENSE'),
+    ])
     const expenseById = new Map(expenses.map((expense) => [expense.id, expense]))
+    // Claims are approved through an EXPENSE approval whose subject is the reimbursement.
+    const approvalByClaim = new Map(
+      approvals.filter(isReimbursementApproval).map((approval) => [approval.subjectId, approval]),
+    )
     return reimbursements
       .map((reimbursement) => {
-        const expense = expenseById.get(reimbursement.expenseId)
-        const name = employeeName(expense?.employee ?? null)
+        const expense = reimbursement.expenseId ? expenseById.get(reimbursement.expenseId) : undefined
+        const approval = approvalByClaim.get(reimbursement.id)
+        const name = employeeName(reimbursement.employee ?? expense?.employee ?? approval?.requester ?? null)
         return {
-          ...toReimbursementInfo(reimbursement),
-          expenseId: reimbursement.expenseId,
-          employeeId: expense?.employeeId ?? '',
+          ...toReimbursementInfo(reimbursement, approval),
+          expenseId: reimbursement.expenseId ?? undefined,
+          employeeId: reimbursement.employeeId ?? expense?.employeeId ?? '',
           employeeName: name,
           avatarInitials: initials(name),
-          category: expense?.category ?? '—',
+          category: expense?.category ?? 'Reimbursement claim',
+          description: reimbursement.description ?? expense?.description ?? '',
           amount: reimbursement.amount,
           currency: reimbursement.currency,
+          approvalId: approval?.id,
+          requesterId: approval?.requesterId,
         }
       })
       .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt))
+  },
+
+  // Sends the money: the backend pays the employee by bank transfer (Anchor)
+  // when the organization has a funded deposit account.
+  async markReimbursementPaid(id: string): Promise<void> {
+    await http.post(`/reimbursements/${id}/pay`)
   },
 
   // Expense approvals come from the shared approvals engine; ids are approval
@@ -235,6 +277,8 @@ export const spendApi = {
   async getApprovalRequests(): Promise<SpendApprovalRequest[]> {
     const approvals = await fetchApprovals('EXPENSE')
     return approvals
+      // Reimbursement claims are listed under Reimbursements instead.
+      .filter((approval) => !isReimbursementApproval(approval))
       // Approvals are cancelled along with their expense, or when the expense is deleted.
       .filter((approval) => approval.status in APPROVAL_STATUS)
       .map((approval) => {

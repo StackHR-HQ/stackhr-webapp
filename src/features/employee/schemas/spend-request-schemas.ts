@@ -38,6 +38,18 @@ export const expenseSchema = z.object({
 export type ExpenseFormInput = z.input<typeof expenseSchema>
 export type ExpenseFormValues = z.infer<typeof expenseSchema>
 
+export const reimbursementSchema = z.object({
+  amount: z.coerce.number().positive('Amount must be greater than 0'),
+  description: z
+    .string()
+    .trim()
+    .min(1, 'Say what the money was spent on')
+    .max(500, 'Description must be 500 characters or fewer'),
+})
+
+export type ReimbursementFormInput = z.input<typeof reimbursementSchema>
+export type ReimbursementFormValues = z.infer<typeof reimbursementSchema>
+
 export const salaryAdvanceSchema = z.object({
   amount: z.coerce.number().positive('Amount must be greater than 0'),
   repaymentMonths: z.coerce.number().int().min(1, 'Choose a repayment period'),

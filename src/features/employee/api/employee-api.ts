@@ -11,8 +11,10 @@ import type {
   MyLeaveRequest,
   MyPayslip,
   MyProfile,
+  MyReimbursement,
   MySalaryAdvance,
   ProfileUpdate,
+  ReimbursementPayload,
   SalaryAdvancePayload,
 } from '../types/employee-types'
 
@@ -43,6 +45,22 @@ export const employeeApi = {
   // Only pending claims can be cancelled.
   async cancelExpense(id: string): Promise<void> {
     await http.patch(`/spend/expenses/${id}/cancel`)
+  },
+
+  // There's no /me endpoint for reimbursements. Managers and admins get the
+  // whole organization's list here, so it's narrowed to the signed-in employee.
+  async getReimbursements(employeeId: string): Promise<MyReimbursement[]> {
+    const { data } = await http.get<{ reimbursements: MyReimbursement[] }>('/reimbursements')
+    return data.reimbursements.filter((reimbursement) => !reimbursement.employeeId || reimbursement.employeeId === employeeId)
+  },
+
+  async submitReimbursement(payload: ReimbursementPayload): Promise<void> {
+    await http.post('/reimbursements', payload)
+  },
+
+  // Only pending claims can be cancelled.
+  async cancelReimbursement(id: string): Promise<void> {
+    await http.patch(`/reimbursements/${id}/cancel`)
   },
 
   async getSalaryAdvances(): Promise<MySalaryAdvance[]> {

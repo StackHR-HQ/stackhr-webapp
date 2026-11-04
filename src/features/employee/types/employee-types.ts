@@ -151,6 +151,26 @@ export interface MySalaryAdvance extends MySpendRequest {
   reason?: string | null
 }
 
+// From GET /reimbursements: either a claim submitted on its own, or created
+// when one of the employee's expenses was approved (expenseId set).
+export interface MyReimbursement {
+  id: string
+  employeeId?: string
+  expenseId?: string | null
+  amount: number
+  currency?: string
+  description?: string | null
+  status: string
+  createdAt?: string
+  paidAt?: string | null
+}
+
+export interface ReimbursementPayload {
+  amount: number
+  currency: string
+  description: string
+}
+
 export interface ExpensePayload {
   category: string
   amount: number

@@ -38,31 +38,39 @@ export function spendApprovalsToApprovals(requests: SpendApprovalRequest[]): Glo
   }))
 }
 
-const REIMBURSEMENT_STATUS_MAP: Record<Reimbursement['status'], GlobalApprovalStatus> = {
+// Cancelled claims never reach an approver, so they're left out.
+const REIMBURSEMENT_STATUS_MAP: Partial<Record<Reimbursement['status'], GlobalApprovalStatus>> = {
   pending: 'pending',
   approved: 'approved',
   processing: 'approved',
   completed: 'approved',
   failed: 'rejected',
+  rejected: 'rejected',
 }
 
-export function reimbursementsToApprovals(reimbursements: Reimbursement[]): GlobalApprovalItem[] {
-  return reimbursements.map((reimbursement) => ({
-    id: reimbursement.id,
-    domain: 'reimbursements',
-    title: reimbursement.employeeName,
-    subtitle: `${reimbursement.category} · ${reimbursement.method}`,
-    avatarInitials: reimbursement.avatarInitials,
-    amount: reimbursement.amount,
-    currency: reimbursement.currency,
-    submittedAt: reimbursement.requestedAt,
-    status: REIMBURSEMENT_STATUS_MAP[reimbursement.status],
-    decidedAt: reimbursement.completedAt,
-    detailPath: `/spend/expenses/${reimbursement.expenseId}`,
-    // Reimbursement status tracks payout progress, not a maker-checker decision
-    // — the decision already happened at the expense-approval stage.
-    actionable: false,
-  }))
+export function reimbursementsToApprovals(reimbursements: Reimbursement[], currentUserId?: string): GlobalApprovalItem[] {
+  return reimbursements
+    .filter((reimbursement) => reimbursement.status in REIMBURSEMENT_STATUS_MAP)
+    .map((reimbursement) => ({
+      id: reimbursement.id,
+      domain: 'reimbursements',
+      title: reimbursement.employeeName,
+      subtitle: [reimbursement.category, reimbursement.description].filter(Boolean).join(' · '),
+      avatarInitials: reimbursement.avatarInitials,
+      amount: reimbursement.amount,
+      currency: reimbursement.currency,
+      submittedAt: reimbursement.requestedAt,
+      status: REIMBURSEMENT_STATUS_MAP[reimbursement.status]!,
+      decidedAt: reimbursement.completedAt,
+      detailPath: reimbursement.expenseId ? `/spend/expenses/${reimbursement.expenseId}` : '/spend/reimbursements',
+      // One created from an approved expense was already decided at the expense
+      // stage; a claim submitted on its own is decided through its approval record.
+      actionable:
+        reimbursement.status === 'pending' &&
+        Boolean(reimbursement.approvalId) &&
+        reimbursement.requesterId !== currentUserId,
+      approvalId: reimbursement.approvalId,
+    }))
 }
 
 // Cancelled advances never reach an approver, so they're left out.

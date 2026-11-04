@@ -4,8 +4,10 @@ const TABS: { key: ReimbursementStatus; label: string }[] = [
   { key: 'pending', label: 'Pending' },
   { key: 'approved', label: 'Approved' },
   { key: 'processing', label: 'Processing' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'completed', label: 'Paid' },
   { key: 'failed', label: 'Failed' },
+  { key: 'rejected', label: 'Rejected' },
+  { key: 'cancelled', label: 'Cancelled' },
 ]
 
 export function ReimbursementStatusTabs({

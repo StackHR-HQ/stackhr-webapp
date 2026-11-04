@@ -24,6 +24,11 @@ export const mockSpendApi = {
     )
   },
 
+  async markReimbursementPaid(id: string): Promise<void> {
+    await delay(400)
+    void id
+  },
+
   async getApprovalRequests(): Promise<SpendApprovalRequest[]> {
     await delay(400)
     return deriveApprovalRequests(EXPENSE_CLAIMS).sort(

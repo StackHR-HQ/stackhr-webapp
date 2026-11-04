@@ -154,6 +154,13 @@ function readReason(metadata: string | null): string | undefined {
   }
 }
 
+// A reimbursement claim comes through as an EXPENSE approval whose subject is
+// the reimbursement, so it's grouped by subject table instead of type.
+function categoryOf(request: ApprovalRequest): ApprovalCategoryMeta {
+  const type = request.subjectTable === 'reimbursement' ? 'REIMBURSEMENT' : request.type
+  return CATEGORIES[type] ?? OTHER
+}
+
 function toApprovalItem(request: ApprovalRequest, title: string): ApprovalItem {
   const isLeave = request.type === 'LEAVE'
   const summary = request.subjectSummary
@@ -177,7 +184,7 @@ function groupApprovals(requests: ApprovalRequest[]): ApprovalCategory[] {
   const categories = new Map<ApprovalCategoryKey, ApprovalCategory>()
 
   for (const request of requests) {
-    const meta = CATEGORIES[request.type] ?? OTHER
+    const meta = categoryOf(request)
     const category = categories.get(meta.key) ?? {
       key: meta.key,
       label: meta.label,
@@ -198,7 +205,7 @@ function toRecentActivity(requests: ApprovalRequest[], currentUserId?: string): 
     person?.id === currentUserId ? 'You' : (person?.fullName ?? 'Someone')
 
   const events = requests.flatMap((request) => {
-    const meta = CATEGORIES[request.type] ?? OTHER
+    const meta = categoryOf(request)
     const leaveType = request.subjectSummary?.leaveType
     const subject = leaveType ?? meta.title.toLowerCase()
     const items: ActivityItem[] = [
