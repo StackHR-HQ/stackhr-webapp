@@ -9,6 +9,7 @@ import type {
   AuditLogEntry,
   ComplianceOverview,
   CompensationBreakdown,
+  PayrollExecution,
   ComplianceWarning,
   EarningComponent,
   EmployeeSalaryRow,
@@ -110,6 +111,21 @@ interface ApiPayslip {
   periodYear: number
   netSalary: number
   employee: { id: string; fullName: string } | null
+}
+
+// POST /payroll/runs/:id/execute. Bulk transfer amounts are kobo; the export
+// batch is whole naira.
+interface ApiExecution {
+  bulkTransfer?: {
+    reference: string
+    status: string
+    transfersCount: number
+    totalAmountKobo: number
+  } | null
+  paymentExportBatch?: {
+    totalPayoutNet: number
+    employeeTransfers?: { employeeName: string; amount: number; currency: string }[]
+  } | null
 }
 
 // GET /payroll/compensation: each employee's current compensation.
@@ -598,8 +614,30 @@ export const payrollApi = {
   },
 
   // Reusing the key on a retry replays the original response instead of paying twice.
-  async executeRun(id: string, idempotencyKey: string): Promise<void> {
-    await http.post(`/payroll/runs/${id}/execute`, {}, { headers: { 'Idempotency-Key': idempotencyKey } })
+  async executeRun(id: string, idempotencyKey: string): Promise<PayrollExecution> {
+    const { data } = await http.post<ApiExecution>(
+      `/payroll/runs/${id}/execute`,
+      {},
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    )
+    const bulk = data?.bulkTransfer
+    const batch = data?.paymentExportBatch
+    return {
+      bulkTransfer: bulk
+        ? {
+            reference: bulk.reference,
+            status: bulk.status,
+            transfersCount: bulk.transfersCount,
+            totalAmount: bulk.totalAmountKobo / 100,
+          }
+        : null,
+      transfers: (batch?.employeeTransfers ?? []).map((transfer) => ({
+        employeeName: transfer.employeeName,
+        amount: transfer.amount,
+        currency: transfer.currency,
+      })),
+      totalNet: batch?.totalPayoutNet ?? 0,
+    }
   },
 
   async reconcileRun(id: string): Promise<void> {
