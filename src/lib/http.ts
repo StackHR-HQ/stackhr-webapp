@@ -29,11 +29,20 @@ http.interceptors.response.use(
       // /auth/* returns 401 for bad credentials, which isn't an expired session
       const url = error.config?.url ?? ''
       const isCredentialCheck = url.startsWith('/auth/') && url !== '/auth/me'
-      if (!isCredentialCheck) useAuthStore.getState().clearSession()
+      // Pension routes call PenCentral and pass its 401 through when the
+      // backend's partner credentials are missing; that isn't an expired session.
+      const isPartnerAuthFailure = url.startsWith('/pension/') && /partner credential/i.test(errorMessage(error))
+      if (!isCredentialCheck && !isPartnerAuthFailure) useAuthStore.getState().clearSession()
     }
     return Promise.reject(error)
   },
 )
+
+function errorMessage(error: unknown): string {
+  if (!isAxiosError(error)) return ''
+  const message: unknown = error.response?.data?.message ?? error.response?.data?.error?.message
+  return typeof message === 'string' ? message : ''
+}
 
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (isAxiosError(error)) {
