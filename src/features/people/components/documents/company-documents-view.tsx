@@ -2,6 +2,7 @@ import { FileTextIcon } from '@phosphor-icons/react'
 import { Card } from '../../../../components/ui/card'
 import { formatDate } from '../../lib/format'
 import type { CompanyDocument } from '../../types/people-types'
+import { DownloadDocumentButton } from './download-document-button'
 
 export function CompanyDocumentsView({ documents }: { documents: CompanyDocument[] }) {
   return (
@@ -19,6 +20,7 @@ export function CompanyDocumentsView({ documents }: { documents: CompanyDocument
               </p>
             </div>
             <span className="shrink-0 text-xs text-muted">{document.visibility}</span>
+            <DownloadDocumentButton documentId={document.id} name={document.name} />
           </li>
         ))}
       </ul>

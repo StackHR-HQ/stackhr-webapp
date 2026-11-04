@@ -2,6 +2,7 @@ import { FileTextIcon } from '@phosphor-icons/react'
 import { Card, CardHeader } from '../../../../components/ui/card'
 import { formatDate } from '../../lib/format'
 import type { EmployeeDetail } from '../../types/people-types'
+import { DownloadDocumentButton } from '../documents/download-document-button'
 
 export function DocumentsTab({ employee }: { employee: EmployeeDetail }) {
   return (
@@ -20,6 +21,7 @@ export function DocumentsTab({ employee }: { employee: EmployeeDetail }) {
                   {document.category} · Uploaded {formatDate(document.uploadedAt)} · {document.fileSize}
                 </p>
               </div>
+              <DownloadDocumentButton documentId={document.id} name={document.name} />
             </li>
           ))}
         </ul>

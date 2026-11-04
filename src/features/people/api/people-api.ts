@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import { toApiEnum } from '../../../lib/api-enum'
 import type { LeaveTypeFormValues } from '../schemas/leave-type-schema'
 import { http } from '../../../lib/http'
@@ -33,6 +34,21 @@ const toDepartment = (department: Department): Department => ({
   ...department,
   headEmployeeId: department.headEmployeeId || null,
 })
+
+// Reads the file name from e.g. `attachment; filename="Offer Letter.pdf"`,
+// preferring the RFC 5987 filename* form when it's there.
+function fileNameFromDisposition(header: unknown): string | undefined {
+  if (typeof header !== 'string') return undefined
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1]
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded.trim())
+    } catch {
+      // fall through to the plain filename
+    }
+  }
+  return /filename="?([^";]+)"?/i.exec(header)?.[1]?.trim() || undefined
+}
 
 export const peopleApi = {
   async getEmployees(): Promise<EmployeeSummary[]> {
@@ -203,6 +219,25 @@ export const peopleApi = {
     if (employeeId) form.append('employeeId', employeeId)
     const { data } = await http.post<UploadDocumentResult>('/people/documents', form)
     return data
+  },
+
+  // Streams the file. Admins can download any document in the organization;
+  // employees only their own and company-wide ones.
+  async downloadDocument(id: string): Promise<{ blob: Blob; fileName?: string }> {
+    try {
+      const response = await http.get<Blob>(`/people/documents/${id}/download`, { responseType: 'blob' })
+      return { blob: response.data, fileName: fileNameFromDisposition(response.headers['content-disposition']) }
+    } catch (err) {
+      // Error bodies arrive as a Blob too; parse them so the API's message reaches the user.
+      if (isAxiosError(err) && err.response?.data instanceof Blob) {
+        try {
+          err.response.data = JSON.parse(await err.response.data.text())
+        } catch {
+          // not JSON; leave it for the generic message
+        }
+      }
+      throw err
+    }
   },
 
   async assignOnboardingTemplate(payload: AssignOnboardingTemplatePayload): Promise<void> {
