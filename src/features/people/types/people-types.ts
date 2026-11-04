@@ -275,6 +275,27 @@ export interface UploadDocumentResult {
   document: CompanyDocument | EmployeeDocumentRow
 }
 
+// GET /leave/requests/:id: what the request list leaves out.
+export interface LeaveRequestDetail {
+  id: string
+  employeeName: string
+  leaveType: string
+  paid: boolean | null
+  startDate: string
+  endDate: string
+  days: number
+  reason: string | null
+  status: string
+  submittedAt: string
+  decidedAt: string | null
+}
+
+export interface EmployeeImportResult {
+  // Null when the response didn't say how many were created.
+  imported: number | null
+  errors: string[]
+}
+
 export interface AssignOnboardingTemplatePayload {
   employeeId: string
   templateId: string
