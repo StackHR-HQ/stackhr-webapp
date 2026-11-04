@@ -9,6 +9,7 @@ import { TextField } from '../../../components/ui/text-field'
 import { getApiErrorMessage } from '../../../lib/http'
 import { notify } from '../../../lib/toast'
 import { useBanks, useVerifyBankAccount } from '../../banking/hooks/use-banks'
+import { usePfas } from '../../compliance/hooks/use-pension'
 import { useUpdateMyProfile } from '../hooks/use-my-profile'
 import { profileSchema, type ProfileFormValues } from '../schemas/profile-schema'
 import type { MyProfile, ProfileUpdate } from '../types/employee-types'
@@ -106,6 +107,19 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
     : []
   const accountHint = verificationHint(verification, bankName)
 
+  // PFA comes from PenCom's official list when it loads, so pension schedules
+  // can match it; otherwise it stays free text.
+  const pfas = usePfas()
+  const pensionProvider = useWatch({ control, name: 'pensionProvider' })
+  const pfaOptions = pfas.data
+    ? [
+        ...(pensionProvider && !pfas.data.some((pfa) => pfa.name === pensionProvider)
+          ? [{ value: pensionProvider, label: pensionProvider }]
+          : []),
+        ...pfas.data.map((pfa) => ({ value: pfa.name, label: pfa.name })),
+      ]
+    : []
+
   // The bank's record of the holder's name wins over what was typed.
   useEffect(() => {
     if (verifiedName && getValues('accountName') !== verifiedName) {
@@ -184,7 +198,11 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
 
       <FieldGroup title="Tax and pension">
         <TextField label="Tax ID (TIN)" {...field('tin')} />
-        <TextField label="Pension provider" {...field('pensionProvider')} />
+        {pfas.data ? (
+          <SelectField label="Pension provider (PFA)" placeholder="Select your PFA" options={pfaOptions} {...field('pensionProvider')} />
+        ) : (
+          <TextField label="Pension provider" {...field('pensionProvider')} />
+        )}
         <TextField label="Pension RSA number" {...field('pensionRsaNumber')} />
       </FieldGroup>
 
