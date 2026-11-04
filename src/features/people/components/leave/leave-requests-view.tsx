@@ -1,17 +1,21 @@
-import { CheckIcon, XIcon } from '@phosphor-icons/react'
+import { CheckIcon, InfoIcon, XIcon } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar } from '../../../../components/ui/avatar'
 import { Badge } from '../../../../components/ui/badge'
 import { Card } from '../../../../components/ui/card'
+import { Modal } from '../../../../components/ui/modal'
 import { formatDate } from '../../lib/format'
 import { REQUEST_STATUS_META } from '../../lib/status-meta'
 import type { LeaveRequestWithEmployee } from '../../types/people-types'
 import { getApiErrorMessage } from '../../../../lib/api-error'
 import { notify } from '../../../../lib/toast'
 import { useDecideLeaveRequest } from '../../hooks/use-decide-leave-request'
+import { LeaveRequestDetailView } from './leave-request-detail'
 
 export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmployee[] }) {
   const decision = useDecideLeaveRequest()
+  const [viewing, setViewing] = useState<LeaveRequestWithEmployee | null>(null)
 
   function resolve(request: LeaveRequestWithEmployee, status: 'approved' | 'rejected') {
     decision.mutate(
@@ -65,34 +69,52 @@ export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmpl
                   <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>
                 </td>
                 <td className="px-4 py-3">
-                  {isPending ? (
-                    <div className="flex justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => resolve(request, 'rejected')}
-                        disabled={decision.isPending}
-                        aria-label={`Reject leave request from ${request.employeeName}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical"
-                      >
-                        <XIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => resolve(request, 'approved')}
-                        disabled={decision.isPending}
-                        aria-label={`Approve leave request from ${request.employeeName}`}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90"
-                      >
-                        <CheckIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ) : null}
+                  <div className="flex justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setViewing(request)}
+                      aria-label={`View leave request from ${request.employeeName}`}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:text-ink"
+                    >
+                      <InfoIcon className="h-3.5 w-3.5" />
+                    </button>
+                    {isPending ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => resolve(request, 'rejected')}
+                          disabled={decision.isPending}
+                          aria-label={`Reject leave request from ${request.employeeName}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:border-critical hover:text-critical"
+                        >
+                          <XIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => resolve(request, 'approved')}
+                          disabled={decision.isPending}
+                          aria-label={`Approve leave request from ${request.employeeName}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-ink transition-opacity hover:opacity-90"
+                        >
+                          <CheckIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
+
+      <Modal
+        open={viewing !== null}
+        onClose={() => setViewing(null)}
+        title={viewing ? `${viewing.employeeName} · ${viewing.type}` : 'Leave request'}
+      >
+        {viewing ? <LeaveRequestDetailView id={viewing.id} /> : null}
+      </Modal>
     </div>
   )
 }
