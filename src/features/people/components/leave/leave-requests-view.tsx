@@ -113,7 +113,7 @@ export function LeaveRequestsView({ requests }: { requests: LeaveRequestWithEmpl
         onClose={() => setViewing(null)}
         title={viewing ? `${viewing.employeeName} · ${viewing.type}` : 'Leave request'}
       >
-        {viewing ? <LeaveRequestDetailView id={viewing.id} /> : null}
+        {viewing ? <LeaveRequestDetailView request={viewing} /> : null}
       </Modal>
     </div>
   )

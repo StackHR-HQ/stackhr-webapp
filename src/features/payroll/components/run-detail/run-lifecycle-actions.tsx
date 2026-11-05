@@ -1,11 +1,13 @@
 import { isAxiosError } from 'axios'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../../../components/ui/button'
 import { Modal } from '../../../../components/ui/modal'
+import { csvCell, downloadCsv } from '../../../../lib/download'
+import { USE_MOCK_PAYROLL } from '../../../../lib/env'
 import { getApiErrorMessage } from '../../../../lib/http'
 import { notify } from '../../../../lib/toast'
 import { AccountDetails, RefreshBalanceButton } from '../../../banking/components/deposit-account-card'
-import { useDepositAccount } from '../../../banking/hooks/use-banks'
+import { useDepositAccount, useSyncDepositAccount } from '../../../banking/hooks/use-banks'
 import {
   useAttestPayrollFunding,
   useCalculatePayrollRun,
@@ -106,13 +108,33 @@ export function RunLifecycleActions({ run }: { run: PayrollRunDetail }) {
   )
 }
 
+const toKobo = (amount: number) => Math.round(amount * 100)
+
 // Shows the company account next to the net pay it has to cover, so the admin
-// confirms funding against the real balance.
+// confirms funding against the real balance. The GET returns the last-synced
+// balance, so the live one is fetched from Anchor when this opens.
 function FundingStatus({ run }: { run: PayrollRunDetail }) {
-  const account = useDepositAccount()
+  const account = useDepositAccount(!USE_MOCK_PAYROLL)
+  const sync = useSyncDepositAccount()
+  const { mutate: syncBalance } = sync
+  // Strict mode mounts twice in dev; one sync per opening is enough.
+  const synced = useRef(false)
+
+  useEffect(() => {
+    if (USE_MOCK_PAYROLL || synced.current) return
+    synced.current = true
+    syncBalance()
+  }, [syncBalance])
+
+  // Mock runs have mock net pay, so comparing them to a real balance means nothing.
+  if (USE_MOCK_PAYROLL) return null
   if (account.isPending) return <div className="mt-4 h-24 animate-pulse rounded-lg bg-canvas" />
   if (account.isError) return null
-  const shortfall = run.summary.netPay - account.data.balance
+
+  const { currency } = run.summary
+  const sameCurrency = account.data.currency === currency
+  const shortfallKobo = toKobo(run.summary.netPay) - toKobo(account.data.balance)
+
   return (
     <div className="mt-4 space-y-3">
       <div className="flex items-center justify-between">
@@ -120,14 +142,32 @@ function FundingStatus({ run }: { run: PayrollRunDetail }) {
         <RefreshBalanceButton />
       </div>
       <AccountDetails account={account.data} />
-      {shortfall > 0 ? (
-        <p className="rounded-lg border border-critical/40 bg-critical/5 px-3 py-2 text-sm text-critical">
-          Short by {formatAmount(shortfall, run.summary.currency)}. Transfer at least that much, then refresh the balance.
-        </p>
+      {sync.isPending ? (
+        <p className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-muted">Checking the live balance…</p>
       ) : (
-        <p className="rounded-lg border border-positive/40 bg-positive/5 px-3 py-2 text-sm text-positive">
-          The balance covers this run&apos;s net pay.
-        </p>
+        <>
+          {sync.isError ? (
+            <p className="text-xs text-muted">
+              Couldn&apos;t fetch the live balance, so this is the last one recorded. Refresh before confirming.
+            </p>
+          ) : null}
+          {!sameCurrency ? (
+            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-ink">
+              The company account holds {account.data.currency}, but this run pays in {currency}. Check the balance
+              covers net pay before confirming.
+            </p>
+          ) : shortfallKobo > 0 ? (
+            <p className="rounded-lg border border-critical/40 bg-critical/5 px-3 py-2 text-sm text-critical">
+              {/* Rounded up, so a shortfall of a few kobo never reads as ₦0. */}
+              Short by {formatAmount(Math.ceil(shortfallKobo / 100), currency)}. Transfer at least that much, then
+              refresh the balance.
+            </p>
+          ) : (
+            <p className="rounded-lg border border-positive/40 bg-positive/5 px-3 py-2 text-sm text-positive">
+              The balance covers this run&apos;s net pay.
+            </p>
+          )}
+        </>
       )}
     </div>
   )
@@ -217,7 +257,10 @@ function ExecuteRunModal({ run, open, onClose }: { run: PayrollRunDetail; open: 
       const execution = await execute.mutateAsync({ id: run.id, idempotencyKey: idempotencyKey.current })
       idempotencyKey.current = null
       setResult(execution)
-      notify.success(execution.bulkTransfer ? 'Salary transfers sent' : 'Payment recorded')
+      const outcome = executionOutcome(execution)
+      if (outcome === 'failed') notify.error('Salary transfers failed', 'Pay each employee by bank transfer instead.')
+      else if (outcome === 'manual') notify.success('Payment recorded', 'Pay each employee by bank transfer.')
+      else notify.success(outcome === 'completed' ? 'Employees paid' : 'Salary transfers sent')
     } catch (err) {
       // A definite answer other than "still in progress" ends this attempt.
       if (isAxiosError(err) && err.response && err.response.status !== 409) idempotencyKey.current = null
@@ -233,7 +276,14 @@ function ExecuteRunModal({ run, open, onClose }: { run: PayrollRunDetail; open: 
   }
 
   return (
-    <Modal open={open} onClose={close} title={result ? 'Employees paid' : 'Pay employees'}>
+    // The result isn't kept anywhere else, so only Done closes it; while paying,
+    // closing would hide the result when it arrives.
+    <Modal
+      open={open}
+      onClose={close}
+      dismissible={!execute.isPending && !result}
+      title={result ? RESULT_TITLE[executionOutcome(result)] : 'Pay employees'}
+    >
       {result ? (
         <ExecutionResult run={run} result={result} onDone={close} />
       ) : (
@@ -267,10 +317,22 @@ const TRANSFER_STATUS: Record<string, string> = {
   FAILED: 'Failed',
 }
 
-// Quotes a CSV cell when it holds a comma, quote or line break.
-const csvCell = (value: string | number) => {
-  const text = String(value)
-  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+type ExecutionOutcome = 'completed' | 'processing' | 'failed' | 'manual'
+
+// What happened to the money: sent by Anchor (and how far it got), or left
+// for the admin to pay by hand.
+function executionOutcome({ bulkTransfer }: PayrollExecution): ExecutionOutcome {
+  if (!bulkTransfer) return 'manual'
+  const status = TRANSFER_STATUS[bulkTransfer.status.toUpperCase()]
+  if (status === 'Failed') return 'failed'
+  return status === 'Completed' ? 'completed' : 'processing'
+}
+
+const RESULT_TITLE: Record<ExecutionOutcome, string> = {
+  completed: 'Employees paid',
+  processing: 'Salary transfers sent',
+  failed: 'Salary transfers failed',
+  manual: 'Pay employees by bank transfer',
 }
 
 function downloadTransfers(run: PayrollRunDetail, result: PayrollExecution) {
@@ -278,28 +340,31 @@ function downloadTransfers(run: PayrollRunDetail, result: PayrollExecution) {
     ['Employee', 'Amount', 'Currency'],
     ...result.transfers.map((transfer) => [transfer.employeeName, transfer.amount, transfer.currency]),
   ]
-  const blob = new Blob([rows.map((row) => row.map(csvCell).join(',')).join('\n')], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `payroll-transfers-${run.periodLabel.replace(/\s+/g, '-').toLowerCase()}.csv`
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  downloadCsv(
+    rows.map((row) => row.map(csvCell).join(',')).join('\n'),
+    `payroll-transfers-${run.periodLabel.replace(/\s+/g, '-').toLowerCase()}.csv`,
+  )
 }
 
 function ExecutionResult({ run, result, onDone }: { run: PayrollRunDetail; result: PayrollExecution; onDone: () => void }) {
   const { bulkTransfer } = result
+  const failed = executionOutcome(result) === 'failed'
   return (
     <div className="space-y-4">
       {bulkTransfer ? (
-        <div className="space-y-1 rounded-lg border border-line bg-canvas px-3 py-2.5 text-sm">
+        <div
+          className={`space-y-1 rounded-lg border px-3 py-2.5 text-sm ${failed ? 'border-critical/40 bg-critical/5' : 'border-line bg-canvas'}`}
+        >
           <p className="text-ink">
             {bulkTransfer.transfersCount} {bulkTransfer.transfersCount === 1 ? 'transfer' : 'transfers'} totalling{' '}
-            <span className="font-medium">{formatAmount(bulkTransfer.totalAmount, run.summary.currency)}</span> sent from
-            the company account.
+            <span className="font-medium">{formatAmount(bulkTransfer.totalAmount, run.summary.currency)}</span>{' '}
+            {failed
+              ? "couldn't be sent from the company account. Pay each employee by bank transfer using the list below."
+              : 'sent from the company account.'}
           </p>
-          <p className="text-muted">
-            Status: {TRANSFER_STATUS[bulkTransfer.status] ?? bulkTransfer.status} · Reference {bulkTransfer.reference}
+          <p className={failed ? 'text-critical' : 'text-muted'}>
+            Status: {TRANSFER_STATUS[bulkTransfer.status.toUpperCase()] ?? bulkTransfer.status} · Reference{' '}
+            {bulkTransfer.reference}
           </p>
         </div>
       ) : (

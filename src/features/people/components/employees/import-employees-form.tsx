@@ -1,45 +1,62 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, type ChangeEvent } from 'react'
+import Papa from 'papaparse'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { Button } from '../../../../components/ui/button'
 import { FormErrorBanner } from '../../../../components/ui/form-error-banner'
+import { downloadCsv } from '../../../../lib/download'
 import { getApiErrorMessage } from '../../../../lib/http'
 import { notify } from '../../../../lib/toast'
+import { parseEmployeeCsv } from '../../../onboarding/lib/parse-employee-csv'
 import { peopleApi } from '../../api/people-api'
 import type { EmployeeImportResult } from '../../types/people-types'
 
 // The columns POST /onboarding/employees/import expects, in this order.
-const COLUMNS = ['fullName', 'email', 'department', 'jobTitle', 'employmentType', 'salary', 'startDate']
-const TEMPLATE = `${COLUMNS.join(',')}\nAda Okafor,ada@yourcompany.com,Engineering,Software Engineer,FULL_TIME,500000,2026-01-01\n`
+const COLUMNS = ['fullName', 'email', 'department', 'jobTitle', 'employmentType', 'salary', 'startDate'] as const
+const TEMPLATE = `${COLUMNS.join(',')}
+Ada Okafor,ada@yourcompany.com,Engineering,Software Engineer,FULL_TIME,500000,2026-01-01
+`
 const MAX_BYTES = 1024 * 1024
 
-function downloadTemplate() {
-  const url = URL.createObjectURL(new Blob([TEMPLATE], { type: 'text/csv' }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'stackhr-employee-import-template.csv'
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+// Reads the file the same way onboarding's import does (header aliases such as
+// "Full Name", quoted cells with line breaks), then rewrites it with the exact
+// column names the backend expects.
+function prepareCsv(text: string): { csv: string; rows: number } | { error: string } {
+  const { rows, missingColumns } = parseEmployeeCsv(text)
+  if (missingColumns.length) return { error: `The file is missing these columns: ${missingColumns.join(', ')}.` }
+  if (rows.length === 0) return { error: 'The file has no employee rows.' }
+  const csv = Papa.unparse({ fields: [...COLUMNS], data: rows.map((row) => COLUMNS.map((column) => row[column])) })
+  return { csv, rows: rows.length }
 }
 
-// Checks the header before anything is sent; returns the number of data rows.
-function checkCsv(text: string): { rows: number } | { error: string } {
-  const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '')
-  if (lines.length < 2) return { error: 'The file has no employee rows.' }
-  const header = lines[0].split(',').map((cell) => cell.trim().replace(/^"|"$/g, ''))
-  const missing = COLUMNS.filter((column) => !header.includes(column))
-  if (missing.length) return { error: `The file is missing these columns: ${missing.join(', ')}.` }
-  return { rows: lines.length - 1 }
-}
-
-export function ImportEmployeesForm({ onDone }: { onDone: () => void }) {
+export function ImportEmployeesForm({
+  onDone,
+  onLockChange,
+}: {
+  onDone: () => void
+  // True while the import runs or its result is showing, so the modal can't be
+  // dismissed and lose the list of skipped rows.
+  onLockChange?: (locked: boolean) => void
+}) {
   const queryClient = useQueryClient()
-  const [file, setFile] = useState<{ name: string; text: string; rows: number } | null>(null)
+  const [file, setFile] = useState<{ name: string; csv: string; rows: number } | null>(null)
   const [error, setError] = useState<string>()
   const [result, setResult] = useState<EmployeeImportResult | null>(null)
   const importEmployees = useMutation({
     mutationFn: (csv: string) => peopleApi.importEmployees(csv),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['people'] }),
+    // New employees also change setup progress and the dashboard's counts.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['people'] }),
+        queryClient.invalidateQueries({ queryKey: ['onboarding', 'status'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ]),
   })
+
+  const locked = importEmployees.isPending || result !== null
+  useEffect(() => {
+    onLockChange?.(locked)
+  }, [locked, onLockChange])
+  useEffect(() => () => onLockChange?.(false), [onLockChange])
 
   async function choose(event: ChangeEvent<HTMLInputElement>) {
     const chosen = event.target.files?.[0]
@@ -52,16 +69,16 @@ export function ImportEmployeesForm({ onDone }: { onDone: () => void }) {
       return
     }
     const text = await chosen.text()
-    const checked = checkCsv(text)
-    if ('error' in checked) setError(checked.error)
-    else setFile({ name: chosen.name, text, rows: checked.rows })
+    const prepared = prepareCsv(text)
+    if ('error' in prepared) setError(prepared.error)
+    else setFile({ name: chosen.name, csv: prepared.csv, rows: prepared.rows })
   }
 
   async function submit() {
     if (!file) return
     setError(undefined)
     try {
-      const imported = await importEmployees.mutateAsync(file.text)
+      const imported = await importEmployees.mutateAsync(file.csv)
       setResult(imported)
       if (imported.errors.length === 0) notify.success('Employees imported')
     } catch (err) {
@@ -104,7 +121,7 @@ export function ImportEmployeesForm({ onDone }: { onDone: () => void }) {
         Add several employees at once from a CSV file with the columns{' '}
         <span className="font-medium text-ink">{COLUMNS.join(', ')}</span>. Write salary in naira without commas,
         dates as YYYY-MM-DD, and employment type as FULL_TIME, PART_TIME, CONTRACT or INTERN.{' '}
-        <button type="button" onClick={downloadTemplate} className="font-medium text-accent hover:underline">
+        <button type="button" onClick={() => downloadCsv(TEMPLATE, 'stackhr-employee-import-template.csv')} className="font-medium text-accent hover:underline">
           Download the template
         </button>
       </p>
@@ -120,7 +137,14 @@ export function ImportEmployeesForm({ onDone }: { onDone: () => void }) {
       </label>
 
       <div className="flex gap-3">
-        <Button type="button" variant="secondary" width="fit" className="px-6" onClick={onDone}>
+        <Button
+          type="button"
+          variant="secondary"
+          width="fit"
+          className="px-6"
+          disabled={importEmployees.isPending}
+          onClick={onDone}
+        >
           Cancel
         </Button>
         <Button type="button" width="fit" className="px-6" disabled={!file} loading={importEmployees.isPending} onClick={submit}>

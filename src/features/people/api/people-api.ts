@@ -255,20 +255,17 @@ export const peopleApi = {
         createdAt: string
         decidedAt: string | null
         leaveType: { name: string; paid?: boolean } | null
-        employee: { fullName: string } | null
       }
-    }>(`/leave/requests/${id}`)
+    }>(`/leave/requests/${id}`) // No /people/ equivalent on staging; admin access is unconfirmed.
     const request = data.leaveRequest
     return {
-      id: request.id,
-      employeeName: request.employee?.fullName ?? 'Unknown employee',
       leaveType: request.leaveType?.name ?? 'Leave',
       paid: request.leaveType?.paid ?? null,
       startDate: request.startDate,
       endDate: request.endDate,
       days: request.totalDays ?? request.days ?? 0,
       reason: request.reason || null,
-      status: request.status,
+      status: request.status.toLowerCase(),
       submittedAt: request.createdAt,
       decidedAt: request.decidedAt,
     }
@@ -290,13 +287,17 @@ export const peopleApi = {
     return {
       imported: count('imported', 'importedCount', 'created', 'createdCount', 'employees', 'success'),
       errors: Array.isArray(errors)
-        ? errors.map((error) =>
-            typeof error === 'string'
-              ? error
-              : [error?.row != null ? `Row ${error.row}` : error?.email, error?.message ?? error?.reason ?? error?.error]
-                  .filter(Boolean)
-                  .join(': '),
-          )
+        ? errors.map((error) => {
+            if (typeof error === 'string') return error
+            const line = [
+              error?.row != null ? `Row ${error.row}` : error?.email,
+              error?.message ?? error?.reason ?? error?.error,
+            ]
+              .filter(Boolean)
+              .join(': ')
+            // An unfamiliar shape is still shown rather than left as a blank bullet.
+            return line || JSON.stringify(error) || 'A row was skipped for an unknown reason.'
+          })
         : [],
     }
   },

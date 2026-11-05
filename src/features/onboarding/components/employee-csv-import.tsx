@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Button } from '../../../components/ui/button'
+import { downloadCsv } from '../../../lib/download'
 import { EMPLOYMENT_TYPES } from '../constants/onboarding-options'
 import { buildSampleEmployeeCsv } from '../lib/employee-helpers'
 import { type CsvRowDraft, parseEmployeeCsv } from '../lib/parse-employee-csv'
@@ -57,13 +58,7 @@ function revalidateAll(rows: RowState[], existingEmails: Set<string>): RowState[
 }
 
 function downloadSampleCsv() {
-  const blob = new Blob([buildSampleEmployeeCsv()], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'stackhr-employees-sample.csv'
-  link.click()
-  URL.revokeObjectURL(url)
+  downloadCsv(buildSampleEmployeeCsv(), 'stackhr-employees-sample.csv')
 }
 
 export function EmployeeCsvImport({

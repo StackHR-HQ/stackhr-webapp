@@ -277,8 +277,6 @@ export interface UploadDocumentResult {
 
 // GET /leave/requests/:id: what the request list leaves out.
 export interface LeaveRequestDetail {
-  id: string
-  employeeName: string
   leaveType: string
   paid: boolean | null
   startDate: string

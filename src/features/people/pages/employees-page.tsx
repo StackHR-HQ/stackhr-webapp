@@ -18,6 +18,7 @@ export function EmployeesPage() {
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [importLocked, setImportLocked] = useState(false)
 
   const deferredSearch = useDeferredValue(search)
   const directoryQuery = useEmployeeDirectory({
@@ -63,8 +64,13 @@ export function EmployeesPage() {
         </div>
       </div>
 
-      <Modal open={importing} onClose={() => setImporting(false)} title="Import employees">
-        {importing ? <ImportEmployeesForm onDone={() => setImporting(false)} /> : null}
+      <Modal
+        open={importing}
+        onClose={() => setImporting(false)}
+        dismissible={!importLocked}
+        title="Import employees"
+      >
+        {importing ? <ImportEmployeesForm onDone={() => setImporting(false)} onLockChange={setImportLocked} /> : null}
       </Modal>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Add employee">
