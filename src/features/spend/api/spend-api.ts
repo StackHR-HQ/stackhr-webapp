@@ -1,5 +1,6 @@
 import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
+import { fetchAllApprovals } from '../../approvals/api/approvals-api'
 import type { ApprovalRequest } from '../../approvals/types/approval-request-types'
 import { initials } from '../../employee/lib/profile-format'
 import type { SalaryAdvanceStatusEntry } from '../../payroll/types/payroll-types'
@@ -124,7 +125,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 // A reimbursement claim submitted on its own is approved through an EXPENSE
 // approval request whose subject is the reimbursement rather than an expense.
-const isReimbursementApproval = (approval: ApprovalRequest) => approval.subjectTable === 'reimbursement'
+export const isReimbursementApproval = (approval: ApprovalRequest) => approval.subjectTable === 'reimbursement'
 
 const employeeName = (employee: ApiEmployeeRef | null) => employee?.fullName ?? 'Unknown employee'
 
@@ -147,16 +148,17 @@ async function fetchReimbursements(): Promise<ApiReimbursement[]> {
   return data.reimbursements
 }
 
-async function fetchApprovals(type: 'EXPENSE' | 'SALARY_ADVANCE'): Promise<ApprovalRequest[]> {
-  const { data } = await http.get<{ items: ApprovalRequest[] }>('/approvals', { params: { type, page: 1, limit: 100 } })
-  return data.items
-}
+// All of them, not just the first page, so older claims still find their approval.
+const fetchApprovals = (type: 'EXPENSE' | 'SALARY_ADVANCE') => fetchAllApprovals({ type })
 
 // The backend leaves a reimbursement PENDING after it's been decided:
 // - one created from an approved expense was approved at the expense stage;
 // - a claim keeps PENDING after its approval request is approved or rejected.
 // So a pending one takes its status from that decision.
-function reimbursementStatus(reimbursement: ApiReimbursement, approval?: ApprovalRequest): ReimbursementStatus {
+export function reimbursementStatus(
+  reimbursement: Pick<ApiReimbursement, 'status' | 'expenseId'>,
+  approval?: ApprovalRequest,
+): ReimbursementStatus {
   const status = REIMBURSEMENT_STATUS[toApiEnum(reimbursement.status)] ?? 'pending'
   if (status !== 'pending') return status
   if (reimbursement.expenseId || approval?.status === 'APPROVED') return 'approved'

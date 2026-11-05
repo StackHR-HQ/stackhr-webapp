@@ -23,8 +23,6 @@ import type {
   LeaveType,
   OnboardingTemplate,
   PaginatedEmployees,
-  Team,
-  TeamInput,
   UpdateEmployeePayload,
   UploadDocumentPayload,
   UploadDocumentResult,
@@ -49,7 +47,8 @@ function fileNameFromDisposition(header: unknown): string | undefined {
       // fall through to the plain filename
     }
   }
-  return /filename="?([^";]+)"?/i.exec(header)?.[1]?.trim() || undefined
+  // Anchored to a parameter start so a malformed filename*= isn't read as filename=.
+  return /(?:^|;)\s*filename="?([^";]+)"?/i.exec(header)?.[1]?.trim() || undefined
 }
 
 export const peopleApi = {
@@ -80,25 +79,6 @@ export const peopleApi = {
   async getDepartments(): Promise<Department[]> {
     const { data } = await http.get<Department[]>('/people/departments')
     return data.map(toDepartment)
-  },
-
-  async getTeams(): Promise<Team[]> {
-    const { data } = await http.get<Team[]>('/people/teams')
-    return data
-  },
-
-  async createTeam(payload: TeamInput): Promise<Team> {
-    const { data } = await http.post<Team>('/people/teams', payload)
-    return data
-  },
-
-  async updateTeam(id: string, payload: TeamInput): Promise<Team> {
-    const { data } = await http.patch<Team>(`/people/teams/${id}`, payload)
-    return data
-  },
-
-  async deleteTeam(id: string): Promise<void> {
-    await http.delete(`/people/teams/${id}`)
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {

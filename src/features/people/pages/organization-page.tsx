@@ -45,7 +45,7 @@ export function PeopleOrganizationPage() {
           {activeTab === 'departments' ? (
             <DepartmentsView departments={departments ?? []} employees={employees ?? []} />
           ) : null}
-          {/* The backend only lists teams (GET /people/teams); there's no way to create, edit or delete one yet. */}
+          {/* The backend only lists teams (GET /people/teams); there's no way to create, edit or delete one yet. The old TeamsView and its hooks were removed; rebuild them against the real contract when it ships. */}
           {activeTab === 'teams' ? (
             <ComingSoon
               icon={UsersThreeIcon}

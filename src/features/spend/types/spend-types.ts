@@ -58,7 +58,8 @@ export interface Reimbursement extends ReimbursementInfo {
 
 export interface ReimbursementTotals {
   count: number
-  amount: number
+  // One sum per currency; amounts in different currencies are never added together.
+  amounts: { currency: string; amount: number }[]
 }
 
 // Totals by stage, worked out from the list. GET /reimbursements/summary counts

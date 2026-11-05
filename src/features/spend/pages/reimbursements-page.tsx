@@ -38,7 +38,15 @@ export function ReimbursementsPage() {
     if (!reimbursements) return undefined
     const totals = (statuses: ReimbursementStatus[]) => {
       const matching = reimbursements.filter((reimbursement) => statuses.includes(reimbursement.status))
-      return { count: matching.length, amount: matching.reduce((sum, reimbursement) => sum + reimbursement.amount, 0) }
+      const byCurrency = new Map<string, number>()
+      for (const reimbursement of matching) {
+        const currency = reimbursement.currency || 'NGN'
+        byCurrency.set(currency, (byCurrency.get(currency) ?? 0) + reimbursement.amount)
+      }
+      return {
+        count: matching.length,
+        amounts: [...byCurrency].map(([currency, amount]) => ({ currency, amount })),
+      }
     }
     return { pending: totals(['pending']), approved: totals(['approved', 'processing']), paid: totals(['completed']) }
   }, [reimbursements])

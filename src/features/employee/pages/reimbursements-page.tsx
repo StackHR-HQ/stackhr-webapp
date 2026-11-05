@@ -4,7 +4,6 @@ import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import { Card } from '../../../components/ui/card'
 import { Modal } from '../../../components/ui/modal'
-import { toApiEnum } from '../../../lib/api-enum'
 import { getApiErrorMessage } from '../../../lib/http'
 import { notify } from '../../../lib/toast'
 import { formatAmount, formatDate } from '../../dashboard/lib/format'
@@ -39,7 +38,14 @@ export function MyReimbursementsPage() {
   const sorted = reimbursements.data
     ? reimbursements.data.toSorted((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
     : []
-  const isPending = profile.isPending || reimbursements.isPending
+  // The claims query waits for the profile's id, so a failed profile must be
+  // checked first or the skeleton would never go away.
+  const loadFailed = profile.isError || reimbursements.isError
+  const isPending = !loadFailed && (profile.isPending || reimbursements.isPending)
+  const retry = () => {
+    if (profile.isError) void profile.refetch()
+    else void reimbursements.refetch()
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -95,13 +101,13 @@ export function MyReimbursementsPage() {
 
       {isPending ? (
         <div className="h-48 animate-pulse rounded-panel border border-line bg-surface" />
-      ) : reimbursements.isError || profile.isError ? (
+      ) : loadFailed ? (
         <Card>
           <div className="py-4 text-center">
             <p className="text-sm text-muted">Couldn&apos;t load your reimbursements right now.</p>
             <button
               type="button"
-              onClick={() => reimbursements.refetch()}
+              onClick={retry}
               className="mt-2 text-sm font-medium text-accent hover:underline"
             >
               Try again
@@ -132,7 +138,8 @@ export function MyReimbursementsPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    {toApiEnum(reimbursement.status) === 'PENDING' && !reimbursement.expenseId ? (
+                    {/* Only a claim nobody has decided on yet can be cancelled. */}
+                    {reimbursement.status === 'pending' && !reimbursement.expenseId ? (
                       <button
                         type="button"
                         onClick={() => setCancelling(reimbursement)}

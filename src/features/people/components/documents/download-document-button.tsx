@@ -5,6 +5,26 @@ import { getApiErrorMessage } from '../../../../lib/http'
 import { notify } from '../../../../lib/toast'
 import { peopleApi } from '../../api/people-api'
 
+const EXTENSIONS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'text/csv': 'csv',
+  'text/plain': 'txt',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+}
+
+// The API's CORS setup doesn't expose Content-Disposition to the browser, so
+// the real file name is often unreadable. The display name ("Offer Letter")
+// then gets an extension from the file's type, so the OS can open it.
+function withExtension(name: string, mimeType: string): string {
+  const extension = EXTENSIONS[mimeType.split(';')[0].trim().toLowerCase()]
+  return extension && !name.toLowerCase().endsWith(`.${extension}`) ? `${name}.${extension}` : name
+}
+
 // Fetches the file with the session cookie, then hands it to the browser as a download.
 export function DownloadDocumentButton({ documentId, name }: { documentId: string; name: string }) {
   const [downloading, setDownloading] = useState(false)
@@ -13,7 +33,7 @@ export function DownloadDocumentButton({ documentId, name }: { documentId: strin
     setDownloading(true)
     try {
       const { blob, fileName } = await peopleApi.downloadDocument(documentId)
-      downloadBlob(blob, fileName ?? name)
+      downloadBlob(blob, fileName ?? withExtension(name, blob.type))
     } catch (err) {
       notify.error(`Couldn't download ${name}`, getApiErrorMessage(err))
     } finally {

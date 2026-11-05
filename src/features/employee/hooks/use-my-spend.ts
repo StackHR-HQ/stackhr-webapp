@@ -18,26 +18,28 @@ export function useMyReimbursements(employeeId: string | undefined) {
   })
 }
 
-export function useSubmitReimbursement() {
+// A claim also shows up on Spend > Reimbursements, in Approvals and on the
+// dashboard (a manager or admin can claim too), so those refresh with it.
+function useInvalidateClaims() {
   const queryClient = useQueryClient()
+  return () => {
+    for (const queryKey of [['me'], ['spend'], ['approvals'], ['dashboard']]) {
+      void queryClient.invalidateQueries({ queryKey })
+    }
+  }
+}
 
+export function useSubmitReimbursement() {
+  const onSuccess = useInvalidateClaims()
   return useMutation({
     mutationFn: (payload: ReimbursementPayload) => employeeApi.submitReimbursement(payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['me'] })
-    },
+    onSuccess,
   })
 }
 
 export function useCancelReimbursement() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (id: string) => employeeApi.cancelReimbursement(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['me'] })
-    },
-  })
+  const onSuccess = useInvalidateClaims()
+  return useMutation({ mutationFn: (id: string) => employeeApi.cancelReimbursement(id), onSuccess })
 }
 
 export function useSubmitExpense() {
