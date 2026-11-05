@@ -38,11 +38,14 @@ export function useAttestPayrollFunding() {
 }
 
 export function useExecutePayrollRun() {
-  const onSuccess = useInvalidateRuns()
+  const queryClient = useQueryClient()
+  const invalidateRuns = useInvalidateRuns()
   return useMutation({
     mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) =>
       payrollApi.executeRun(id, idempotencyKey),
-    onSuccess,
+    // Paying moves money out of the company account, so its balance is stale too.
+    onSuccess: () =>
+      Promise.all([invalidateRuns(), queryClient.invalidateQueries({ queryKey: ['banking', 'deposit-account'] })]),
   })
 }
 

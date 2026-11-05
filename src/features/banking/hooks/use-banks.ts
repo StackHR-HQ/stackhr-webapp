@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { bankingApi } from '../api/banking-api'
 
 const NUBAN = /^\d{10}$/
@@ -10,6 +10,23 @@ export function useBanks() {
     // The backend caches the list for a day; it rarely changes.
     staleTime: 60 * 60 * 1000,
     retry: false,
+  })
+}
+
+export function useDepositAccount(enabled = true) {
+  return useQuery({
+    queryKey: ['banking', 'deposit-account'],
+    queryFn: () => bankingApi.getDepositAccount(),
+    enabled,
+    retry: false,
+  })
+}
+
+export function useSyncDepositAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => bankingApi.syncDepositAccount(),
+    onSuccess: (account) => queryClient.setQueryData(['banking', 'deposit-account'], account),
   })
 }
 

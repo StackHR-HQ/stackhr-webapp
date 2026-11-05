@@ -1,5 +1,7 @@
 import { Link } from 'react-router'
 import { Card } from '../../../components/ui/card'
+import { USE_MOCK_PAYROLL } from '../../../lib/env'
+import { DepositAccountCard } from '../../banking/components/deposit-account-card'
 import { ComplianceWarningsCard } from '../components/overview/compliance-warnings-card'
 import { CurrentPayrollCard } from '../components/overview/current-payroll-card'
 import { PayrollOverviewStats } from '../components/overview/payroll-overview-stats'
@@ -78,6 +80,8 @@ export function PayrollOverviewPage() {
         </div>
 
         <div className="space-y-6">
+          {/* Real data only: the mock payroll has no account behind it. */}
+          {USE_MOCK_PAYROLL ? null : <DepositAccountCard />}
           <UpcomingPayrollCard runs={data.upcomingRuns} />
           <ComplianceWarningsCard warnings={data.complianceWarnings} />
         </div>

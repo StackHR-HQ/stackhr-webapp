@@ -3,6 +3,7 @@ import { useDeferredValue, useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Modal } from '../../../components/ui/modal'
 import { AddEmployeeForm } from '../components/employees/add-employee-form'
+import { ImportEmployeesForm } from '../components/employees/import-employees-form'
 import { EmployeeStatusTabs, type EmployeeStatusFilter } from '../components/employees/employee-status-tabs'
 import { EmployeesTable } from '../components/employees/employees-table'
 import { PeopleLoadError } from '../components/people-load-error'
@@ -16,6 +17,8 @@ export function EmployeesPage() {
   const [statusFilter, setStatusFilter] = useState<EmployeeStatusFilter>('all')
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importLocked, setImportLocked] = useState(false)
 
   const deferredSearch = useDeferredValue(search)
   const directoryQuery = useEmployeeDirectory({
@@ -51,12 +54,24 @@ export function EmployeesPage() {
           <h1 className="text-xl font-medium text-ink">Employees</h1>
           <p className="mt-1 text-sm text-muted">Browse and manage everyone in your organization.</p>
         </div>
-        <div className="shrink-0">
-          <Button type="button" onClick={() => setAdding(true)} className="px-4">
+        <div className="flex shrink-0 gap-2">
+          <Button type="button" variant="secondary" width="fit" onClick={() => setImporting(true)} className="px-4">
+            Import CSV
+          </Button>
+          <Button type="button" width="fit" onClick={() => setAdding(true)} className="px-4">
             Add employee
           </Button>
         </div>
       </div>
+
+      <Modal
+        open={importing}
+        onClose={() => setImporting(false)}
+        dismissible={!importLocked}
+        title="Import employees"
+      >
+        {importing ? <ImportEmployeesForm onDone={() => setImporting(false)} onLockChange={setImportLocked} /> : null}
+      </Modal>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Add employee">
         <AddEmployeeForm onDone={() => setAdding(false)} onCancel={() => setAdding(false)} />

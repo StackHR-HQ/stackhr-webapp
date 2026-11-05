@@ -159,6 +159,21 @@ export interface EmployeeSalaryRow extends EmployeeRef {
   payFrequency: string
 }
 
+// What POST /payroll/runs/:id/execute did. The run itself doesn't keep this,
+// so it's only available straight after paying. Amounts are whole naira.
+export interface PayrollExecution {
+  // Set when Anchor sent the transfers.
+  bulkTransfer: {
+    reference: string
+    status: string
+    transfersCount: number
+    totalAmount: number
+  } | null
+  // Who to pay and how much; the fallback when transfers weren't sent automatically.
+  transfers: { employeeName: string; amount: number; currency: string }[]
+  totalNet: number
+}
+
 // An employee's current pay split, whole currency units per month.
 export interface CompensationBreakdown {
   basicSalary: number

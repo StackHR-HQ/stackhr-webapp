@@ -1,5 +1,6 @@
 import { DownloadSimpleIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { downloadBlob } from '../../../../lib/download'
 import { getApiErrorMessage } from '../../../../lib/http'
 import { notify } from '../../../../lib/toast'
 import { peopleApi } from '../../api/people-api'
@@ -32,13 +33,7 @@ export function DownloadDocumentButton({ documentId, name }: { documentId: strin
     setDownloading(true)
     try {
       const { blob, fileName } = await peopleApi.downloadDocument(documentId)
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = fileName ?? withExtension(name, blob.type)
-      link.click()
-      // Give the browser a moment to start the download before releasing the blob.
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      downloadBlob(blob, fileName ?? withExtension(name, blob.type))
     } catch (err) {
       notify.error(`Couldn't download ${name}`, getApiErrorMessage(err))
     } finally {

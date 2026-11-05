@@ -11,6 +11,8 @@ import type {
   DepartmentInput,
   DocumentTemplate,
   EmployeeDetail,
+  EmployeeImportResult,
+  LeaveRequestDetail,
   EmployeeDirectoryParams,
   EmployeeDocumentRow,
   EmployeeLeaveBalanceRow,
@@ -217,6 +219,66 @@ export const peopleApi = {
         }
       }
       throw err
+    }
+  },
+
+  async getLeaveRequest(id: string): Promise<LeaveRequestDetail> {
+    const { data } = await http.get<{
+      leaveRequest: {
+        id: string
+        startDate: string
+        endDate: string
+        totalDays?: number
+        days?: number
+        reason: string | null
+        status: string
+        createdAt: string
+        decidedAt: string | null
+        leaveType: { name: string; paid?: boolean } | null
+      }
+    }>(`/leave/requests/${id}`) // No /people/ equivalent on staging; admin access is unconfirmed.
+    const request = data.leaveRequest
+    return {
+      leaveType: request.leaveType?.name ?? 'Leave',
+      paid: request.leaveType?.paid ?? null,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      days: request.totalDays ?? request.days ?? 0,
+      reason: request.reason || null,
+      status: request.status.toLowerCase(),
+      submittedAt: request.createdAt,
+      decidedAt: request.decidedAt,
+    }
+  },
+
+  // Bulk-creates employees from raw CSV text. The response isn't documented,
+  // so whatever counts and errors it returns are read leniently.
+  async importEmployees(csv: string): Promise<EmployeeImportResult> {
+    const { data } = await http.post<Record<string, unknown>>('/onboarding/employees/import', { csv })
+    const count = (...keys: string[]) => {
+      for (const key of keys) {
+        const value = data?.[key]
+        if (typeof value === 'number') return value
+        if (Array.isArray(value)) return value.length
+      }
+      return null
+    }
+    const errors = data?.errors ?? data?.failed ?? data?.failures
+    return {
+      imported: count('imported', 'importedCount', 'created', 'createdCount', 'employees', 'success'),
+      errors: Array.isArray(errors)
+        ? errors.map((error) => {
+            if (typeof error === 'string') return error
+            const line = [
+              error?.row != null ? `Row ${error.row}` : error?.email,
+              error?.message ?? error?.reason ?? error?.error,
+            ]
+              .filter(Boolean)
+              .join(': ')
+            // An unfamiliar shape is still shown rather than left as a blank bullet.
+            return line || JSON.stringify(error) || 'A row was skipped for an unknown reason.'
+          })
+        : [],
     }
   },
 
