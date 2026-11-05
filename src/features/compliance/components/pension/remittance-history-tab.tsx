@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { Badge } from '../../../../components/ui/badge'
 import { Button } from '../../../../components/ui/button'
 import { Modal } from '../../../../components/ui/modal'
-import type { PensionSchedule } from '../../api/pension-api'
+import { withDefaults, type PensionSchedule } from '../../api/pension-api'
 import { usePensionComplianceReport, usePensionSchedule, usePensionSchedules } from '../../hooks/use-pension'
 import { formatAmount, formatDate } from '../../lib/format'
 import { scheduleStatusMeta } from '../../lib/pension-status'
@@ -26,24 +26,31 @@ function Tile({ icon: TileIcon, label, count, amount }: { icon: Icon; label: str
   )
 }
 
+const isEmpty = (value: unknown) =>
+  value == null || value === 0 || value === '' || (Array.isArray(value) && value.length === 0)
+
 // The list and the detail endpoint each return only some fields; keep whatever either has.
 function mergeSchedule(listItem: PensionSchedule | undefined, detail: PensionSchedule | undefined) {
-  if (!listItem) return detail
-  if (!detail) return listItem
+  if (!listItem || !detail) {
+    const only = listItem ?? detail
+    return only && withDefaults(only)
+  }
   const merged = { ...listItem }
   for (const [key, value] of Object.entries(detail) as [keyof PensionSchedule, unknown][]) {
-    if (value != null && value !== 0 && value !== '') Object.assign(merged, { [key]: value })
+    if (!isEmpty(value)) Object.assign(merged, { [key]: value })
   }
-  return merged
+  return withDefaults(merged)
 }
 
 export function RemittanceHistoryTab({ connected }: { connected: boolean }) {
-  const schedules = usePensionSchedules(true)
+  const schedules = usePensionSchedules()
   const report = usePensionComplianceReport(connected)
   const [creating, setCreating] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
   const detail = usePensionSchedule(openId)
 
+  // Includes cancelled schedules on purpose: the backend allows one schedule per
+  // payroll run, whatever its status, so those runs can't get a new one.
   const existingRunIds = useMemo(
     () => new Set((schedules.data ?? []).flatMap((schedule) => (schedule.payrollRunId ? [schedule.payrollRunId] : []))),
     [schedules.data],

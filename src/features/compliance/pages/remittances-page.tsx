@@ -47,7 +47,16 @@ export function RemittancesPage() {
 
       <UnderlineTabs tabs={REMITTANCES_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {isError ? (
+      {/* Pension remittances load their own data, so a payroll overview failure doesn't hide them. */}
+      {activeTab === 'history' ? (
+        <RemittanceHistoryTab connected={Boolean(employer.data?.isAttached)} />
+      ) : activeTab === 'exports' ? (
+        <ComingSoon
+          icon={DownloadSimpleIcon}
+          title="Remittance exports"
+          description="Soon you'll be able to download remittance schedules in the format each statutory body expects, ready to file."
+        />
+      ) : isError ? (
         <div className="rounded-panel border border-line bg-surface p-6 text-center shadow-panel">
           <p className="text-sm font-medium text-ink">Couldn't load remittance data</p>
           <button
@@ -73,14 +82,6 @@ export function RemittancesPage() {
               lines={data.currentRun?.lines ?? []}
               currency={data.currentRun?.summary.currency ?? 'NGN'}
               statutoryContributions={data.statutoryContributions}
-            />
-          ) : null}
-          {activeTab === 'history' ? <RemittanceHistoryTab connected={Boolean(employer.data?.isAttached)} /> : null}
-          {activeTab === 'exports' ? (
-            <ComingSoon
-              icon={DownloadSimpleIcon}
-              title="Remittance exports"
-              description="Soon you'll be able to download remittance schedules in the format each statutory body expects, ready to file."
             />
           ) : null}
         </>

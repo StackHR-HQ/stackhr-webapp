@@ -17,8 +17,10 @@ export function usePfas() {
   })
 }
 
-export function usePensionSchedules(enabled: boolean) {
-  return useQuery({ queryKey: [...PENSION, 'schedules'], queryFn: () => pensionApi.getSchedules(), enabled })
+// Read from StackHR's own records (no PenCentral call), so it loads whether or
+// not PenCentral is connected.
+export function usePensionSchedules() {
+  return useQuery({ queryKey: [...PENSION, 'schedules'], queryFn: () => pensionApi.getSchedules() })
 }
 
 export function usePensionSchedule(id: string | null) {
@@ -66,5 +68,16 @@ export const useCreateScheduleFromPayroll = () =>
 export const useValidateSchedule = () => usePensionMutation((id: string) => pensionApi.validateSchedule(id))
 export const useCheckValidation = () => usePensionMutation((id: string) => pensionApi.getValidationStatus(id))
 export const useSubmitSchedule = () => usePensionMutation((id: string) => pensionApi.submitSchedule(id))
-export const useInitiatePensionPayment = () => usePensionMutation((id: string) => pensionApi.initiatePayment(id))
+// The account to pay into comes back in this response; cache it on the
+// schedule straight away rather than relying on the refetch to carry it.
+export function useInitiatePensionPayment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => pensionApi.initiatePayment(id),
+    onSuccess: (schedule) => {
+      queryClient.setQueryData([...PENSION, 'schedules', schedule.id], schedule)
+      return queryClient.invalidateQueries({ queryKey: PENSION })
+    },
+  })
+}
 export const useSyncPensionPayment = () => usePensionMutation((id: string) => pensionApi.syncPaymentStatus(id))

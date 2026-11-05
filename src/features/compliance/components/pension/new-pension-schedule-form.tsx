@@ -57,6 +57,13 @@ export function NewPensionScheduleForm({
 
       {runs.isPending ? (
         <div className="h-16 animate-pulse rounded-lg bg-canvas" />
+      ) : runs.isError ? (
+        <p className="rounded-lg border border-line px-3 py-4 text-center text-sm text-muted">
+          Couldn&apos;t load payroll runs: {pensionErrorMessage(runs.error)}{' '}
+          <button type="button" onClick={() => runs.refetch()} className="font-medium text-accent hover:underline">
+            Try again
+          </button>
+        </p>
       ) : eligible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line px-3 py-4 text-center text-sm text-muted">
           There&apos;s no approved payroll run without a schedule. Approve a payroll run first.

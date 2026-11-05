@@ -29,19 +29,30 @@ http.interceptors.response.use(
       // /auth/* returns 401 for bad credentials, which isn't an expired session
       const url = error.config?.url ?? ''
       const isCredentialCheck = url.startsWith('/auth/') && url !== '/auth/me'
-      // Pension routes call PenCentral and pass its 401 through when the
-      // backend's partner credentials are missing; that isn't an expired session.
-      const isPartnerAuthFailure = url.startsWith('/pension/') && /partner credential/i.test(errorMessage(error))
-      if (!isCredentialCheck && !isPartnerAuthFailure) useAuthStore.getState().clearSession()
+      if (!isCredentialCheck && !isPartnerCredentialError(error)) useAuthStore.getState().clearSession()
     }
     return Promise.reject(error)
   },
 )
 
-function errorMessage(error: unknown): string {
+// The message the backend put in an error response, whichever envelope it used.
+function responseMessage(error: unknown): string {
   if (!isAxiosError(error)) return ''
   const message: unknown = error.response?.data?.message ?? error.response?.data?.error?.message
-  return typeof message === 'string' ? message : ''
+  if (typeof message === 'string') return message
+  if (Array.isArray(message)) return message.join(', ')
+  return ''
+}
+
+// Stopgap: pension routes pass PenCentral's own 401 through when the backend's
+// partner credentials are missing. That isn't an expired session, so it mustn't
+// sign the user out. The backend should send a distinct status (502/424) or
+// error code for upstream failures instead; until then this matches the
+// /pension/ route and PenCentral's wording, in this one place.
+export function isPartnerCredentialError(error: unknown): boolean {
+  if (!isAxiosError(error) || error.response?.status !== 401) return false
+  const url = error.config?.url ?? ''
+  return url.startsWith('/pension/') && /partner credential/i.test(responseMessage(error))
 }
 
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
@@ -50,9 +61,8 @@ export function getApiErrorMessage(error: unknown, fallback = 'Something went wr
     if (!error.response) return "We couldn't reach the server. Check your connection and try again."
     if (error.response.status >= 500) return 'Something went wrong on our end. Please try again in a moment.'
 
-    const message: unknown = error.response.data?.message ?? error.response.data?.error?.message
-    if (typeof message === 'string' && message) return message
-    if (Array.isArray(message) && message.length > 0) return message.join(', ')
+    const message = responseMessage(error)
+    if (message) return message
   }
   return fallback
 }

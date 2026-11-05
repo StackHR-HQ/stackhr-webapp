@@ -1,5 +1,5 @@
 import type { BadgeTone } from '../../../components/ui/badge'
-import { getApiErrorMessage } from '../../../lib/http'
+import { getApiErrorMessage, isPartnerCredentialError } from '../../../lib/http'
 
 const SCHEDULE_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   DRAFT: { label: 'Draft', tone: 'neutral' },
@@ -33,8 +33,7 @@ export const missingFieldLabel = (field: string) => MISSING_FIELD[field] ?? fiel
 // PenCentral's 401 for missing partner credentials is a setup problem on our
 // side, not something the customer can fix; say so plainly.
 export function pensionErrorMessage(error: unknown): string {
-  const message = getApiErrorMessage(error)
-  return /partner credential/i.test(message)
+  return isPartnerCredentialError(error)
     ? "StackHR can't reach PenCentral right now. Please try again later, or contact support if this keeps happening."
-    : message
+    : getApiErrorMessage(error)
 }
