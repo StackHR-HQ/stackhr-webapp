@@ -119,6 +119,8 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
         ...pfas.data.map((pfa) => ({ value: pfa.name, label: pfa.name })),
       ]
     : []
+  // Matched by name, so a saved provider gets its code even if it predates the list.
+  const pfaCodeFor = (name: string) => pfas.data?.find((pfa) => pfa.name === name.trim())?.code ?? null
 
   // The bank's record of the holder's name wins over what was typed.
   useEffect(() => {
@@ -133,6 +135,13 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
     const update: ProfileUpdate = Object.fromEntries(
       (Object.keys(dirtyFields) as (keyof ProfileFormValues)[]).map((key) => [key, values[key].trim() || null]),
     )
+    // Pension schedules check pfaCode, so keep it in step with the chosen PFA.
+    // Without the list, a typed name can't be matched, so the code is left alone;
+    // an unchanged provider only fills in a missing code, never clears one.
+    if (pfas.data && (dirtyFields.pensionProvider || !profile.pfaCode)) {
+      const pfaCode = pfaCodeFor(values.pensionProvider)
+      if (pfaCode !== (profile.pfaCode ?? null)) update.pfaCode = pfaCode
+    }
     if (Object.keys(update).length === 0) {
       onDone()
       return
@@ -199,7 +208,11 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
       <FieldGroup title="Tax and pension">
         <TextField label="Tax ID (TIN)" {...field('tin')} />
         {pfas.data ? (
-          <SelectField label="Pension provider (PFA)" placeholder="Select your PFA" options={pfaOptions} {...field('pensionProvider')} />
+          <SelectField
+            label="Pension provider (PFA)"
+            options={[{ value: '', label: 'Not set' }, ...pfaOptions]}
+            {...field('pensionProvider')}
+          />
         ) : (
           <TextField label="Pension provider" {...field('pensionProvider')} />
         )}

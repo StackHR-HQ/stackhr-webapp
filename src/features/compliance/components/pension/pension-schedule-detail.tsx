@@ -31,7 +31,11 @@ const naira = (amount: number | null) => (amount == null ? '—' : formatAmount(
 export function PensionScheduleDetail({ schedule }: { schedule: PensionSchedule }) {
   const status = scheduleStatusMeta(schedule.status)
   const [error, setError] = useState<string>()
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  // From "Check validation" this session; otherwise what the schedule kept from
+  // its last failed validation, so reopening it still shows what to fix.
+  const [checkedErrors, setCheckedErrors] = useState<string[] | null>(null)
+  const validationErrors =
+    checkedErrors ?? (schedule.status === 'VALIDATION_FAILED' ? schedule.validationErrors : [])
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
 
   const validate = useValidateSchedule()
@@ -54,14 +58,14 @@ export function PensionScheduleDetail({ schedule }: { schedule: PensionSchedule 
 
   const sendForValidation = () =>
     run(async () => {
-      setValidationErrors([])
+      setCheckedErrors([])
       await validate.mutateAsync(schedule.id)
     }, 'Sent to PenCentral for validation')
 
   const refreshValidation = () =>
     run(async () => {
       const result = await checkValidation.mutateAsync(schedule.id)
-      setValidationErrors(result.errors)
+      setCheckedErrors(result.errors.length ? result.errors : result.schedule.validationErrors)
       if (result.penCentralStatus === 'pending') notify.success('PenCentral is still checking this schedule')
     })
 
@@ -91,8 +95,8 @@ export function PensionScheduleDetail({ schedule }: { schedule: PensionSchedule 
         <div className="rounded-lg border border-critical/40 bg-critical/5 px-3 py-2.5 text-sm">
           <p className="font-medium text-critical">PenCentral found problems with these rows</p>
           <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-ink">
-            {validationErrors.map((line) => (
-              <li key={line}>{line}</li>
+            {validationErrors.map((line, index) => (
+              <li key={index}>{line}</li>
             ))}
           </ul>
           <p className="mt-2 text-muted">Fix the employees&apos; pension details, then send the schedule again.</p>

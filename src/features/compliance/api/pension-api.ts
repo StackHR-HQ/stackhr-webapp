@@ -52,6 +52,8 @@ export interface PensionSchedule {
   virtualAccountName: string | null
   receiptId: string | null
   createdAt: string | null
+  // PenCentral's row problems from the last failed validation, kept on the schedule.
+  validationErrors: string[]
 }
 
 export interface ValidationResult {
@@ -125,16 +127,34 @@ function num(value: unknown): number | null {
 // The backend sends both camelCase and snake_case for PenCentral fields.
 const pick = (source: Loose, camel: string, snake: string) => source[camel] ?? source[snake]
 
+// The backend stores the month as its English name; a number (or numeric
+// string) is turned into one too.
+function monthName(month: unknown): string | null {
+  const index = num(month)
+  return index != null ? (MONTHS[index - 1] ?? null) : str(month)
+}
+
+function parseErrors(json: unknown): string[] {
+  if (typeof json !== 'string' || !json) return []
+  try {
+    const parsed: unknown = JSON.parse(json)
+    return Array.isArray(parsed) ? parsed.map(toReadableError) : [toReadableError(parsed)]
+  } catch {
+    return [json]
+  }
+}
+
+// Fields a response leaves out stay empty ('' or null) rather than getting a
+// default, so merging the list and detail keeps whichever one has the value.
+// Fallbacks for display live in withDefaults.
 function toSchedule(raw: Loose): PensionSchedule {
-  const month = raw.periodMonth
-  const monthName = typeof month === 'number' ? MONTHS[month - 1] : str(month)
   const year = num(raw.periodYear) ?? 0
   return {
     id: String(raw.id),
     payrollRunId: str(raw.payrollRunId),
-    periodLabel: [monthName, year || null].filter(Boolean).join(' ') || 'Pension schedule',
+    periodLabel: [monthName(raw.periodMonth), year || null].filter(Boolean).join(' '),
     periodYear: year,
-    status: str(raw.status)?.toUpperCase() ?? 'DRAFT',
+    status: str(raw.status)?.toUpperCase() ?? '',
     employeeCount: num(raw.employeeCount),
     totalEmployeePension: num(raw.totalEmployeePension),
     totalEmployerPension: num(raw.totalEmployerPension),
@@ -144,7 +164,20 @@ function toSchedule(raw: Loose): PensionSchedule {
     virtualAccountName: str(raw.virtualAccountName),
     receiptId: str(pick(raw, 'receiptId', 'receipt_id')),
     createdAt: str(raw.createdAt),
+    validationErrors: parseErrors(raw.validationErrorsJson),
   }
+}
+
+export function withDefaults(schedule: PensionSchedule): PensionSchedule {
+  return { ...schedule, periodLabel: schedule.periodLabel || 'Pension schedule', status: schedule.status || 'DRAFT' }
+}
+
+// A field the rest of the flow depends on; better to fail loudly than to carry
+// the text 'undefined' into the UI or the next request.
+function required(source: Loose, camel: string, snake: string): string {
+  const value = pick(source, camel, snake)
+  if (typeof value !== 'string' || !value) throw new Error(`PenCentral's response is missing ${camel}.`)
+  return value
 }
 
 function toReadableError(raw: unknown): string {
@@ -189,10 +222,10 @@ export const pensionApi = {
   async validateEmployer(employerCode: string): Promise<EmployerValidation> {
     const { data } = await http.post<Loose>('/pension/employers/validate', { employerCode })
     return {
-      validationId: String(pick(data, 'validationId', 'validation_id')),
-      employerCode: String(pick(data, 'employerCode', 'employer_code')),
-      employerName: String(pick(data, 'employerName', 'employer_name')),
-      expiresAt: String(pick(data, 'expiresAt', 'expires_at')),
+      validationId: required(data, 'validationId', 'validation_id'),
+      employerCode: required(data, 'employerCode', 'employer_code'),
+      employerName: required(data, 'employerName', 'employer_name'),
+      expiresAt: required(data, 'expiresAt', 'expires_at'),
     }
   },
 
@@ -210,8 +243,9 @@ export const pensionApi = {
   },
 
   async getSchedules(): Promise<PensionSchedule[]> {
-    const { data } = await http.get<{ schedules: Loose[] }>('/pension/schedules')
-    return data.schedules.map(toSchedule)
+    const { data } = await http.get<{ schedules?: Loose[] } | Loose[]>('/pension/schedules')
+    const list = Array.isArray(data) ? data : data?.schedules
+    return Array.isArray(list) ? list.map(toSchedule).map(withDefaults) : []
   },
 
   async getSchedule(id: string): Promise<PensionSchedule> {
@@ -223,7 +257,7 @@ export const pensionApi = {
   async createScheduleFromPayroll(payrollRunId: string): Promise<PensionSchedule> {
     try {
       const { data } = await http.post<Loose>(`/pension/schedules/from-payroll/${payrollRunId}`)
-      return toSchedule((data.schedule as Loose | undefined) ?? data)
+      return withDefaults(toSchedule((data.schedule as Loose | undefined) ?? data))
     } catch (err) {
       const employees = incompleteEmployees(err)
       if (employees) {
