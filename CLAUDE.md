@@ -2,37 +2,54 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status
+## What this is
 
-This repo is the **early scaffold** for the StackHR web app (a React + Vite + TypeScript rebuild). Right now `src/` still contains the unmodified default Vite template (`App.tsx` renders the Vite/React starter page) — there is no routing, state management, API layer, auth, or backend code here yet. Don't assume any of the infrastructure described below already exists in this repo; check before relying on it.
-
-`StackHR-MVP-Technical-Specification-aligned.md` documents the **target product** (a live, deployed HR/Payroll/Spend platform for African SMEs) that this codebase is presumably being built toward or alongside. Key facts from that spec worth knowing when working here:
-
-- Product: unifies People Ops, Payroll Ops, and Spend Ops (employees, leave, payroll/tax compliance, expenses, reimbursements, salary advances, approvals, RBAC) for African SMEs, beta live at app.stackhr.app.
-- Target stack per the spec: BetterAuth (auth), NeonDB PostgreSQL + Postgres RLS (multi-tenant, `org_id`-scoped), Cloudflare R2 (storage), Sendbyte (email), Anchor (NGN payments, test mode), Vercel (hosting, auto-deploy on push), Sentry (errors), GA4 (analytics), Playwright (E2E). **None of these are wired into this repo yet** — `package.json` currently only has `react`, `react-dom`, and Vite tooling.
-- Payroll is designed as a rule-based compliance engine: tax rules (e.g. `NG-2026-v1`, `NG-2025`) are versioned and selected automatically by payroll period, kept separate from the payroll engine version and from per-run settings snapshots, so historical runs never silently change when rules are updated later.
-- Roles are Admin / Manager / Employee, access is purely role-based (no tier-based feature gating yet).
-
-Treat the spec as background/context for product direction, not as a description of code that exists in this checkout.
+Frontend SPA for StackHR — an HR / Payroll / Spend platform for African SMEs (People Ops, Payroll Ops, Spend Ops, Compliance). React 19 + Vite 8 + TypeScript, talking to a separate REST backend (not in this repo). `StackHR-MVP-Technical-Specification-aligned.md` describes the target product (payroll as a versioned, rule-based tax compliance engine; Admin / Manager / Employee RBAC); treat it as product context, not a description of this code. `docs/*.md` hold backend endpoint contracts for the features being integrated, and `sidebar.md` is the intended nav IA.
 
 ## Commands
 
-Package manager is **bun** (`bun.lock` is present — use `bun`, not `npm`/`yarn`).
+Package manager is **bun** (use `bun`, not npm/yarn).
 
 ```bash
-bun install       # install dependencies
-bun run dev        # start Vite dev server with HMR
-bun run build       # type-check (tsc -b) then production build via Vite
-bun run lint        # ESLint over the whole repo
-bun run preview     # preview the production build locally
+bun install                      # run after every pull — missing deps make Vite fail with "could not be resolved"
+bun run dev                      # Vite dev server on :5173
+bun run build                    # tsc -b, then vite build
+bun run lint                     # ESLint (flat config)
+bun test                         # unit tests in tests/*.test.ts (bun:test)
+bun test tests/people-api.test.ts          # single file
+bun test -t "creates a department"         # single test by name
 ```
 
-There is no test script configured in `package.json` yet. The `webapp-testing` skill (`.agents/skills/webapp-testing/`) is available for writing Playwright-based browser tests against the dev server when testing is needed — see `scripts/with_server.py --help` for managing the dev server lifecycle during automated tests.
+Unit tests exercise the API modules by swapping `http.defaults.adapter` for a stub that captures the outgoing request, then asserting URL/method/body — follow that pattern for new API tests. `tests/auth-flow.e2e.py` is a Playwright script driven by `.agents/skills/webapp-testing/scripts/with_server.py`; note that the `test:e2e:mock` script sets `VITE_USE_MOCK_AUTH`, but nothing in `src/` reads that flag any more.
 
-## Architecture notes
+Deploys are static builds (`netlify.toml`, `render.yaml`) with an SPA fallback rewrite to `index.html`.
 
-- Build tooling: Vite 8 + `@vitejs/plugin-react`, TypeScript ~6 in project-references mode (`tsconfig.json` → `tsconfig.app.json` for `src/`, `tsconfig.node.json` for Vite config). `tsconfig.app.json` has `noUnusedLocals`/`noUnusedParameters`/`verbatimModuleSyntax` enabled — unused imports/vars and non-type-only type imports will fail the build.
-- Linting: flat ESLint config (`eslint.config.js`) using `typescript-eslint` recommended rules, `eslint-plugin-react-hooks`, and `eslint-plugin-react-refresh` (Vite-flavored). `dist` is ignored.
-- Styling is plain CSS with custom properties (see `src/index.css`, `src/App.css`) — **Tailwind is not installed** despite a `tailwind-design-system` skill being present in `.agents/skills/`; don't assume Tailwind classes will work without adding the dependency first.
-- Icons are served as an SVG sprite from `public/icons.svg` and referenced via `<use href="/icons.svg#...">`.
-- `.agents/skills/` holds project-level agent skills pulled in via `skills-lock.json` (apple-design, emil-design-eng, tailwind-design-system, webapp-testing) — consult these for design/UI conventions and testing workflows when relevant to the task at hand.
+## Environment
+
+Copy `.env.example` to `.env`. `VITE_API_BASE_URL` is the backend base (e.g. `http://localhost:3001/v1/api`). The backend sends no CORS headers for localhost, so in dev `vite.config.ts` proxies the URL's path to its origin and `src/lib/env.ts` rewrites `API_BASE_URL` to the bare path; use `resolveApiUrl()` for server-relative file URLs (e.g. document downloads).
+
+`VITE_USE_MOCK_SETTINGS` / `VITE_USE_MOCK_PAYROLL` / `VITE_USE_MOCK_SPEND` default to **mocked** unless set to the string `"false"`.
+
+## Architecture
+
+**Feature folders.** `src/features/<feature>/` each with some of: `api/`, `hooks/`, `pages/`, `components/`, `schemas/` (zod), `types/`, `lib/` (pure helpers), `data/` (static/mock data), `store/` (zustand). Shared UI primitives are in `src/components/ui/`, shared utilities in `src/lib/`. All routes are declared in `src/App.tsx`.
+
+**Data flow: page → hook → api → `http`.**
+- `src/lib/http.ts` is the single axios instance (`withCredentials`, cookie session). Its response interceptor **unwraps the `{ success, message, data }` envelope**, so API functions receive `data` directly. A 401 clears the auth session, except on `/auth/*` credential checks (other than `/auth/me`).
+- Each feature's `*-api.ts` exports an object of request functions. Features that still have mock backends (settings, team-access, payroll, spend) add a `*-mock-api.ts` with the same shape and a `*-service.ts` that picks one based on the env flag — hooks import the **service**, not the api directly.
+- Hooks wrap TanStack Query. Query keys are arrays namespaced by feature (`['people', 'leave', ...]`); mutations invalidate the feature prefix on success. Use `getApiErrorMessage()` from `lib/http.ts` for user-facing errors and `lib/toast.ts`/sonner for notifications. `lib/api-enum.ts` converts between UI and backend enum casing.
+- The global `QueryClient` (`src/main.tsx`) doesn't retry 4xx and is cleared whenever the logged-in user changes.
+
+**Auth & roles.** `features/auth/store/auth-store.ts` (zustand `persist`) holds the user; "remember me" decides localStorage vs sessionStorage. `routing/protected-route.tsx` gates on a session and runs `useSyncSession`; `routing/role-route.tsx` redirects roles the backend would 403. Roles are `admin | manager | employee`: `/people`, `/payroll`, `/compliance`, `/reports`, `/settings` are admin-only; `/spend` is admin+manager; `/me/*` is the employee self-service area (wrapped in `EmployeeRecordGate`, which requires an employee record); `/` renders the admin or employee dashboard by role. When adding a page, update both the route in `App.tsx` and `features/dashboard/components/sidebar-nav-data.ts`.
+
+**Forms.** react-hook-form + zod via `@hookform/resolvers`, schemas in each feature's `schemas/`.
+
+## TypeScript / lint gotchas
+
+`tsconfig.app.json` enables `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax` and `erasableSyntaxOnly` — unused symbols fail the build, type-only imports must use `import type`, and TS `enum`s / parameter properties are not allowed (use union types / `as const`).
+
+## Styling
+
+Tailwind CSS v4 via `@tailwindcss/vite`, configured CSS-first in `src/index.css` (`@theme` block — there is no `tailwind.config`). Use the semantic tokens (`bg-canvas`, `bg-surface`, `text-ink`, `text-muted`, `border-line`, `bg-accent`, `rounded-card`, `shadow-panel`, …) rather than raw colors; dark mode is handled by redefining those tokens under `prefers-color-scheme`. Merge classes with `cn()` (`src/lib/cn.ts`, clsx + tailwind-merge); component variants use `class-variance-authority` (see `components/ui/button.tsx`). Icons come from `@phosphor-icons/react`; motion from `framer-motion`.
+
+`.agents/skills/` contains project design and testing skills (apple-design, emil-design-eng, frontend-design, design-taste-frontend, tailwind-design-system, webapp-testing, product-marketing). Check them for UI conventions.
