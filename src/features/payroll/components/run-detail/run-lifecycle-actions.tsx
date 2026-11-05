@@ -246,7 +246,8 @@ function ExecuteRunModal({ run, open, onClose }: { run: PayrollRunDetail; open: 
   const idempotencyKey = useRef<string | null>(null)
   // A double-click lands before the button re-renders as disabled.
   const inFlight = useRef(false)
-  // The run doesn't keep this, so it's shown now or not at all.
+  // Newer backends also store this on the run (shown on the run page), but
+  // older ones don't, so it's kept on screen until the admin closes it.
   const [result, setResult] = useState<PayrollExecution | null>(null)
 
   async function pay() {
@@ -346,7 +347,16 @@ function downloadTransfers(run: PayrollRunDetail, result: PayrollExecution) {
   )
 }
 
-function ExecutionResult({ run, result, onDone }: { run: PayrollRunDetail; result: PayrollExecution; onDone: () => void }) {
+// Also used on the run page to show how a paid run went; there's no Done there.
+export function ExecutionResult({
+  run,
+  result,
+  onDone,
+}: {
+  run: PayrollRunDetail
+  result: PayrollExecution
+  onDone?: () => void
+}) {
   const { bulkTransfer } = result
   const failed = executionOutcome(result) === 'failed'
   return (
@@ -400,12 +410,16 @@ function ExecutionResult({ run, result, onDone }: { run: PayrollRunDetail; resul
         </div>
       ) : null}
 
-      <p className="text-xs text-muted">Once every transfer has landed, mark the run as reconciled.</p>
-      <div className="flex justify-end">
-        <Button type="button" width="fit" className="px-5" onClick={onDone}>
-          Done
-        </Button>
-      </div>
+      {onDone ? (
+        <>
+          <p className="text-xs text-muted">Once every transfer has landed, mark the run as reconciled.</p>
+          <div className="flex justify-end">
+            <Button type="button" width="fit" className="px-5" onClick={onDone}>
+              Done
+            </Button>
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }

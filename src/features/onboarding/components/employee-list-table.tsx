@@ -26,7 +26,7 @@ export function EmployeeListTable({
             <th className="px-4 py-3 font-medium">Name</th>
             <th className="px-4 py-3 font-medium">Role</th>
             <th className="px-4 py-3 font-medium">Department</th>
-            <th className="px-4 py-3 font-medium">Salary</th>
+            <th className="px-4 py-3 font-medium">Monthly salary</th>
             <th className="px-4 py-3 font-medium">Manager</th>
             {onRemove ? <th className="px-4 py-3" /> : null}
           </tr>

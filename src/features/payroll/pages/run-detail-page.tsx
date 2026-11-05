@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { Card, CardHeader } from '../../../components/ui/card'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
 import { AuditLogTab } from '../components/run-detail/audit-log-tab'
 import { ComplianceTab } from '../components/run-detail/compliance-tab'
@@ -9,6 +10,7 @@ import { EmployeesTab } from '../components/run-detail/employees-tab'
 import { EmployerContributionsTab } from '../components/run-detail/employer-contributions-tab'
 import { PayslipsTab } from '../components/run-detail/payslips-tab'
 import { RunHeader } from '../components/run-detail/run-header'
+import { ExecutionResult } from '../components/run-detail/run-lifecycle-actions'
 import { SummaryTab } from '../components/run-detail/summary-tab'
 import { TaxTab } from '../components/run-detail/tax-tab'
 import { usePayrollRun } from '../hooks/use-payroll-run'
@@ -72,6 +74,13 @@ export function PayrollRunDetailPage() {
       </Link>
 
       <RunHeader run={run} />
+
+      {run.execution ? (
+        <Card>
+          <CardHeader title="Payment" />
+          <ExecutionResult run={run} result={run.execution} />
+        </Card>
+      ) : null}
 
       <UnderlineTabs tabs={RUN_TABS} active={activeTab} onChange={setActiveTab} />
 

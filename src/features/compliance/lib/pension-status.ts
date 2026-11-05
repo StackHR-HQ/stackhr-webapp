@@ -30,8 +30,8 @@ const MISSING_FIELD: Record<string, string> = {
 
 export const missingFieldLabel = (field: string) => MISSING_FIELD[field] ?? field
 
-// PenCentral's 401 for missing partner credentials is a setup problem on our
-// side, not something the customer can fix; say so plainly.
+// PenCentral being unreachable or rejecting our partner credentials is a
+// problem on our side, not something the customer can fix; say so plainly.
 export function pensionErrorMessage(error: unknown): string {
   return isPartnerCredentialError(error)
     ? "StackHR can't reach PenCentral right now. Please try again later, or contact support if this keeps happening."

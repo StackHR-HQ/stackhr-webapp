@@ -92,7 +92,7 @@ export function EmployeeManualForm({
         />
         <TextField
           id="salary"
-          label={`Salary (${currencySymbol(currency)})`}
+          label={`Monthly salary (${currencySymbol(currency)})`}
           type="number"
           min="0"
           step="0.01"

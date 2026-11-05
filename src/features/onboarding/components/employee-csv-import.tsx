@@ -21,7 +21,7 @@ const EDITABLE_FIELDS: Array<{ field: keyof CsvRowDraft; label: string }> = [
   { field: 'department', label: 'Department' },
   { field: 'jobTitle', label: 'Role' },
   { field: 'employmentType', label: 'Type' },
-  { field: 'salary', label: 'Salary' },
+  { field: 'salary', label: 'Monthly salary' },
   { field: 'startDate', label: 'Start date' },
   { field: 'managerName', label: 'Manager' },
 ]

@@ -115,6 +115,8 @@ export interface PayrollRunDetail extends PayrollRunMeta {
   lines: RunEmployeeLine[]
   complianceWarnings: ComplianceWarning[]
   auditLog: AuditLogEntry[]
+  // How the run was paid, once it has been. Optional: mock runs don't have it.
+  execution?: PayrollExecution | null
 }
 
 export interface PayrollOverview {
