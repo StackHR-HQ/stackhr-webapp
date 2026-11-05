@@ -43,6 +43,8 @@ export interface OnboardingStatus {
   employeeCount: number
   employeesComplete: boolean
   complete: boolean
+  // Where the wizard should resume, e.g. 'DASHBOARD' once setup is done.
+  nextStep?: string
 }
 
 export const onboardingApi = {

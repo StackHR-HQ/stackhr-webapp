@@ -119,7 +119,7 @@ export function ImportEmployeesForm({
     <div className="space-y-4">
       <p className="text-sm text-muted">
         Add several employees at once from a CSV file with the columns{' '}
-        <span className="font-medium text-ink">{COLUMNS.join(', ')}</span>. Write salary in naira without commas,
+        <span className="font-medium text-ink">{COLUMNS.join(', ')}</span>. Write salary as the monthly gross in naira without commas (450000 for ₦450,000 a month),
         dates as YYYY-MM-DD, and employment type as FULL_TIME, PART_TIME, CONTRACT or INTERN.{' '}
         <button type="button" onClick={() => downloadCsv(TEMPLATE, 'stackhr-employee-import-template.csv')} className="font-medium text-accent hover:underline">
           Download the template

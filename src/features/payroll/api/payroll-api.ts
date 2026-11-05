@@ -1,6 +1,6 @@
 import { toApiEnum } from '../../../lib/api-enum'
 import { http } from '../../../lib/http'
-import type { ApprovalRequest } from '../../approvals/types/approval-request-types'
+import { fetchAllApprovals } from '../../approvals/api/approvals-api'
 import { humanizeEnum, initials } from '../../employee/lib/profile-format'
 import { peopleApi } from '../../people/api/people-api'
 import { EARNING_COMPONENTS } from '../lib/earning-structure'
@@ -95,7 +95,7 @@ interface ApiAuditEvent {
   actor: { id: string; name: string | null; email: string } | null
 }
 
-interface ApiPayrollRunDetail extends ApiPayrollRun {
+interface ApiPayrollRunDetail extends ApiPayrollRun, ApiExecution {
   items: ApiPayrollRunItem[]
   rejectionReason?: string | null
   complianceWarnings?: ApiComplianceAlert[]
@@ -387,6 +387,29 @@ function toRunDetail(run: ApiPayrollRunDetail, ruleSet?: ApiActiveRuleSet): Payr
     complianceWarnings: toComplianceWarnings(run.complianceWarnings ?? [], run.id),
     auditLog: (run.auditTrail ?? []).map(toAuditLogEntry),
     lines,
+    // Stored on the run once it's paid (older backends don't keep it).
+    execution: run.bulkTransfer || run.paymentExportBatch ? toExecution(run) : null,
+  }
+}
+
+function toExecution(data: ApiExecution | undefined): PayrollExecution {
+  const bulk = data?.bulkTransfer
+  const batch = data?.paymentExportBatch
+  return {
+    bulkTransfer: bulk
+      ? {
+          reference: bulk.reference,
+          status: bulk.status,
+          transfersCount: bulk.transfersCount,
+          totalAmount: bulk.totalAmountKobo / 100,
+        }
+      : null,
+    transfers: (batch?.employeeTransfers ?? []).map((transfer) => ({
+      employeeName: transfer.employeeName,
+      amount: transfer.amount,
+      currency: transfer.currency,
+    })),
+    totalNet: batch?.totalPayoutNet ?? 0,
   }
 }
 
@@ -484,10 +507,8 @@ export const payrollApi = {
     const [apiRun, ruleSet] = await Promise.all([fetchRun(id), fetchActiveRuleSet()])
     const run = toRunDetail(apiRun, ruleSet)
     if (run.status !== 'pending_approval') return run
-    const { data } = await http.get<{ items: ApprovalRequest[] }>('/approvals', {
-      params: { type: 'PAYROLL', status: 'PENDING', page: 1, limit: 100 },
-    })
-    const approval = data.items.find((item) => item.subjectId === id)
+    const approvals = await fetchAllApprovals({ type: 'PAYROLL', status: 'PENDING' })
+    const approval = approvals.find((item) => item.subjectId === id)
     return { ...run, approvalId: approval?.id, approvalRequesterId: approval?.requesterId }
   },
 
@@ -620,24 +641,7 @@ export const payrollApi = {
       {},
       { headers: { 'Idempotency-Key': idempotencyKey } },
     )
-    const bulk = data?.bulkTransfer
-    const batch = data?.paymentExportBatch
-    return {
-      bulkTransfer: bulk
-        ? {
-            reference: bulk.reference,
-            status: bulk.status,
-            transfersCount: bulk.transfersCount,
-            totalAmount: bulk.totalAmountKobo / 100,
-          }
-        : null,
-      transfers: (batch?.employeeTransfers ?? []).map((transfer) => ({
-        employeeName: transfer.employeeName,
-        amount: transfer.amount,
-        currency: transfer.currency,
-      })),
-      totalNet: batch?.totalPayoutNet ?? 0,
-    }
+    return toExecution(data)
   },
 
   async reconcileRun(id: string): Promise<void> {

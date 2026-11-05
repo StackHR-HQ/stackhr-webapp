@@ -125,7 +125,8 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 // A reimbursement claim submitted on its own is approved through an EXPENSE
 // approval request whose subject is the reimbursement rather than an expense.
-export const isReimbursementApproval = (approval: ApprovalRequest) => approval.subjectTable === 'reimbursement'
+export const isReimbursementApproval = (approval: ApprovalRequest) =>
+  approval.type === 'REIMBURSEMENT' || approval.subjectTable === 'reimbursement'
 
 const employeeName = (employee: ApiEmployeeRef | null) => employee?.fullName ?? 'Unknown employee'
 
@@ -150,6 +151,17 @@ async function fetchReimbursements(): Promise<ApiReimbursement[]> {
 
 // All of them, not just the first page, so older claims still find their approval.
 const fetchApprovals = (type: 'EXPENSE' | 'SALARY_ADVANCE') => fetchAllApprovals({ type })
+
+// Claims used to be filed as EXPENSE approvals with subjectTable 'reimbursement';
+// the backend now files them (and backfills old ones) as REIMBURSEMENT. Reading
+// both works before and after that change is deployed.
+export async function fetchClaimApprovals(): Promise<ApprovalRequest[]> {
+  const [expense, reimbursement] = await Promise.all([
+    fetchAllApprovals({ type: 'EXPENSE' }),
+    fetchAllApprovals({ type: 'REIMBURSEMENT' }),
+  ])
+  return [...expense, ...reimbursement].filter(isReimbursementApproval)
+}
 
 // The backend leaves a reimbursement PENDING after it's been decided:
 // - one created from an approved expense was approved at the expense stage;
@@ -239,13 +251,11 @@ export const spendApi = {
     const [reimbursements, expenses, approvals] = await Promise.all([
       fetchReimbursements(),
       fetchExpenses(),
-      fetchApprovals('EXPENSE'),
+      fetchClaimApprovals(),
     ])
     const expenseById = new Map(expenses.map((expense) => [expense.id, expense]))
-    // Claims are approved through an EXPENSE approval whose subject is the reimbursement.
-    const approvalByClaim = new Map(
-      approvals.filter(isReimbursementApproval).map((approval) => [approval.subjectId, approval]),
-    )
+    // A claim is approved through an approval whose subject is the reimbursement.
+    const approvalByClaim = new Map(approvals.map((approval) => [approval.subjectId, approval]))
     return reimbursements
       .map((reimbursement) => {
         const expense = reimbursement.expenseId ? expenseById.get(reimbursement.expenseId) : undefined

@@ -1,6 +1,5 @@
 import { http } from '../../../lib/http'
-import { fetchAllApprovals } from '../../approvals/api/approvals-api'
-import { isReimbursementApproval, reimbursementStatus } from '../../spend/api/spend-api'
+import { fetchClaimApprovals, reimbursementStatus } from '../../spend/api/spend-api'
 import type {
   ExpensePayload,
   LeaveRequestPayload,
@@ -56,11 +55,9 @@ export const employeeApi = {
   async getReimbursements(employeeId: string): Promise<MyReimbursement[]> {
     const [{ data }, approvals] = await Promise.all([
       http.get<{ reimbursements: MyReimbursement[] }>('/reimbursements'),
-      fetchAllApprovals({ type: 'EXPENSE' }),
+      fetchClaimApprovals(),
     ])
-    const approvalByClaim = new Map(
-      approvals.filter(isReimbursementApproval).map((approval) => [approval.subjectId, approval]),
-    )
+    const approvalByClaim = new Map(approvals.map((approval) => [approval.subjectId, approval]))
     return data.reimbursements
       .filter((reimbursement) => reimbursement.employeeId === employeeId)
       .map((reimbursement) => ({

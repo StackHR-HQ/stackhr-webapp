@@ -44,15 +44,18 @@ function responseMessage(error: unknown): string {
   return ''
 }
 
-// Stopgap: pension routes pass PenCentral's own 401 through when the backend's
-// partner credentials are missing. That isn't an expired session, so it mustn't
-// sign the user out. The backend should send a distinct status (502/424) or
-// error code for upstream failures instead; until then this matches the
-// /pension/ route and PenCentral's wording, in this one place.
+// PenCentral rejecting StackHR's partner credentials. Older backends pass
+// PenCentral's 401 straight through, which must not sign the user out, so
+// that case is matched on the /pension/ route and PenCentral's wording. Newer
+// backends (stackhr-be#31) send 502 instead; once that's on every environment
+// the 401 branch can go.
 export function isPartnerCredentialError(error: unknown): boolean {
-  if (!isAxiosError(error) || error.response?.status !== 401) return false
+  if (!isAxiosError(error)) return false
   const url = error.config?.url ?? ''
-  return url.startsWith('/pension/') && /partner credential/i.test(responseMessage(error))
+  if (!url.startsWith('/pension/')) return false
+  const status = error.response?.status
+  if (status === 502) return true
+  return status === 401 && /partner credential/i.test(responseMessage(error))
 }
 
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
