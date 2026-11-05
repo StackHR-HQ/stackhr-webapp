@@ -33,9 +33,26 @@ export function SetSalaryForm({
   paymentFrequency: string
   onDone: () => void
 }) {
-  const { data: current, isPending } = useEmployeeCompensation(employeeId)
+  const { data: current, isPending, isError, error, refetch } = useEmployeeCompensation(employeeId)
 
   if (isPending) return <div className="h-72 animate-pulse rounded-lg bg-canvas" />
+  // Opening an empty form here would let a save replace the real breakdown
+  // with zero allowances, so a failed load stops at an error.
+  if (isError) {
+    return (
+      <div className="space-y-3">
+        <FormErrorBanner message={`Couldn't load the current salary: ${getApiErrorMessage(error)}`} />
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" width="fit" className="px-6" onClick={onDone}>
+            Close
+          </Button>
+          <Button type="button" width="fit" className="px-6" onClick={() => refetch()}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <SalaryFields

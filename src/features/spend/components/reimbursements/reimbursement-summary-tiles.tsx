@@ -9,7 +9,11 @@ function SummaryTile({ icon: TileIcon, label, totals }: { icon: Icon; label: str
         <TileIcon className="h-4.5 w-4.5 text-ink" />
       </div>
       <div className="mt-3">
-        <p className="text-xl font-medium text-ink">{formatAmount(totals.amount, 'NGN')}</p>
+        <p className="text-xl font-medium text-ink">
+          {totals.amounts.length === 0
+            ? formatAmount(0, 'NGN')
+            : totals.amounts.map(({ currency, amount }) => formatAmount(amount, currency)).join(' + ')}
+        </p>
         <p className="text-xs text-muted">
           {label} · {totals.count} {totals.count === 1 ? 'claim' : 'claims'}
         </p>
