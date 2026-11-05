@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { isAxiosError } from 'axios'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
@@ -106,15 +106,35 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
     : []
   const accountHint = verificationHint(verification, bankName)
 
-  // The bank's record of the holder's name wins over what was typed.
+  // The bank's record of the holder's name wins over what was typed. When the
+  // bank or number changes, a name filled in from the old account is cleared
+  // so it can't be saved against the new one.
+  const autoFilledName = useRef<string | null>(null)
   useEffect(() => {
-    if (verifiedName && getValues('accountName') !== verifiedName) {
-      setValue('accountName', verifiedName, { shouldDirty: true, shouldValidate: true })
+    if (verifiedName) {
+      if (getValues('accountName') !== verifiedName) {
+        setValue('accountName', verifiedName, { shouldDirty: true, shouldValidate: true })
+      }
+      autoFilledName.current = verifiedName
+    } else if (autoFilledName.current && getValues('accountName') === autoFilledName.current) {
+      setValue('accountName', '', { shouldDirty: true })
+      autoFilledName.current = null
     }
   }, [verifiedName, getValues, setValue])
 
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
+    // Changed bank details aren't saved while the bank is still checking them or
+    // says the account doesn't exist. Unchanged ones never block other edits.
+    const bankDetailsChanged = Boolean(dirtyFields.bankName || dirtyFields.accountNumber)
+    if (bankDetailsChanged && verification.isFetching) {
+      setError('accountNumber', { message: 'Wait for the bank to confirm the account.' })
+      return
+    }
+    if (bankDetailsChanged && accountHint.error) {
+      setError('accountNumber', { message: accountHint.error })
+      return
+    }
     // Only send what changed; an emptied field clears the stored value.
     const update: ProfileUpdate = Object.fromEntries(
       (Object.keys(dirtyFields) as (keyof ProfileFormValues)[]).map((key) => [key, values[key].trim() || null]),
