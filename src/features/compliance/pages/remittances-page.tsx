@@ -1,9 +1,12 @@
-import { ClockCounterClockwiseIcon, DownloadSimpleIcon } from '@phosphor-icons/react'
+import { DownloadSimpleIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { ComingSoon } from '../../../components/ui/coming-soon'
 import { UnderlineTabs } from '../../../components/ui/underline-tabs'
 import { EmployerContributionsTab } from '../../payroll/components/run-detail/employer-contributions-tab'
 import { useComplianceOverview } from '../../payroll/hooks/use-compliance-overview'
+import { PenCentralConnectionCard } from '../components/pension/pencentral-connection-card'
+import { RemittanceHistoryTab } from '../components/pension/remittance-history-tab'
+import { usePenCentralEmployer } from '../hooks/use-pension'
 import { EmployeeContributionsTab } from '../components/remittances/employee-contributions-tab'
 
 type RemittancesTabKey = 'employee' | 'employer' | 'history' | 'exports'
@@ -11,13 +14,14 @@ type RemittancesTabKey = 'employee' | 'employer' | 'history' | 'exports'
 const REMITTANCES_TABS: { key: RemittancesTabKey; label: string }[] = [
   { key: 'employee', label: 'Employee Contributions' },
   { key: 'employer', label: 'Employer Contributions' },
-  { key: 'history', label: 'Remittance History' },
+  { key: 'history', label: 'Pension Remittances' },
   { key: 'exports', label: 'Remittance Exports' },
 ]
 
 export function RemittancesPage() {
   const [activeTab, setActiveTab] = useState<RemittancesTabKey>('employee')
   const { data, isPending, isError, refetch } = useComplianceOverview()
+  const employer = usePenCentralEmployer()
 
   return (
     <div className="max-w-[1400px] space-y-5">
@@ -28,9 +32,31 @@ export function RemittancesPage() {
         </p>
       </div>
 
+      {employer.data ? (
+        <PenCentralConnectionCard employer={employer.data} />
+      ) : employer.isError ? (
+        <p className="rounded-panel border border-line bg-surface p-4 text-sm text-muted">
+          Couldn&apos;t check your PenCentral connection.{' '}
+          <button type="button" onClick={() => employer.refetch()} className="font-medium text-accent hover:underline">
+            Try again
+          </button>
+        </p>
+      ) : (
+        <div className="h-28 animate-pulse rounded-panel border border-line bg-surface" />
+      )}
+
       <UnderlineTabs tabs={REMITTANCES_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {isError ? (
+      {/* Pension remittances load their own data, so a payroll overview failure doesn't hide them. */}
+      {activeTab === 'history' ? (
+        <RemittanceHistoryTab connected={Boolean(employer.data?.isAttached)} />
+      ) : activeTab === 'exports' ? (
+        <ComingSoon
+          icon={DownloadSimpleIcon}
+          title="Remittance exports"
+          description="Soon you'll be able to download remittance schedules in the format each statutory body expects, ready to file."
+        />
+      ) : isError ? (
         <div className="rounded-panel border border-line bg-surface p-6 text-center shadow-panel">
           <p className="text-sm font-medium text-ink">Couldn't load remittance data</p>
           <button
@@ -56,20 +82,6 @@ export function RemittancesPage() {
               lines={data.currentRun?.lines ?? []}
               currency={data.currentRun?.summary.currency ?? 'NGN'}
               statutoryContributions={data.statutoryContributions}
-            />
-          ) : null}
-          {activeTab === 'history' ? (
-            <ComingSoon
-              icon={ClockCounterClockwiseIcon}
-              title="Remittance history"
-              description="Soon you'll see every remittance filed with pension, tax and other statutory bodies, tracked through to confirmation."
-            />
-          ) : null}
-          {activeTab === 'exports' ? (
-            <ComingSoon
-              icon={DownloadSimpleIcon}
-              title="Remittance exports"
-              description="Soon you'll be able to download remittance schedules in the format each statutory body expects, ready to file."
             />
           ) : null}
         </>

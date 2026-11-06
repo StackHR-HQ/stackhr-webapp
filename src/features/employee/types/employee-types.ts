@@ -77,6 +77,8 @@ export interface MyProfile {
   accountName: string | null
   bankAccountLast4: string | null
   pensionProvider: string | null
+  // PenCom's code for the PFA; pension schedules check this, not the name.
+  pfaCode: string | null
   pensionRsaNumber: string | null
   firstName: string | null
   lastName: string | null
@@ -115,6 +117,7 @@ export type ProfileUpdate = Partial<
     | 'accountName'
     | 'tin'
     | 'pensionProvider'
+    | 'pfaCode'
     | 'pensionRsaNumber'
   >
 >

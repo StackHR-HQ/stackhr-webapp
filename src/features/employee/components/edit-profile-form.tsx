@@ -9,6 +9,7 @@ import { TextField } from '../../../components/ui/text-field'
 import { getApiErrorMessage } from '../../../lib/http'
 import { notify } from '../../../lib/toast'
 import { useBanks, useVerifyBankAccount } from '../../banking/hooks/use-banks'
+import { usePfas } from '../../compliance/hooks/use-pension'
 import { useUpdateMyProfile } from '../hooks/use-my-profile'
 import { profileSchema, type ProfileFormValues } from '../schemas/profile-schema'
 import type { MyProfile, ProfileUpdate } from '../types/employee-types'
@@ -106,6 +107,21 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
     : []
   const accountHint = verificationHint(verification, bankName)
 
+  // PFA comes from PenCom's official list when it loads, so pension schedules
+  // can match it; otherwise it stays free text.
+  const pfas = usePfas()
+  const pensionProvider = useWatch({ control, name: 'pensionProvider' })
+  const pfaOptions = pfas.data
+    ? [
+        ...(pensionProvider && !pfas.data.some((pfa) => pfa.name === pensionProvider)
+          ? [{ value: pensionProvider, label: pensionProvider }]
+          : []),
+        ...pfas.data.map((pfa) => ({ value: pfa.name, label: pfa.name })),
+      ]
+    : []
+  // Matched by name, so a saved provider gets its code even if it predates the list.
+  const pfaCodeFor = (name: string) => pfas.data?.find((pfa) => pfa.name === name.trim())?.code ?? null
+
   // The bank's record of the holder's name wins over what was typed. When the
   // bank or number changes, a name filled in from the old account is cleared
   // so it can't be saved against the new one.
@@ -139,6 +155,13 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
     const update: ProfileUpdate = Object.fromEntries(
       (Object.keys(dirtyFields) as (keyof ProfileFormValues)[]).map((key) => [key, values[key].trim() || null]),
     )
+    // Pension schedules check pfaCode, so keep it in step with the chosen PFA.
+    // Without the list, a typed name can't be matched, so the code is left alone;
+    // an unchanged provider only fills in a missing code, never clears one.
+    if (pfas.data && (dirtyFields.pensionProvider || !profile.pfaCode)) {
+      const pfaCode = pfaCodeFor(values.pensionProvider)
+      if (pfaCode !== (profile.pfaCode ?? null)) update.pfaCode = pfaCode
+    }
     if (Object.keys(update).length === 0) {
       onDone()
       return
@@ -204,7 +227,15 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
 
       <FieldGroup title="Tax and pension">
         <TextField label="Tax ID (TIN)" {...field('tin')} />
-        <TextField label="Pension provider" {...field('pensionProvider')} />
+        {pfas.data ? (
+          <SelectField
+            label="Pension provider (PFA)"
+            options={[{ value: '', label: 'Not set' }, ...pfaOptions]}
+            {...field('pensionProvider')}
+          />
+        ) : (
+          <TextField label="Pension provider" {...field('pensionProvider')} />
+        )}
         <TextField label="Pension RSA number" {...field('pensionRsaNumber')} />
       </FieldGroup>
 
