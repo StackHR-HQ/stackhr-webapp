@@ -13,6 +13,7 @@ import { getStatutoryContributions } from '../lib/statutory-contributions'
 import { TAX_RULE_SETS } from '../lib/tax-rules'
 import type {
   BonusPayout,
+  CompensationBreakdown,
   ComplianceOverview,
   DeductionType,
   EarningComponent,
@@ -24,6 +25,7 @@ import type {
   SalaryAdvanceStatusEntry,
   SalaryBand,
   SalaryChangeEntry,
+  SetCompensationPayload,
   TaxRuleSet,
 } from '../types/payroll-types'
 
@@ -109,6 +111,27 @@ export const mockPayrollApi = {
   async getEmployeeSalaries(): Promise<EmployeeSalaryRow[]> {
     await delay(300)
     return getEmployeeSalaryRows()
+  },
+
+  async getEmployeeCompensation(employeeId: string): Promise<CompensationBreakdown | null> {
+    await delay(200)
+    const row = getEmployeeSalaryRows().find((salary) => salary.employeeId === employeeId)
+    if (!row) return null
+    const share = (id: EarningComponent['id']) =>
+      Math.round((row.monthlySalary * (EARNING_COMPONENTS.find((component) => component.id === id)?.percentOfGross ?? 0)) / 100)
+    return {
+      basicSalary: share('basic'),
+      housingAllowance: share('housing'),
+      transportAllowance: share('transport'),
+      otherAllowances: share('other'),
+      currency: row.currency,
+      paymentFrequency: 'MONTHLY',
+    }
+  },
+
+  async setCompensation(payload: SetCompensationPayload): Promise<void> {
+    await delay(300)
+    void payload
   },
 
   async getEarningComponents(): Promise<EarningComponent[]> {

@@ -159,6 +159,20 @@ export interface EmployeeSalaryRow extends EmployeeRef {
   payFrequency: string
 }
 
+// An employee's current pay split, whole currency units per month.
+export interface CompensationBreakdown {
+  basicSalary: number
+  housingAllowance: number
+  transportAllowance: number
+  otherAllowances: number
+  currency: string
+  paymentFrequency: string
+}
+
+export interface SetCompensationPayload extends CompensationBreakdown {
+  employeeId: string
+}
+
 export interface EarningComponent {
   id: 'basic' | 'housing' | 'transport' | 'other'
   name: string

@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { Avatar } from '../../../../components/ui/avatar'
 import { formatDate } from '../../lib/format'
 import type { EmployeeDocumentRow } from '../../types/people-types'
+import { DownloadDocumentButton } from './download-document-button'
 
 export function EmployeeDocumentsView({ documents }: { documents: EmployeeDocumentRow[] }) {
   const [search, setSearch] = useState('')
@@ -39,6 +40,7 @@ export function EmployeeDocumentsView({ documents }: { documents: EmployeeDocume
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">Uploaded</th>
                 <th className="px-4 py-3 font-medium">Size</th>
+                <th className="px-4 py-3 font-medium" aria-label="Download" />
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -57,6 +59,9 @@ export function EmployeeDocumentsView({ documents }: { documents: EmployeeDocume
                   <td className="px-4 py-3 text-muted">{document.category}</td>
                   <td className="px-4 py-3 text-muted">{formatDate(document.uploadedAt)}</td>
                   <td className="px-4 py-3 text-muted">{document.fileSize}</td>
+                  <td className="px-2 py-1.5 text-right">
+                    <DownloadDocumentButton documentId={document.id} name={document.name} />
+                  </td>
                 </tr>
               ))}
             </tbody>

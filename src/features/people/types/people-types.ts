@@ -7,14 +7,6 @@ export interface Department {
   headEmployeeId: string | null
 }
 
-export interface Team {
-  id: string
-  name: string
-  description: string
-  leadEmployeeId: string | null
-  memberIds: string[]
-}
-
 export interface EmployeeSummary {
   id: string
   // Auto-generated as EMP-0001, EMP-0002... unless an admin sets one.
@@ -59,7 +51,11 @@ export interface PersonalInfo {
 }
 
 export interface CompensationInfo {
+  // The API sends the monthly gross here and the yearly figure in
+  // annualSalaryMinor (kobo); mock data has no annualSalaryMinor and keeps the
+  // yearly figure in salary. Read it through annualSalary().
   salary: number
+  annualSalaryMinor?: number
   currency: string
   payFrequency: string
   bankName: string | null
@@ -235,19 +231,12 @@ export interface UpdateEmployeePayload {
   workLocation?: string | null
 }
 
-// Departments and teams own their membership atomically: this list replaces
-// the full member set and head/lead on every write, matching the confirmed
+// Departments own their membership atomically: this list replaces
+// the full member set and head on every write, matching the confirmed
 // backend contract.
 export interface DepartmentInput {
   name: string
   headEmployeeId: string | null
-  memberIds: string[]
-}
-
-export interface TeamInput {
-  name: string
-  description: string
-  leadEmployeeId: string | null
   memberIds: string[]
 }
 

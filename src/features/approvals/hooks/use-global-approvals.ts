@@ -49,7 +49,7 @@ export function useGlobalApprovals() {
     return [
       ...leaveRequestsToApprovals(leave.data ?? []),
       ...spendApprovalsToApprovals(expenses.data ?? []),
-      ...reimbursementsToApprovals(reimbursements.data ?? []),
+      ...reimbursementsToApprovals(reimbursements.data ?? [], currentUserId),
       ...salaryAdvancesToApprovals(salaryAdvances.data ?? []),
       ...payrollRunsToApprovals(payrollRuns.data ?? []),
       ...approvalRequestsToApprovals(fallback.data ?? [], currentUserId),

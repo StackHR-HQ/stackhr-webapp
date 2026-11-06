@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import { toApiEnum } from '../../../lib/api-enum'
 import type { LeaveTypeFormValues } from '../schemas/leave-type-schema'
 import { http } from '../../../lib/http'
@@ -20,8 +21,6 @@ import type {
   LeaveType,
   OnboardingTemplate,
   PaginatedEmployees,
-  Team,
-  TeamInput,
   UpdateEmployeePayload,
   UploadDocumentPayload,
   UploadDocumentResult,
@@ -33,6 +32,22 @@ const toDepartment = (department: Department): Department => ({
   ...department,
   headEmployeeId: department.headEmployeeId || null,
 })
+
+// Reads the file name from e.g. `attachment; filename="Offer Letter.pdf"`,
+// preferring the RFC 5987 filename* form when it's there.
+function fileNameFromDisposition(header: unknown): string | undefined {
+  if (typeof header !== 'string') return undefined
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1]
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded.trim())
+    } catch {
+      // fall through to the plain filename
+    }
+  }
+  // Anchored to a parameter start so a malformed filename*= isn't read as filename=.
+  return /(?:^|;)\s*filename="?([^";]+)"?/i.exec(header)?.[1]?.trim() || undefined
+}
 
 export const peopleApi = {
   async getEmployees(): Promise<EmployeeSummary[]> {
@@ -62,25 +77,6 @@ export const peopleApi = {
   async getDepartments(): Promise<Department[]> {
     const { data } = await http.get<Department[]>('/people/departments')
     return data.map(toDepartment)
-  },
-
-  async getTeams(): Promise<Team[]> {
-    const { data } = await http.get<Team[]>('/people/teams')
-    return data
-  },
-
-  async createTeam(payload: TeamInput): Promise<Team> {
-    const { data } = await http.post<Team>('/people/teams', payload)
-    return data
-  },
-
-  async updateTeam(id: string, payload: TeamInput): Promise<Team> {
-    const { data } = await http.patch<Team>(`/people/teams/${id}`, payload)
-    return data
-  },
-
-  async deleteTeam(id: string): Promise<void> {
-    await http.delete(`/people/teams/${id}`)
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {
@@ -203,6 +199,25 @@ export const peopleApi = {
     if (employeeId) form.append('employeeId', employeeId)
     const { data } = await http.post<UploadDocumentResult>('/people/documents', form)
     return data
+  },
+
+  // Streams the file. Admins can download any document in the organization;
+  // employees only their own and company-wide ones.
+  async downloadDocument(id: string): Promise<{ blob: Blob; fileName?: string }> {
+    try {
+      const response = await http.get<Blob>(`/people/documents/${id}/download`, { responseType: 'blob' })
+      return { blob: response.data, fileName: fileNameFromDisposition(response.headers['content-disposition']) }
+    } catch (err) {
+      // Error bodies arrive as a Blob too; parse them so the API's message reaches the user.
+      if (isAxiosError(err) && err.response?.data instanceof Blob) {
+        try {
+          err.response.data = JSON.parse(await err.response.data.text())
+        } catch {
+          // not JSON; leave it for the generic message
+        }
+      }
+      throw err
+    }
   },
 
   async assignOnboardingTemplate(payload: AssignOnboardingTemplatePayload): Promise<void> {

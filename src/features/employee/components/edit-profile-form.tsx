@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
+import { isAxiosError } from 'axios'
+import { useEffect, useRef, type ReactNode } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { Button } from '../../../components/ui/button'
 import { FormErrorBanner } from '../../../components/ui/form-error-banner'
 import { SelectField } from '../../../components/ui/select-field'
 import { TextField } from '../../../components/ui/text-field'
 import { getApiErrorMessage } from '../../../lib/http'
 import { notify } from '../../../lib/toast'
+import { useBanks, useVerifyBankAccount } from '../../banking/hooks/use-banks'
 import { useUpdateMyProfile } from '../hooks/use-my-profile'
 import { profileSchema, type ProfileFormValues } from '../schemas/profile-schema'
 import type { MyProfile, ProfileUpdate } from '../types/employee-types'
@@ -47,6 +49,22 @@ function toFormValues(profile: MyProfile): ProfileFormValues {
   }
 }
 
+// What to show under the account number while it's being checked with the bank.
+function verificationHint(
+  verification: ReturnType<typeof useVerifyBankAccount>,
+  bankName: string,
+): { hint?: ReactNode; error?: string } {
+  if (verification.isFetching) return { hint: 'Checking the account with your bank…' }
+  if (verification.data) return { hint: `Verified: ${verification.data.accountName}` }
+  if (verification.isError) {
+    const status = isAxiosError(verification.error) ? verification.error.response?.status : undefined
+    if (status === 404) return { error: `No account with this number at ${bankName}` }
+    if (status === 400) return { error: getApiErrorMessage(verification.error) }
+    // Anything else (e.g. no access to verification): don't block saving.
+  }
+  return {}
+}
+
 function FieldGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-t border-line pt-5 first:border-t-0 first:pt-0">
@@ -64,14 +82,59 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
     handleSubmit,
     setError,
     clearErrors,
+    setValue,
+    getValues,
+    control,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: toFormValues(profile),
   })
 
+  // Bank comes from Anchor's list when it loads; otherwise it stays free text.
+  const banks = useBanks()
+  const [bankName, accountNumber] = useWatch({ control, name: ['bankName', 'accountNumber'] })
+  const bank = banks.data?.find((candidate) => candidate.name === bankName)
+  const verification = useVerifyBankAccount(bank?.nipCode, accountNumber.trim())
+  const verifiedName = verification.data?.accountName
+  const bankOptions = banks.data
+    ? [
+        // Keep a saved bank that isn't on the list (e.g. typed before the list existed).
+        ...(bankName && !bank ? [{ value: bankName, label: bankName }] : []),
+        ...banks.data.map((candidate) => ({ value: candidate.name, label: candidate.name })),
+      ]
+    : []
+  const accountHint = verificationHint(verification, bankName)
+
+  // The bank's record of the holder's name wins over what was typed. When the
+  // bank or number changes, a name filled in from the old account is cleared
+  // so it can't be saved against the new one.
+  const autoFilledName = useRef<string | null>(null)
+  useEffect(() => {
+    if (verifiedName) {
+      if (getValues('accountName') !== verifiedName) {
+        setValue('accountName', verifiedName, { shouldDirty: true, shouldValidate: true })
+      }
+      autoFilledName.current = verifiedName
+    } else if (autoFilledName.current && getValues('accountName') === autoFilledName.current) {
+      setValue('accountName', '', { shouldDirty: true })
+      autoFilledName.current = null
+    }
+  }, [verifiedName, getValues, setValue])
+
   const onSubmit = handleSubmit(async (values) => {
     clearErrors('root')
+    // Changed bank details aren't saved while the bank is still checking them or
+    // says the account doesn't exist. Unchanged ones never block other edits.
+    const bankDetailsChanged = Boolean(dirtyFields.bankName || dirtyFields.accountNumber)
+    if (bankDetailsChanged && verification.isFetching) {
+      setError('accountNumber', { message: 'Wait for the bank to confirm the account.' })
+      return
+    }
+    if (bankDetailsChanged && accountHint.error) {
+      setError('accountNumber', { message: accountHint.error })
+      return
+    }
     // Only send what changed; an emptied field clears the stored value.
     const update: ProfileUpdate = Object.fromEntries(
       (Object.keys(dirtyFields) as (keyof ProfileFormValues)[]).map((key) => [key, values[key].trim() || null]),
@@ -121,8 +184,19 @@ export function EditProfileForm({ profile, onDone }: { profile: MyProfile; onDon
       </FieldGroup>
 
       <FieldGroup title="Bank details">
-        <TextField label="Bank name" {...field('bankName')} />
-        <TextField label="Account number" inputMode="numeric" {...field('accountNumber')} />
+        {banks.data ? (
+          <SelectField label="Bank" placeholder="Select your bank" options={bankOptions} {...field('bankName')} />
+        ) : (
+          <TextField label="Bank name" {...field('bankName')} />
+        )}
+        <TextField
+          label="Account number"
+          inputMode="numeric"
+          maxLength={10}
+          {...field('accountNumber')}
+          error={errors.accountNumber?.message ?? accountHint.error}
+          hint={accountHint.hint}
+        />
         <div className="sm:col-span-2">
           <TextField label="Account name" {...field('accountName')} />
         </div>

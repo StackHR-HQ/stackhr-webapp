@@ -8,6 +8,7 @@ import { summarizeRun } from '../lib/payroll-calculation'
 import type {
   AuditLogEntry,
   ComplianceOverview,
+  CompensationBreakdown,
   ComplianceWarning,
   EarningComponent,
   EmployeeSalaryRow,
@@ -22,6 +23,7 @@ import type {
   RunEmployeeLine,
   SalaryBand,
   SalaryChangeEntry,
+  SetCompensationPayload,
   StatutoryApplicability,
   StatutoryContributionRule,
   TaxRuleSet,
@@ -439,6 +441,25 @@ async function getEmployeeSalaryRows(): Promise<EmployeeSalaryRow[]> {
 }
 
 export const payrollApi = {
+  // Null when the employee has no active compensation record yet.
+  async getEmployeeCompensation(employeeId: string): Promise<CompensationBreakdown | null> {
+    const record = (await fetchCompensation()).find((compensation) => compensation.employeeId === employeeId)
+    if (!record) return null
+    return {
+      basicSalary: record.basicSalary,
+      housingAllowance: record.housingAllowance,
+      transportAllowance: record.transportAllowance,
+      otherAllowances: record.otherAllowances,
+      currency: record.currency,
+      paymentFrequency: record.paymentFrequency,
+    }
+  },
+
+  // Creates a new effective-dated record; the backend closes the previous one.
+  async setCompensation(payload: SetCompensationPayload): Promise<void> {
+    await http.post('/payroll/compensation', payload)
+  },
+
   async getRuns(): Promise<PayrollRunListItem[]> {
     return (await fetchRuns()).map(toListItem)
   },

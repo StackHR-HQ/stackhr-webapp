@@ -1,3 +1,5 @@
+import type { CompensationInfo } from '../types/people-types'
+
 const CURRENCY_SYMBOLS: Record<string, string> = {
   NGN: '₦',
 }
@@ -15,4 +17,8 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function annualSalary(compensation: CompensationInfo): number {
+  return compensation.annualSalaryMinor != null ? compensation.annualSalaryMinor / 100 : compensation.salary
 }

@@ -1,4 +1,6 @@
 import { http } from '../../../lib/http'
+import { fetchAllApprovals } from '../../approvals/api/approvals-api'
+import { isReimbursementApproval, reimbursementStatus } from '../../spend/api/spend-api'
 import type {
   ExpensePayload,
   LeaveRequestPayload,
@@ -11,8 +13,10 @@ import type {
   MyLeaveRequest,
   MyPayslip,
   MyProfile,
+  MyReimbursement,
   MySalaryAdvance,
   ProfileUpdate,
+  ReimbursementPayload,
   SalaryAdvancePayload,
 } from '../types/employee-types'
 
@@ -43,6 +47,35 @@ export const employeeApi = {
   // Only pending claims can be cancelled.
   async cancelExpense(id: string): Promise<void> {
     await http.patch(`/spend/expenses/${id}/cancel`)
+  },
+
+  // There's no /me endpoint for reimbursements, and /reimbursements isn't
+  // reliably limited to the caller, so rows are kept only when they carry this
+  // employee's id. The backend leaves a claim PENDING after its approval is
+  // decided, so the status comes from the approval, as on the admin side.
+  async getReimbursements(employeeId: string): Promise<MyReimbursement[]> {
+    const [{ data }, approvals] = await Promise.all([
+      http.get<{ reimbursements: MyReimbursement[] }>('/reimbursements'),
+      fetchAllApprovals({ type: 'EXPENSE' }),
+    ])
+    const approvalByClaim = new Map(
+      approvals.filter(isReimbursementApproval).map((approval) => [approval.subjectId, approval]),
+    )
+    return data.reimbursements
+      .filter((reimbursement) => reimbursement.employeeId === employeeId)
+      .map((reimbursement) => ({
+        ...reimbursement,
+        status: reimbursementStatus(reimbursement, approvalByClaim.get(reimbursement.id)),
+      }))
+  },
+
+  async submitReimbursement(payload: ReimbursementPayload): Promise<void> {
+    await http.post('/reimbursements', payload)
+  },
+
+  // Only pending claims can be cancelled.
+  async cancelReimbursement(id: string): Promise<void> {
+    await http.patch(`/reimbursements/${id}/cancel`)
   },
 
   async getSalaryAdvances(): Promise<MySalaryAdvance[]> {
